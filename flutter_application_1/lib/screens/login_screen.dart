@@ -12,6 +12,402 @@ class _LoginScreenState extends State<LoginScreen> {
   bool obscurePassword = true;
   bool rememberMe = false;
 
+  static const List<Map<String, String>> _terms = [
+    {
+      'title': 'Aceitação dos termos',
+      'body':
+          'Ao aceder ou utilizar a plataforma, o utilizador declara ter lido, compreendido e aceitado estes Termos na íntegra. Caso não concorde com algum dos pontos, não deverá utilizar a plataforma.',
+    },
+    {
+      'title': 'Utilizadores abrangidos',
+      'body':
+          'A plataforma destina-se exclusivamente a colaboradores da Softinsa, bem como a gestores (Talent Managers e Service Line Leaders) no exercício das suas funções.',
+    },
+    {
+      'title': 'Criação de conta e segurança',
+      'body':
+          'O utilizador compromete-se a fornecer informações verdadeiras, completas e atualizadas durante o registo. A password é pessoal e intransmissível. O utilizador é responsável por todas as atividades realizadas na sua conta. Na primeira autenticação, o utilizador deverá alterar a password fornecida. O utilizador pode solicitar a recuperação da password através do email associado à conta.',
+    },
+    {
+      'title': 'Submissão de evidências',
+      'body':
+          'Para concorrer a um badge, o utilizador deverá submeter as evidências solicitadas (certificados, diplomas, relatórios, etc.). O utilizador declara que todas as evidências submetidas são verdadeiras, autênticas e lhe pertencem. A Softinsa reserva-se o direito de solicitar documentação complementar ou de rejeitar evidências que considere insuficientes ou falsas.',
+    },
+    {
+      'title': 'Processo de validação e aprovação',
+      'body':
+          'As candidaturas serão analisadas primeiro pelo Talent Manager e depois pelo Service Line Leader da área respetiva. O utilizador será notificado por email sobre aprovações, rejeições ou pedidos de correção. Todas as decisões são finais nos termos do regulamento interno da Softinsa.',
+    },
+    {
+      'title': 'Obtenção e utilização de badges',
+      'body':
+          'Um badge é atribuído apenas quando todos os requisitos de um determinado nível estiverem cumpridos. Alguns badges podem ter data de expiração, sendo essa informação visível na página do badge. O utilizador compromete-se a não adulterar, falsificar ou utilizar indevidamente qualquer badge.',
+    },
+    {
+      'title': 'Publicação e partilha de badges',
+      'body':
+          'O utilizador pode autorizar que os seus badges sejam exibidos na galeria pública da plataforma. O utilizador pode partilhar voluntariamente os seus badges no LinkedIn ou noutras redes profissionais. Caso pretenda incluir um badge na assinatura de email corporativo, deverá ativar essa funcionalidade nas definições da conta.',
+    },
+    {
+      'title': 'Sistema de pontuação e gamificação',
+      'body':
+          'A Softinsa pode atribuir pontos a cada badge, de acordo com critérios definidos internamente. Os pontos servem para identificar talento e evolução profissional, podendo ser considerados em processos de reconhecimento ou compensação. Mesmo que um badge expire, a pontuação obtida mantém-se no histórico do utilizador.',
+    },
+    {
+      'title': 'Notificações e lembretes',
+      'body':
+          'Ao aceitar estes Termos, o utilizador consente receber notificações por email e/ou push relativas a: confirmação de candidatura a um badge, aprovação ou rejeição de pedidos, expiração de badges e lembretes de objetivos e prazos definidos na timeline pessoal.',
+    },
+    {
+      'title': 'Conduta proibida',
+      'body':
+          'O utilizador não deverá: partilhar as suas credenciais de acesso com terceiros; utilizar a plataforma para fins não profissionais ou não autorizados; submeter evidências falsas ou de terceiros sem consentimento; tentar aceder a dados de outros utilizadores sem permissão.',
+    },
+    {
+      'title': 'Suspensão ou cancelamento de conta',
+      'body':
+          'A Softinsa reserva-se o direito de suspender ou cancelar contas em caso de violação destes Termos, utilização indevida da plataforma ou por solicitação dos recursos humanos da empresa.',
+    },
+    {
+      'title': 'Alterações aos termos',
+      'body':
+          'Estes Termos podem ser atualizados periodicamente. As alterações serão comunicadas aos utilizadores com antecedência mínima de 15 dias, salvo quando exigido por lei.',
+    },
+    {
+      'title': 'Legislação aplicável',
+      'body':
+          'Estes Termos regem-se pela legislação portuguesa. Qualquer litígio será submetido aos tribunais da comarca de Lisboa.',
+    },
+  ];
+
+  static const List<Map<String, String>> _privacyPolicy = [
+    {
+      'title': 'Responsável pelo tratamento dos dados',
+      'body':
+          'A Softinsa é a entidade responsável pelo tratamento dos seus dados pessoais no âmbito da Plataforma de Badges.',
+    },
+    {
+      'title': 'Que dados recolhemos?',
+      'body':
+          'Ao utilizar a plataforma, podemos recolher as seguintes categorias de dados:\n\nDados de identificação profissional: nome, email corporativo, área de atuação e função na empresa.\n\nDados de autenticação: password (armazenada de forma cifrada) e histórico de acessos.\n\nDados de evidências: certificados, diplomas, relatórios e outros documentos que o utilizador enviar para concorrer a badges.\n\nHistórico de badges: badges obtidos, badges em processo de validação e progresso nos percursos de aprendizagem.\n\nDados de gamificação: pontuação atribuída, conquistas especiais e marcos alcançados.\n\nDados de comunicação: notificações enviadas, lembretes e preferências de contacto.',
+    },
+    {
+      'title': 'Como utilizamos os seus dados?',
+      'body':
+          'Os seus dados são utilizados exclusivamente para as seguintes finalidades:\n\nGestão da sua conta e autenticação na plataforma.\n\nSubmissão, validação e aprovação de candidaturas a badges.\n\nEmissão e publicação de badges digitais.\n\nCriação de rankings internos por área ou Service Line, para efeitos de reconhecimento profissional.\n\nEnvio de notificações sobre o estado dos seus pedidos, expiração de badges e lembretes de objetivos.\n\nGeração de relatórios agregados e anónimos para melhoria da plataforma e gestão de talento.\n\nPartilha pública apenas quando o utilizador autorizar expressamente.',
+    },
+    {
+      'title': 'Qual o fundamento legal para o tratamento?',
+      'body':
+          'O tratamento dos seus dados baseia-se em:\n\nExecução do contrato de trabalho ou de formação profissional (gestão de competências e progressão).\n\nConsentimento explícito do utilizador para partilha pública de badges ou integração com redes profissionais.\n\nInteresse legítimo da Softinsa em gerir o talento interno, certificar competências e promover a aprendizagem contínua.\n\nObrigações legais aplicáveis, nomeadamente em matéria de arquivo e auditoria.',
+    },
+    {
+      'title': 'Com quem partilhamos os seus dados?',
+      'body':
+          'Os seus dados podem ser acedidos ou partilhados com:\n\nTalent Managers e Service Line Leaders no âmbito do processo de validação de badges.\n\nAdministradores da plataforma para gestão técnica e configuração.\n\nFornecedores técnicos subcontratados (ex: alojamento da plataforma, serviço de email), que estão vinculados contratualmente ao RGPD.\n\nRedes profissionais (ex: LinkedIn) apenas mediante autorização expressa do utilizador.\n\nAutoridades públicas quando obrigatório por lei.\n\nOs seus dados não são vendidos nem cedidos a terceiros para fins de marketing.',
+    },
+    {
+      'title': 'Página pública de badges',
+      'body':
+          'Cada badge aprovado tem uma página pública acessível por um link único. Essa página contém apenas:\n\nNome do consultor\n\nBadge obtido\n\nData de atribuição\n\nCompetências certificadas\n\nO utilizador pode solicitar a remoção da página pública a qualquer momento, contactando o encarregado de proteção de dados.',
+    },
+    {
+      'title': 'Por quanto tempo guardamos os seus dados?',
+      'body':
+          'Tipo de dado e prazo de conservação:\n\nEvidências submetidas: Durante a validade do badge + 2 anos\n\nBadges sem expiração: Indefinidamente (histórico profissional)\n\nHistórico de acessos e decisões: 5 anos após a última interação\n\nDados de registo: Enquanto o utilizador estiver ativo na plataforma\n\nApós estes prazos, os dados serão anonimizados ou eliminados de forma segura.',
+    },
+    {
+      'title': 'Quais são os seus direitos?',
+      'body':
+          'Enquanto titular dos dados, tem direito a:\n\nAceder aos seus dados pessoais que tratamos.\n\nRetificar dados incompletos ou desatualizados.\n\nSolicitar o apagamento dos seus dados, salvo obrigações legais de conservação.\n\nLimitar o tratamento em certas circunstâncias.\n\nPortabilidade dos dados que nos forneceu.\n\nOpor-se à criação de rankings públicos ou à partilha de badges.\n\nRetirar o consentimento a qualquer momento, sem comprometer a licitude do tratamento realizado até então.\n\nPode exercer estes direitos através do contacto indicado no ponto 11.',
+    },
+    {
+      'title': 'Como protegemos os seus dados?',
+      'body':
+          'Adotamos medidas técnicas e organizativas adequadas, incluindo:\n\nComunicação encriptada (HTTPS) entre o seu dispositivo e a plataforma.\n\nArmazenamento cifrado de passwords.\n\nControlo de acessos baseado em perfis.\n\nRegisto de auditoria para todas as ações de validação e aprovação.',
+    },
+    {
+      'title': 'Dados de menores',
+      'body':
+          'A plataforma destina-se exclusivamente a colaboradores da Softinsa, presumindo-se que todos têm idade igual ou superior a 18 anos.',
+    },
+  ];
+
+  Widget _buildTermCard(int index, Map<String, String> term) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '$index',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.blue.shade700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  term['title']!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  term['body']!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTermsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 650, maxWidth: 700),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+              // Cabeçalho
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SOFTINSA BADGES',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[500],
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Termos de Serviço',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+
+              // Introdução
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: Text(
+                  'Bem-vindo à Plataforma de Badges da Softinsa. Estes Termos de Serviço regulam a sua utilização da plataforma, incluindo o acesso às funcionalidades, submissão de evidências, obtenção de badges e partilha de conquistas.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+              ),
+
+              // Lista scrollável
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: List.generate(
+                      _terms.length,
+                      (i) => _buildTermCard(i + 1, _terms[i]),
+                    ),
+                  ),
+                ),
+              ),
+
+              Divider(height: 1, color: Colors.grey.shade200),
+
+              // Rodapé
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                      ),
+                      child: const Text(
+                        'Li e aceito os termos',
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPrivacyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 650, maxWidth: 700),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SOFTINSA BADGES',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[500],
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Política de Privacidade',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: Text(
+                  'A Softinsa está comprometida com a proteção da sua privacidade e dos seus dados pessoais. Esta Política explica quais os dados que recolhemos, como os utilizamos, com quem os partilhamos e quais os seus direitos ao abrigo do Regulamento Geral sobre a Proteção de Dados (RGPD).',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+              ),
+
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: List.generate(
+                      _privacyPolicy.length,
+                      (i) => _buildTermCard(i + 1, _privacyPolicy[i]),
+                    ),
+                  ),
+                ),
+              ),
+
+              Divider(height: 1, color: Colors.grey.shade200),
+
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                      ),
+                      child: const Text(
+                        'Li e aceito a política',
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +442,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // SUBTÍTULO
                 const Text(
-                  "Insira seu e-mail para entrar na sua conta",
+                  "Insira o seu e-mail para entrar na sua conta",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey),
                 ),
@@ -59,11 +455,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: TextField(
+                  child: const TextField(
                     decoration: InputDecoration(
                       hintText: "email@dominio.com",
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                     ),
                   ),
                 ),
@@ -79,12 +476,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextField(
                     obscureText: obscurePassword,
                     decoration: InputDecoration(
-                      hintText: "palavra-passe",
+                      hintText: "Palavra-passe",
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: Colors.grey[600],
                         ),
                         onPressed: () {
@@ -99,7 +499,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 12),
 
-                // CHECKBOX (apenas)
+                // CHECKBOX
                 Row(
                   children: [
                     SizedBox(
@@ -112,7 +512,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             rememberMe = value ?? false;
                           });
                         },
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                       ),
                     ),
@@ -123,7 +524,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 8),
 
-                // ESQUECEU A SENHA (em baixo)
+                // ESQUECEU A SENHA
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
@@ -141,13 +542,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                // BOTÃO
+                // BOTÃO CONTINUAR
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navegar para o Dashboard
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -168,13 +568,78 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Primeiro acesso? ',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 12,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/register');
+                      },
+                      child: const Text(
+                        'Registe-se',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 40),
 
-                // TEXTO FINAL
-                const Text(
-                  "Ao clicar em continuar, você concorda com os nossos\nTermos de Serviço e Política de Privacidade",
+                // TEXTO FINAL - "Termos de Serviço" e "Política de Privacidade" são clicáveis
+                RichText(
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    children: [
+                      const TextSpan(
+                        text: 'Ao clicar em continuar, você concorda com os nossos\n',
+                      ),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: () => _showTermsDialog(context),
+                          child: const Text(
+                            'Termos de Serviço',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' e ',
+                      ),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: () => _showPrivacyDialog(context),
+                          child: const Text(
+                            'Política de Privacidade',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 20),
