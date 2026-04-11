@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'settings_menu_screen.dart';
+import 'notifications_full_screen.dart';
+import 'profile_screen.dart';
+import 'progress_full_screen.dart';
+import 'suggestions_full_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -18,6 +23,17 @@ class DashboardScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined, size: 32),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsMenuScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     Image.asset(
                       "assets/images/softinsa.png",
                       width: 100,
@@ -26,12 +42,29 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.notifications_none),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NotificationsFullScreen(),
+                              ),
+                            );
+                          },
                         ),
-                        const CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.blue,
-                          child: Icon(Icons.person, color: Colors.white),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileScreen(),
+                              ),
+                            );
+                          },
+                          child: const CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.blue,
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
                         ),
                       ],
                     ),
@@ -77,7 +110,14 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsFullScreen(),
+                          ),
+                        );
+                      },
                       child: const Text("Ver todos"),
                     ),
                   ],
@@ -121,7 +161,14 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProgressFullScreen(),
+                          ),
+                        );
+                      },
                       child: const Text("Ver todos"),
                     ),
                   ],
@@ -155,7 +202,14 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SuggestionsFullScreen(),
+                          ),
+                        );
+                      },
                       child: const Text("Ver todos"),
                     ),
                   ],

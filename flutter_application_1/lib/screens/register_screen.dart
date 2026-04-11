@@ -10,6 +10,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
+  bool _hasAcceptedRgpd = false;
 
   void _showRequestSentDialog(BuildContext context) {
     showDialog(
@@ -42,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Um administrador irá verificar seus dados e ativar sua conta em breve.',
+                'Um administrador irá verificar os seus dados e ativar a sua conta em breve.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 34 / 2,
@@ -84,6 +85,154 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _showRgpdConsentDialog(BuildContext context) async {
+    bool isChecked = false;
+
+    final accepted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: StatefulBuilder(
+          builder: (context, setDialogState) => Dialog(
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 640,
+                maxWidth: 700,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Aceitação dos Termos RGPD',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: Colors.grey.shade200),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Para utilizar a plataforma de badges da Softinsa, necessitamos do seu consentimento para a publicação e partilha dos seus badges.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Os seus badges poderão ser visualizados por outros consultores e gestores da empresa, permitindo o reconhecimento das suas competências e progressão profissional.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Ao aceitar, concorda com o tratamento dos seus dados pessoais de acordo com o Regulamento Geral de Proteção de Dados (RGPD).',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Checkbox(
+                                value: isChecked,
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    isChecked = value ?? false;
+                                  });
+                                },
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'Li e aceito os termos RGPD',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: Colors.grey.shade200),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton(
+                          onPressed:
+                              isChecked ? () => Navigator.pop(context, true) : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            disabledBackgroundColor: Colors.blue.shade200,
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                          ),
+                          child: const Text(
+                            'Confirmar',
+                            style: TextStyle(
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return accepted ?? false;
   }
 
   static const List<Map<String, String>> _terms = [
@@ -550,7 +699,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () => _showRequestSentDialog(context),
+                    onPressed: () async {
+                      if (!_hasAcceptedRgpd) {
+                        final hasAccepted = await _showRgpdConsentDialog(context);
+
+                        if (!hasAccepted || !mounted) {
+                          return;
+                        }
+
+                        setState(() {
+                          _hasAcceptedRgpd = true;
+                        });
+                      }
+
+                      if (!mounted) {
+                        return;
+                      }
+
+                      _showRequestSentDialog(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(

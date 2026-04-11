@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart';
+import '../services/achievement_center.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -548,12 +548,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
+                      AchievementCenter.instance.unlock(
+                        const AchievementUnlock(
+                          id: 'welcome-achievement',
+                          title: 'Bem-vindo a Bordo',
+                          description:
+                              'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
+                          points: 50,
+                          badgesCount: 1,
+                          imageAsset: 'assets/images/welcome.png',
                         ),
                       );
+                      Navigator.pushReplacementNamed(context, '/app');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
