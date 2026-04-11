@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'change_password_screen.dart';
 import 'exports_screen.dart';
 import 'notifications_full_screen.dart';
 import 'ranking_screen.dart';
 import 'reminders_screen.dart';
 import 'profile_screen.dart';
+import 'settings_menu_screen.dart';
 
 class MoreOptionsScreen extends StatelessWidget {
   const MoreOptionsScreen({super.key});
@@ -26,7 +26,7 @@ class MoreOptionsScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ChangePasswordScreen(),
+                          builder: (context) => const SettingsMenuScreen(),
                         ),
                       );
                     },

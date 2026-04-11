@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/achievement_center.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'preferences_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -547,19 +549,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      AchievementCenter.instance.unlock(
-                        const AchievementUnlock(
-                          id: 'welcome-achievement',
-                          title: 'Bem-vindo a Bordo',
-                          description:
-                              'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
-                          points: 50,
-                          badgesCount: 1,
-                          imageAsset: 'assets/images/welcome.png',
-                        ),
-                      );
-                      Navigator.pushReplacementNamed(context, '/app');
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      final hasCompletedPreferences = prefs.getBool(
+                            PreferencesScreen.firstLoginPreferencesDoneKey,
+                          ) ??
+                          false;
+
+                      if (!mounted) {
+                        return;
+                      }
+
+                      if (hasCompletedPreferences) {
+                        Navigator.pushReplacementNamed(context, '/app');
+                        return;
+                      }
+
+                      Navigator.pushReplacementNamed(context, '/preferences');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
