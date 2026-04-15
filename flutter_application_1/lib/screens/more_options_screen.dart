@@ -5,6 +5,7 @@ import 'ranking_screen.dart';
 import 'reminders_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
+import '../widgets/app_top_bar.dart';
 
 class MoreOptionsScreen extends StatelessWidget {
   const MoreOptionsScreen({super.key});
@@ -16,60 +17,31 @@ class MoreOptionsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsMenuScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.settings_outlined, size: 32),
+            AppTopBar(
+              onSettingsTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsMenuScreen(),
                   ),
-                  Image.asset(
-                    'assets/images/softinsa.png',
-                    width: 100,
-                    fit: BoxFit.contain,
+                );
+              },
+              onNotificationsTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsFullScreen(),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NotificationsFullScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.notifications_none, size: 32),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ProfileScreen(),
-                            ),
-                          );
-                        },
-                        child: const CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.grey,
-                          child: Icon(Icons.person, size: 18, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                );
+              },
+              onProfileTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
                   ),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: 24),
             Expanded(
@@ -126,11 +98,7 @@ class MoreOptionsScreen extends StatelessWidget {
 }
 
 class _OptionTile extends StatelessWidget {
-  const _OptionTile({
-    required this.icon,
-    required this.title,
-    this.onTap,
-  });
+  const _OptionTile({required this.icon, required this.title, this.onTap});
 
   final IconData icon;
   final String title;

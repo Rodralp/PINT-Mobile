@@ -4,6 +4,7 @@ import 'app_shell_screen.dart';
 import 'change_password_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
+import '../widgets/app_top_bar.dart';
 
 class ExportsScreen extends StatefulWidget {
   const ExportsScreen({super.key});
@@ -26,57 +27,32 @@ class _ExportsScreenState extends State<ExportsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChangePasswordScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.settings_outlined, size: 32),
-                    ),
-                    Image.asset(
-                      'assets/images/softinsa.png',
-                      width: 100,
-                      fit: BoxFit.contain,
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NotificationsFullScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.notifications_none, size: 32),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          child: const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: Colors.grey,
-                            child: Icon(Icons.person, size: 18, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                AppTopBar(
+                  padding: EdgeInsets.zero,
+                  onSettingsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangePasswordScreen(),
+                      ),
+                    );
+                  },
+                  onNotificationsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsFullScreen(),
+                      ),
+                    );
+                  },
+                  onProfileTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -90,10 +66,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
                 const SizedBox(height: 4),
                 const Text(
                   'Todas as Service Lines',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: TextStyle(fontSize: 20, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -132,7 +105,10 @@ class _ExportsScreenState extends State<ExportsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFC6D2E1), width: 1.8),
+                          border: Border.all(
+                            color: const Color(0xFFC6D2E1),
+                            width: 1.8,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -155,7 +131,10 @@ class _ExportsScreenState extends State<ExportsScreen> {
                       height: 86,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFC6D2E1), width: 1.8),
+                        border: Border.all(
+                          color: const Color(0xFFC6D2E1),
+                          width: 1.8,
+                        ),
                       ),
                       child: const Icon(Icons.filter_alt_outlined, size: 44),
                     ),
@@ -174,7 +153,11 @@ class _ExportsScreenState extends State<ExportsScreen> {
                         ),
                       ),
                     ),
-                    Icon(Icons.chevron_left, size: 36, color: Color(0xFF64748B)),
+                    Icon(
+                      Icons.chevron_left,
+                      size: 36,
+                      color: Color(0xFF64748B),
+                    ),
                     SizedBox(width: 2),
                     Text(
                       '1/3',
@@ -185,7 +168,11 @@ class _ExportsScreenState extends State<ExportsScreen> {
                       ),
                     ),
                     SizedBox(width: 2),
-                    Icon(Icons.chevron_right, size: 36, color: Color(0xFF64748B)),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 36,
+                      color: Color(0xFF64748B),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -270,10 +257,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
             icon: Icon(Icons.history_outlined),
             label: 'Pedidos',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.more_horiz),
-            label: 'Mais',
-          ),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
         ],
       ),
     );
@@ -324,7 +308,9 @@ class _ExportsScreenState extends State<ExportsScreen> {
         color: highlighted ? const Color(0xFFEAF2FF) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: highlighted ? const Color(0xFF1A90F0) : const Color(0xFFD8E1EC),
+          color: highlighted
+              ? const Color(0xFF1A90F0)
+              : const Color(0xFFD8E1EC),
           width: highlighted ? 2.6 : 1.7,
         ),
       ),
@@ -447,20 +433,10 @@ class _ExportsScreenState extends State<ExportsScreen> {
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: Icon(
-          Icons.workspace_premium,
-          color: color,
-          size: 30,
-        ),
+        child: Icon(Icons.workspace_premium, color: color, size: 30),
       ),
     );
   }
 }
 
-enum _BadgeShape {
-  circle,
-  shield,
-  pentagon,
-  hexagon,
-  star,
-}
+enum _BadgeShape { circle, shield, pentagon, hexagon, star }

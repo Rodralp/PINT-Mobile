@@ -4,6 +4,7 @@ import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'progress_full_screen.dart';
 import 'suggestions_full_screen.dart';
+import '../widgets/app_top_bar.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -20,55 +21,32 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // HEADER
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.settings_outlined, size: 32),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsMenuScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    Image.asset(
-                      "assets/images/softinsa.png",
-                      width: 100,
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.notifications_none),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NotificationsFullScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          child: const CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.blue,
-                            child: Icon(Icons.person, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                AppTopBar(
+                  padding: EdgeInsets.zero,
+                  onSettingsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsMenuScreen(),
+                      ),
+                    );
+                  },
+                  onNotificationsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsFullScreen(),
+                      ),
+                    );
+                  },
+                  onProfileTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),
@@ -114,7 +92,8 @@ class DashboardScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const NotificationsFullScreen(),
+                            builder: (context) =>
+                                const NotificationsFullScreen(),
                           ),
                         );
                       },
@@ -243,28 +222,16 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -303,10 +270,7 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -316,10 +280,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressCard({
-    required String title,
-    required double progress,
-  }) {
+  Widget _buildProgressCard({required String title, required double progress}) {
     return Material(
       color: Colors.grey[50],
       borderRadius: BorderRadius.circular(12),
@@ -429,10 +390,7 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       "Recomendado para você",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),

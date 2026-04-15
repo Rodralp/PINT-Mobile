@@ -4,6 +4,7 @@ import 'app_shell_screen.dart';
 import 'change_password_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
+import '../widgets/app_top_bar.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -62,7 +63,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          index == null ? 'Lembrete criado com sucesso.' : 'Lembrete atualizado com sucesso.',
+          index == null
+              ? 'Lembrete criado com sucesso.'
+              : 'Lembrete atualizado com sucesso.',
         ),
       ),
     );
@@ -75,9 +78,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Lembrete "$removedTitle" removido.'),
-      ),
+      SnackBar(content: Text('Lembrete "$removedTitle" removido.')),
     );
   }
 
@@ -92,57 +93,32 @@ class _RemindersScreenState extends State<RemindersScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChangePasswordScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.settings_outlined, size: 32),
-                    ),
-                    Image.asset(
-                      'assets/images/softinsa.png',
-                      width: 100,
-                      fit: BoxFit.contain,
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NotificationsFullScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.notifications_none, size: 32),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          child: const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: Colors.grey,
-                            child: Icon(Icons.person, size: 18, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                AppTopBar(
+                  padding: EdgeInsets.zero,
+                  onSettingsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangePasswordScreen(),
+                      ),
+                    );
+                  },
+                  onNotificationsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsFullScreen(),
+                      ),
+                    );
+                  },
+                  onProfileTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -163,12 +139,19 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     height: 92,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFC6D2E1), width: 1.8),
+                      border: Border.all(
+                        color: const Color(0xFFC6D2E1),
+                        width: 1.8,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add, size: 42, color: Color(0xFF64748B)),
+                        const Icon(
+                          Icons.add,
+                          size: 42,
+                          color: Color(0xFF64748B),
+                        ),
                         const SizedBox(width: 12),
                         Text(
                           'Novo Lembrete',
@@ -186,13 +169,16 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 ...List.generate(_reminders.length, (index) {
                   final reminder = _reminders[index];
                   return Padding(
-                    padding: EdgeInsets.only(bottom: index == _reminders.length - 1 ? 0 : 14),
+                    padding: EdgeInsets.only(
+                      bottom: index == _reminders.length - 1 ? 0 : 14,
+                    ),
                     child: _ReminderCard(
                       color: reminder.color,
                       title: reminder.title,
                       subtitle: reminder.description,
                       date: reminder.date,
-                      onEdit: () => _openReminderForm(existing: reminder, index: index),
+                      onEdit: () =>
+                          _openReminderForm(existing: reminder, index: index),
                       onDelete: () => _removeReminder(index),
                     ),
                   );
@@ -243,15 +229,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
             icon: Icon(Icons.history_outlined),
             label: 'Pedidos',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.more_horiz),
-            label: 'Mais',
-          ),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
         ],
       ),
     );
   }
-
 }
 
 class _ReminderFormDialog extends StatefulWidget {
@@ -272,9 +254,12 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.existing?.title ?? '');
-    _descriptionController =
-        TextEditingController(text: widget.existing?.description ?? '');
+    _titleController = TextEditingController(
+      text: widget.existing?.title ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.existing?.description ?? '',
+    );
     _dateController = TextEditingController(text: widget.existing?.date ?? '');
     _selectedColor = widget.existing?.color ?? const Color(0xFF39D98A);
   }
@@ -294,9 +279,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
 
     if (title.isEmpty || description.isEmpty || date.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha todos os campos.'),
-        ),
+        const SnackBar(content: Text('Preencha todos os campos.')),
       );
       return;
     }
@@ -316,9 +299,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(26),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
         child: SingleChildScrollView(
@@ -337,10 +318,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
               const SizedBox(height: 18),
               const Text(
                 'Título',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Color(0xFF475569),
-                ),
+                style: TextStyle(fontSize: 20, color: Color(0xFF475569)),
               ),
               const SizedBox(height: 8),
               _formField(
@@ -350,10 +328,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
               const SizedBox(height: 16),
               const Text(
                 'Descrição',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Color(0xFF475569),
-                ),
+                style: TextStyle(fontSize: 20, color: Color(0xFF475569)),
               ),
               const SizedBox(height: 8),
               _formField(
@@ -364,10 +339,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
               const SizedBox(height: 16),
               const Text(
                 'Data',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Color(0xFF475569),
-                ),
+                style: TextStyle(fontSize: 20, color: Color(0xFF475569)),
               ),
               const SizedBox(height: 8),
               _formField(
@@ -377,10 +349,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
               const SizedBox(height: 16),
               const Text(
                 'Cor',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Color(0xFF475569),
-                ),
+                style: TextStyle(fontSize: 20, color: Color(0xFF475569)),
               ),
               const SizedBox(height: 12),
               Row(
@@ -464,7 +433,9 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
                           ),
                         ),
                         child: Text(
-                          widget.existing == null ? 'Criar Lembrete' : 'Guardar',
+                          widget.existing == null
+                              ? 'Criar Lembrete'
+                              : 'Guardar',
                           style: const TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -493,13 +464,13 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
-          fontSize: 20,
-          color: Color(0xFF9CA3AF),
-        ),
+        hintStyle: const TextStyle(fontSize: 20, color: Color(0xFF9CA3AF)),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
@@ -588,7 +559,9 @@ class _ReminderCard extends StatelessWidget {
             width: 8,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(20),
+              ),
             ),
           ),
           Expanded(
@@ -641,7 +614,11 @@ class _ReminderCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_month_outlined, size: 30, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.calendar_month_outlined,
+                        size: 30,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(width: 10),
                       Text(
                         date,

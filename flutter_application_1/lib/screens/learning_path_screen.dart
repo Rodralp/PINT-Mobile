@@ -4,6 +4,7 @@ import 'badges_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
+import '../widgets/app_top_bar.dart';
 
 class LearningPathScreen extends StatelessWidget {
   const LearningPathScreen({super.key});
@@ -17,68 +18,46 @@ class LearningPathScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsMenuScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.settings_outlined, size: 32),
+              AppTopBar(
+                onSettingsTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsMenuScreen(),
                     ),
-                    Image.asset(
-                      'assets/images/softinsa.png',
-                      width: 100,
-                      fit: BoxFit.contain,
+                  );
+                },
+                onNotificationsTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsFullScreen(),
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NotificationsFullScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.notifications_none, size: 32),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          child: const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: Colors.grey,
-                            child: Icon(Icons.person, size: 18, color: Colors.white),
-                          ),
-                        ),
-                      ],
+                  );
+                },
+                onProfileTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 28,
+                ),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFFFF00A8), Color(0xFFFF0075), Color(0xFFFF2A00)],
+                    colors: [
+                      Color(0xFFFF00A8),
+                      Color(0xFFFF0075),
+                      Color(0xFFFF2A00),
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -205,7 +184,11 @@ class _ServiceLineCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Color(0xFF1A90F0), size: 38),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0xFF1A90F0),
+                    size: 38,
+                  ),
                 ],
               ),
             ),
@@ -266,8 +249,9 @@ class _ServiceLineCard extends StatelessWidget {
                           footerText,
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight:
-                                progress >= 1 ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: progress >= 1
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: Colors.black87,
                           ),
                         ),
@@ -294,60 +278,31 @@ class HybridCloudPathScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsMenuScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.settings_outlined, size: 32),
+            AppTopBar(
+              onSettingsTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsMenuScreen(),
                   ),
-                  Image.asset(
-                    'assets/images/softinsa.png',
-                    width: 100,
-                    fit: BoxFit.contain,
+                );
+              },
+              onNotificationsTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsFullScreen(),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NotificationsFullScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.notifications_none, size: 32),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ProfileScreen(),
-                            ),
-                          );
-                        },
-                        child: const CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.grey,
-                          child: Icon(Icons.person, size: 18, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                );
+              },
+              onProfileTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
                   ),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Padding(
@@ -436,7 +391,10 @@ class HybridCloudPathScreen extends StatelessWidget {
                                   children: const [
                                     Icon(Icons.schedule_outlined, size: 30),
                                     SizedBox(width: 8),
-                                    Text('6 meses', style: TextStyle(fontSize: 18)),
+                                    Text(
+                                      '6 meses',
+                                      style: TextStyle(fontSize: 18),
+                                    ),
                                     SizedBox(width: 20),
                                     Icon(Icons.group_outlined, size: 30),
                                     SizedBox(width: 8),
@@ -453,7 +411,10 @@ class HybridCloudPathScreen extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       color: const Color(0xFF4CAF50),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       child: const Text(
                         'LowCode (Outsystems)',
                         style: TextStyle(
@@ -490,10 +451,11 @@ class HybridCloudPathScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const HybridCloudBadgeDetailScreen(
-                                    levelTitle: 'Nível Júnior',
-                                    levelCode: 'Nível A',
-                                  ),
+                                  builder: (context) =>
+                                      const HybridCloudBadgeDetailScreen(
+                                        levelTitle: 'Nível Júnior',
+                                        levelCode: 'Nível A',
+                                      ),
                                 ),
                               );
                             },
@@ -511,10 +473,11 @@ class HybridCloudPathScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const HybridCloudBadgeDetailScreen(
-                                    levelTitle: 'Nível Intermédio',
-                                    levelCode: 'Nível B',
-                                  ),
+                                  builder: (context) =>
+                                      const HybridCloudBadgeDetailScreen(
+                                        levelTitle: 'Nível Intermédio',
+                                        levelCode: 'Nível B',
+                                      ),
                                 ),
                               );
                             },
@@ -531,7 +494,8 @@ class HybridCloudPathScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const LowCodeSeniorProgressScreen(),
+                                  builder: (context) =>
+                                      const LowCodeSeniorProgressScreen(),
                                 ),
                               );
                             },
@@ -587,10 +551,22 @@ class HybridCloudPathScreen extends StatelessWidget {
           indicatorColor: const Color(0xFFEAF2FF),
           height: 74,
           destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
-            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
-            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
-            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
+            NavigationDestination(
+              icon: Icon(Icons.home_rounded),
+              label: 'Dashboard',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.workspace_premium_outlined),
+              label: 'Badges',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.menu_book_outlined),
+              label: 'Jornada',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.history_outlined),
+              label: 'Pedidos',
+            ),
             NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
           ],
         ),
@@ -624,7 +600,9 @@ class _HybridLevelTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double buttonWidth = MediaQuery.of(context).size.width < 390 ? 146 : 168;
+    final double buttonWidth = MediaQuery.of(context).size.width < 390
+        ? 146
+        : 168;
 
     return Container(
       width: double.infinity,
@@ -653,10 +631,7 @@ class _HybridLevelTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -670,10 +645,7 @@ class _HybridLevelTile extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 8, right: 10),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: statusColor,
-                  ),
+                  style: TextStyle(fontSize: 18, color: statusColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -687,7 +659,9 @@ class _HybridLevelTile extends StatelessWidget {
                     onPressed: isDisabled ? null : onActionTap,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: isDisabled ? const Color(0xFFCAD0DA) : actionColor,
+                        color: isDisabled
+                            ? const Color(0xFFCAD0DA)
+                            : actionColor,
                         width: 2.5,
                       ),
                       shape: RoundedRectangleBorder(
@@ -697,10 +671,7 @@ class _HybridLevelTile extends StatelessWidget {
                     ),
                     child: Text(
                       actionLabel,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: actionColor,
-                      ),
+                      style: TextStyle(fontSize: 18, color: actionColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -710,16 +681,15 @@ class _HybridLevelTile extends StatelessWidget {
                     icon: Icon(actionIcon, size: 24, color: actionColor),
                     label: Text(
                       actionLabel,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: actionColor,
-                      ),
+                      style: TextStyle(fontSize: 18, color: actionColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: isDisabled ? const Color(0xFFCAD0DA) : actionColor,
+                        color: isDisabled
+                            ? const Color(0xFFCAD0DA)
+                            : actionColor,
                         width: 2.5,
                       ),
                       shape: RoundedRectangleBorder(
@@ -788,7 +758,10 @@ class HybridCloudBadgeDetailScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFFE9F4FF),
-                    border: Border.all(color: const Color(0xFF1A90F0), width: 8),
+                    border: Border.all(
+                      color: const Color(0xFF1A90F0),
+                      width: 8,
+                    ),
                   ),
                   child: const Icon(
                     Icons.cloud_done_outlined,
@@ -816,11 +789,17 @@ class HybridCloudBadgeDetailScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEAF5ED),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF16C524), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFF16C524),
+                      width: 1.5,
+                    ),
                   ),
                   child: const Row(
                     children: [
@@ -859,7 +838,10 @@ class HybridCloudBadgeDetailScreen extends StatelessWidget {
                   (item) => Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF6F8FA),
                       borderRadius: BorderRadius.circular(12),
@@ -867,7 +849,11 @@ class HybridCloudBadgeDetailScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Color(0xFF16C524), size: 22),
+                        const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFF16C524),
+                          size: 22,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(

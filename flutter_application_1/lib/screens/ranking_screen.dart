@@ -4,6 +4,7 @@ import 'app_shell_screen.dart';
 import 'change_password_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
+import '../widgets/app_top_bar.dart';
 
 class RankingScreen extends StatelessWidget {
   const RankingScreen({super.key});
@@ -19,57 +20,32 @@ class RankingScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChangePasswordScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.settings_outlined, size: 32),
-                    ),
-                    Image.asset(
-                      'assets/images/softinsa.png',
-                      width: 100,
-                      fit: BoxFit.contain,
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NotificationsFullScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.notifications_none, size: 32),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                          child: const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: Colors.grey,
-                            child: Icon(Icons.person, size: 18, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                AppTopBar(
+                  padding: EdgeInsets.zero,
+                  onSettingsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangePasswordScreen(),
+                      ),
+                    );
+                  },
+                  onNotificationsTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsFullScreen(),
+                      ),
+                    );
+                  },
+                  onProfileTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 26),
                 const Text(
@@ -83,41 +59,44 @@ class RankingScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 const Text(
                   'Todas as Service Lines',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: TextStyle(fontSize: 20, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
                       child: Container(
-                        height: 84,
+                        height: 64,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFD8DEE9), width: 1.8),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE0E6F0)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.search, size: 42),
+                            Icon(
+                              Icons.search,
+                              color: Colors.grey[500],
+                              size: 30,
+                            ),
                             const SizedBox(width: 12),
-                            Text(
-                              'Pesquisar consultor',
-                              style: TextStyle(
-                                fontSize: 40 / 2,
-                                color: Colors.grey[400],
+                            Expanded(
+                              child: Text(
+                                'Pesquisar consultores',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[500],
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     _toolButton(icon: Icons.filter_alt_outlined),
                     const SizedBox(width: 12),
-                    _toolButton(icon: Icons.sort),
+                    _toolButton(icon: Icons.tune_rounded),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -129,7 +108,7 @@ class RankingScreen extends StatelessWidget {
                   badges: 12,
                   avatarLetter: 'J',
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 const _RankingCard(
                   rank: 2,
                   name: 'Maria Santos',
@@ -138,7 +117,7 @@ class RankingScreen extends StatelessWidget {
                   badges: 10,
                   avatarLetter: 'M',
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 const _RankingCard(
                   rank: 3,
                   name: 'Pedro Mendes',
@@ -147,7 +126,7 @@ class RankingScreen extends StatelessWidget {
                   badges: 9,
                   avatarLetter: 'P',
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 const _RankingCard(
                   rank: 4,
                   name: 'Ana Costa',
@@ -202,10 +181,7 @@ class RankingScreen extends StatelessWidget {
             icon: Icon(Icons.history_outlined),
             label: 'Pedidos',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.more_horiz),
-            label: 'Mais',
-          ),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
         ],
       ),
     );
@@ -213,13 +189,14 @@ class RankingScreen extends StatelessWidget {
 
   Widget _toolButton({required IconData icon}) {
     return Container(
-      width: 112,
-      height: 84,
+      width: 66,
+      height: 64,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD8DEE9), width: 1.8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE0E6F0)),
+        color: Colors.white,
       ),
-      child: Icon(icon, size: 42),
+      child: Icon(icon, size: 30),
     );
   }
 }
@@ -244,39 +221,36 @@ class _RankingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFDCE3EC), width: 1.8),
         boxShadow: const [
           BoxShadow(
             color: Color(0x15000000),
-            blurRadius: 8,
-            offset: Offset(0, 4),
+            blurRadius: 6,
+            offset: Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
-          SizedBox(
-            width: 70,
-            child: Center(child: _rankBadge(rank)),
-          ),
-          const SizedBox(width: 10),
+          SizedBox(width: 56, child: Center(child: _rankBadge(rank))),
+          const SizedBox(width: 8),
           CircleAvatar(
-            radius: 40,
+            radius: 30,
             backgroundColor: const Color(0xFFD1D5DB),
             child: Text(
               avatarLetter,
-              style: const TextStyle(
-                fontSize: 30,
+              style: TextStyle(
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1F2937),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,30 +258,34 @@ class _RankingCard extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 42 / 2,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E293B),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   email,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 13,
                     color: Color(0xFF64748B),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 const Row(
                   children: [
                     Text(
                       'Pontos',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                     ),
-                    SizedBox(width: 34),
+                    SizedBox(width: 24),
                     Text(
                       'Badges',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -317,16 +295,16 @@ class _RankingCard extends StatelessWidget {
                     Text(
                       '$points',
                       style: const TextStyle(
-                        fontSize: 42 / 2,
+                        fontSize: 18,
                         color: Color(0xFF1980E6),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 36),
+                    const SizedBox(width: 28),
                     Text(
                       '$badges',
                       style: const TextStyle(
-                        fontSize: 42 / 2,
+                        fontSize: 18,
                         color: Color(0xFF1980E6),
                         fontWeight: FontWeight.w700,
                       ),
@@ -343,17 +321,17 @@ class _RankingCard extends StatelessWidget {
 
   Widget _rankBadge(int rank) {
     if (rank == 1) {
-      return const Icon(Icons.emoji_events, size: 54, color: Color(0xFFF5B301));
+      return const Icon(Icons.emoji_events, size: 40, color: Color(0xFFF5B301));
     }
     if (rank == 2) {
-      return const Icon(Icons.emoji_events, size: 54, color: Color(0xFFB8BDC7));
+      return const Icon(Icons.emoji_events, size: 40, color: Color(0xFFB8BDC7));
     }
     if (rank == 3) {
-      return const Icon(Icons.emoji_events, size: 54, color: Color(0xFFC4742F));
+      return const Icon(Icons.emoji_events, size: 40, color: Color(0xFFC4742F));
     }
     return Container(
-      width: 54,
-      height: 54,
+      width: 40,
+      height: 40,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: Color(0xFFF2F4F8),
@@ -362,7 +340,7 @@ class _RankingCard extends StatelessWidget {
       child: Text(
         '#$rank',
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: 14,
           fontWeight: FontWeight.w700,
           color: Color(0xFF4B5563),
         ),
