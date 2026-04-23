@@ -37,27 +37,26 @@ class ProgressFullScreen extends StatelessWidget {
                 children: const [
                   _ProgressItemFull(
                     title: 'LowCode (Outsystems)',
-                    progress: 0.72,
+                    subtitle: 'Especialista',
+                    status: 'reprovado',
+                  ),
+                  SizedBox(height: 14),
+                  _ProgressItemFull(
+                    title: 'LowCode (Outsystems)',
+                    subtitle: 'Sénior',
+                    status: 'em_validacao',
+                  ),
+                  SizedBox(height: 14),
+                  _ProgressItemFull(
+                    title: 'LowCode (Outsystems)',
+                    subtitle: 'Intermédio',
+                    status: 'em_progresso',
                   ),
                   SizedBox(height: 14),
                   _ProgressItemFull(
                     title: 'C++ Mastery',
-                    progress: 0.45,
-                  ),
-                  SizedBox(height: 14),
-                  _ProgressItemFull(
-                    title: 'Hybrid Cloud',
-                    progress: 0.20,
-                  ),
-                  SizedBox(height: 14),
-                  _ProgressItemFull(
-                    title: 'Cloud Architecture',
-                    progress: 0.88,
-                  ),
-                  SizedBox(height: 14),
-                  _ProgressItemFull(
-                    title: 'Application Operations',
-                    progress: 0.15,
+                    subtitle: 'Especialista',
+                    status: 'aprovado',
                   ),
                 ],
               ),
@@ -72,78 +71,90 @@ class ProgressFullScreen extends StatelessWidget {
 class _ProgressItemFull extends StatelessWidget {
   const _ProgressItemFull({
     required this.title,
-    required this.progress,
+    required this.subtitle,
+    required this.status,
   });
 
   final String title;
-  final double progress;
+  final String subtitle;
+  final String status;
 
   @override
   Widget build(BuildContext context) {
+    IconData statusIcon;
+    Color statusColor;
+
+    switch (status) {
+      case 'aprovado':
+        statusIcon = Icons.check_circle_outline;
+        statusColor = Colors.green;
+        break;
+      case 'reprovado':
+        statusIcon = Icons.report_problem_outlined;
+        statusColor = Colors.red;
+        break;
+      case 'em_validacao':
+        statusIcon = Icons.search;
+        statusColor = Colors.orange;
+        break;
+      case 'em_progresso':
+      default:
+        statusIcon = Icons.access_time;
+        statusColor = Colors.blue;
+        break;
+    }
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE0E6F0)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.blue[100],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.workspace_premium_outlined, color: Colors.blue, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.workspace_premium, color: Colors.grey, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF243047),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Progresso: ${(progress * 100).toInt()}%',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
                 ),
-              ),
-              Text(
-                '${(progress * 100).toInt()}%',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
-              color: Colors.blue,
-              minHeight: 8,
+              ],
             ),
+          ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: statusColor.withOpacity(0.3)),
+            ),
+            child: Icon(statusIcon, color: statusColor, size: 24),
           ),
         ],
       ),

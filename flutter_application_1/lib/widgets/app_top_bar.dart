@@ -20,31 +20,46 @@ class AppTopBar extends StatelessWidget {
       padding: padding,
       child: Row(
         children: [
-          _ActionIconButton(
-            icon: Icons.settings_outlined,
-            onTap: onSettingsTap,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionIconButton(
+                icon: Icons.settings_outlined,
+                onTap: onSettingsTap,
+              ),
+              const SizedBox(width: 4),
+              _ActionIconButton(
+                icon: Icons.notifications_none_outlined,
+                onTap: onNotificationsTap,
+              ),
+            ],
           ),
           const Spacer(),
-          Image.asset(
-            'assets/images/softinsa.png',
-            width: 108,
-            fit: BoxFit.contain,
+          const Text(
+            'SOFTINSA',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3B82F6),
+              letterSpacing: 0.5,
+            ),
           ),
           const Spacer(),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               _ActionIconButton(
-                icon: Icons.notifications_none_outlined,
-                onTap: onNotificationsTap,
+                icon: Icons.chat_bubble_outline,
+                onTap: () {}, // Por agora sem função específica
               ),
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: onProfileTap,
                 child: const CircleAvatar(
-                  radius: 16,
+                  radius: 18,
+                  backgroundImage: AssetImage('assets/images/profile_placeholder.png'), // Se não existir, o Flutter mostra o fallback
                   backgroundColor: Color(0xFFC4CAD3),
-                  child: Icon(Icons.person, size: 16, color: Colors.white),
+                  child: Icon(Icons.person, size: 20, color: Colors.white),
                 ),
               ),
             ],
@@ -70,7 +85,7 @@ class _ActionIconButton extends StatelessWidget {
         onPressed: onTap,
         padding: EdgeInsets.zero,
         splashRadius: 22,
-        icon: Icon(icon, size: 34, color: const Color(0xFF111827)),
+        icon: Icon(icon, size: 28, color: const Color(0xFF111827)),
       ),
     );
   }
