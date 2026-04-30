@@ -1,15 +1,15 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/achievement_center.dart';
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
-import '../services/achievement_center.dart';
+import '../theme/softinsa_theme.dart';
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
 
-  static const String firstLoginPreferencesDoneKey =
-      'first_login_preferences_done';
+  static const String firstLoginPreferencesDoneKey = 'first_login_preferences_done';
 
   @override
   State<PreferencesScreen> createState() => _PreferencesScreenState();
@@ -21,64 +21,55 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       title: 'LowCode (Outsystems)',
       subtitle: 'Desenvolvimento de aplicações com plataformas low-code',
       icon: Icons.laptop,
-      color: Color(0xFF8A2BE2),
-      selected: false,
+      color: const Color(0xFF2F80ED),
     ),
     _PreferenceArea(
       title: 'DevSecOps & IT Automation',
       subtitle: 'Automação, segurança e práticas DevOps',
-      icon: Icons.build,
-      color: Color(0xFFFF7A00),
-      selected: false,
+      icon: Icons.build_circle_outlined,
+      color: const Color(0xFFEF7D32),
     ),
     _PreferenceArea(
       title: 'Sourcing & Talent Management',
       subtitle: 'Gestão de talento e recrutamento',
-      icon: Icons.groups,
-      color: Color(0xFF3B82F6),
-      selected: false,
+      icon: Icons.groups_2_outlined,
+      color: const Color(0xFF8B5CF6),
     ),
     _PreferenceArea(
       title: 'Cloud & Infrastructure',
       subtitle: 'Arquitetura e infraestrutura cloud',
-      icon: Icons.cloud,
-      color: Color(0xFF06B6D4),
-      selected: false,
+      icon: Icons.cloud_outlined,
+      color: const Color(0xFF06B6D4),
     ),
     _PreferenceArea(
       title: 'Data & Analytics',
       subtitle: 'Análise de dados e business intelligence',
-      icon: Icons.bar_chart,
-      color: Color(0xFF22C55E),
-      selected: false,
+      icon: Icons.bar_chart_outlined,
+      color: const Color(0xFF16A34A),
     ),
     _PreferenceArea(
       title: 'Cybersecurity',
       subtitle: 'Segurança da informação e proteção de dados',
-      icon: Icons.lock,
-      color: Color(0xFFFF2D3B),
-      selected: false,
+      icon: Icons.lock_outline,
+      color: const Color(0xFFDC2626),
     ),
     _PreferenceArea(
       title: 'Agile & Project Management',
       subtitle: 'Metodologias ágeis e gestão de projetos',
-      icon: Icons.assignment,
-      color: Color(0xFFEC4899),
-      selected: false,
+      icon: Icons.assignment_outlined,
+      color: const Color(0xFFDB2777),
     ),
     _PreferenceArea(
       title: 'Frontend Development',
       subtitle: 'Desenvolvimento de interfaces e experiência do utilizador',
-      icon: Icons.palette,
-      color: Color(0xFF6366F1),
-      selected: false,
+      icon: Icons.palette_outlined,
+      color: const Color(0xFF4F46E5),
     ),
     _PreferenceArea(
       title: 'Backend Development',
       subtitle: 'Desenvolvimento de APIs e serviços',
-      icon: Icons.settings,
-      color: Color(0xFFEAB308),
-      selected: false,
+      icon: Icons.settings_outlined,
+      color: const Color(0xFFD4A017),
     ),
   ];
 
@@ -89,8 +80,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   Future<List<int>> _resolveSelectedAreaIds(int accountId) async {
     final backendAreas = await AuthApi.instance.fetchPreferenceAreas(accountId: accountId);
     final areaIdByName = <String, int>{
-      for (final area in backendAreas)
-        area.name.trim().toLowerCase(): area.id,
+      for (final area in backendAreas) area.name.trim().toLowerCase(): area.id,
     };
 
     final selectedIds = <int>[];
@@ -104,26 +94,26 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     return selectedIds.toSet().toList(growable: false);
   }
 
+  void _toggleArea(_PreferenceArea area) {
+    setState(() {
+      area.selected = !area.selected;
+    });
+  }
+
   Future<void> _saveAndContinue() async {
     if (_selectedCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecione pelo menos uma área de interesse.'),
-        ),
+        const SnackBar(content: Text('Selecione pelo menos uma área de interesse.')),
       );
       return;
     }
 
     final accountId = await AuthSession.getAccountId();
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (accountId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível identificar a conta ativa.'),
-        ),
+        const SnackBar(content: Text('Não foi possível identificar a conta ativa.')),
       );
       return;
     }
@@ -132,15 +122,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
     try {
       final selectedAreaIds = await _resolveSelectedAreaIds(accountId);
-
       if (selectedAreaIds.isEmpty) {
         throw const FormatException('No matching backend areas were found.');
       }
 
-      await AuthApi.instance.savePreferences(
-        accountId: accountId,
-        areaIds: selectedAreaIds,
-      );
+      await AuthApi.instance.savePreferences(accountId: accountId, areaIds: selectedAreaIds);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(PreferencesScreen.firstLoginPreferencesDoneKey, true);
@@ -150,28 +136,19 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         const AchievementUnlock(
           id: 'welcome-achievement',
           title: 'Bem-vindo a Bordo',
-          description:
-              'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
+          description: 'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
           points: 50,
           badgesCount: 1,
           imageAsset: 'assets/images/welcome.png',
         ),
       );
 
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/app');
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível guardar as preferências.'),
-        ),
+        const SnackBar(content: Text('Não foi possível guardar as preferências.')),
       );
     } finally {
       if (mounted) {
@@ -191,189 +168,216 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border:
-                          Border.all(color: const Color(0xFF1A90F0), width: 1.5),
-                    ),
-                    child: const Icon(Icons.settings_outlined, size: 24),
-                  ),
-                  Image.asset(
-                    'assets/images/softinsa.png',
-                    width: 106,
-                    fit: BoxFit.contain,
-                  ),
-                  Row(
-                    children: const [
-                      Icon(Icons.notifications_none, size: 26),
-                      SizedBox(width: 8),
-                      CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Colors.grey,
-                        child: Icon(Icons.person, color: Colors.white, size: 15),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextField(
-                enabled: false,
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar área',
-                  hintStyle:
-                      const TextStyle(fontSize: 16, color: Color(0xFF98A2B3)),
-                  prefixIcon:
-                      const Icon(Icons.search, size: 24, color: Color(0xFF98A2B3)),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 11),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFBFC6D1), width: 1.3),
-                  ),
-                  disabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFBFC6D1), width: 1.3),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 9, 16, 8),
-              child: Container(
-                width: double.infinity,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFBFC6D1), width: 1.3),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: SoftinsaColors.surfaceAlt,
+      body: Container(
+        decoration: const BoxDecoration(gradient: SoftinsaColors.brandGradient),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+                child: Row(
                   children: [
-                    Icon(Icons.filter_alt_outlined,
-                        size: 24, color: Color(0xFF475569)),
-                    SizedBox(width: 8),
-                    Text(
-                      'Filtrar pesquisa',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF334155)),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                      ),
+                      child: const Icon(Icons.tune_rounded, color: Colors.white),
+                    ),
+                    const SizedBox(width: 14),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      alignment: Alignment.center,
+                      child: Image.asset('assets/images/softinsa.png', width: 30, fit: BoxFit.contain),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                      ),
+                      child: Text(
+                        '$_selectedCount selecionadas',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const Divider(height: 1, color: Color(0xFFCCD4E0)),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                itemCount: _areas.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final area = _areas[index];
-                  return _PreferenceCard(
-                    area: area,
-                    onTap: () {
-                      setState(() {
-                        area.selected = !area.selected;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _saving ? null : _resetSelections,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5A5F),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancelar Alterações',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Escolha as suas áreas',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _saving ? null : _saveAndContinue,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A90F0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Isto ajuda a personalizar badges, conteúdos e recomendações no mobile e no web.',
+                        style: TextStyle(color: Colors.white, height: 1.45),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _saving ? null : _resetSelections,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(color: Colors.white54),
+                              ),
+                              child: const Text('Limpar seleção'),
+                            ),
                           ),
-                        ),
-                        child: _saving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _saving ? null : _saveAndContinue,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: SoftinsaColors.blueDark,
+                              ),
+                              child: _saving
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                                    )
+                                  : const Text('Guardar'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF3F6FA),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                    child: GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _areas.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.95,
+                      ),
+                      itemBuilder: (context, index) {
+                        final area = _areas[index];
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(24),
+                          onTap: _saving ? null : () => _toggleArea(area),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: area.selected ? area.color : SoftinsaColors.border,
+                                width: area.selected ? 1.8 : 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 42,
+                                      height: 42,
+                                      decoration: BoxDecoration(
+                                        color: area.color.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: Icon(area.icon, color: area.color),
+                                    ),
+                                    const Spacer(),
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 180),
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: area.selected ? area.color : Colors.transparent,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: area.selected ? area.color : SoftinsaColors.border,
+                                        ),
+                                      ),
+                                      child: area.selected
+                                          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                                          : null,
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                Text(
+                                  area.title,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: SoftinsaColors.ink,
                                   ),
                                 ),
-                              )
-                            : const Text(
-                                'Salvar Alterações',
-                                style: TextStyle(fontSize: 14, color: Colors.white),
-                              ),
-                      ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  area.subtitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: SoftinsaColors.textMuted,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: NavigationBar(
-          selectedIndex: 2,
-          onDestinationSelected: (_) {},
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFEAF2FF),
-          height: 74,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
-            NavigationDestination(
-                icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
-            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
-            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -386,97 +390,11 @@ class _PreferenceArea {
     required this.subtitle,
     required this.icon,
     required this.color,
-    required this.selected,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
   final Color color;
-  bool selected;
-}
-
-class _PreferenceCard extends StatelessWidget {
-  const _PreferenceCard({
-    required this.area,
-    required this.onTap,
-  });
-
-  final _PreferenceArea area;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFD3D9E3), width: 1.3),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: area.color,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(area.icon, color: Colors.white, size: 27),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    area.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF1E293B),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    area.subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF667085),
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: area.selected ? const Color(0xFF1A90F0) : Colors.white,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color:
-                      area.selected ? const Color(0xFF1A90F0) : const Color(0xFFC5CCD7),
-                  width: 1.7,
-                ),
-              ),
-              child: area.selected
-                  ? const Icon(Icons.check, color: Colors.white, size: 22)
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  bool selected = false;
 }

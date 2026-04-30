@@ -566,6 +566,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       ElevatedButton(
                         onPressed: () => Navigator.pop(context),
@@ -578,6 +579,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             horizontal: 16,
                             vertical: 10,
                           ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: const Text(
                           'Li e aceito a política',

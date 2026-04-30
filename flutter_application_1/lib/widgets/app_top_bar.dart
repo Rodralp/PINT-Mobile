@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/softinsa_theme.dart';
+
 class AppTopBar extends StatelessWidget {
   const AppTopBar({
     super.key,
@@ -18,53 +20,65 @@ class AppTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: padding,
-      child: Row(
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ActionIconButton(
-                icon: Icons.settings_outlined,
-                onTap: onSettingsTap,
-              ),
-              const SizedBox(width: 4),
-              _ActionIconButton(
-                icon: Icons.notifications_none_outlined,
-                onTap: onNotificationsTap,
-              ),
-            ],
-          ),
-          const Spacer(),
-          const Text(
-            'SOFTINSA',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF3B82F6),
-              letterSpacing: 0.5,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: SoftinsaColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: SoftinsaColors.border),
+          boxShadow: SoftinsaShadows.soft,
+        ),
+        child: Row(
+          children: [
+            _ActionIconButton(
+              icon: Icons.settings_outlined,
+              onTap: onSettingsTap,
             ),
-          ),
-          const Spacer(),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ActionIconButton(
-                icon: Icons.chat_bubble_outline,
-                onTap: () {}, // Por agora sem função específica
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onProfileTap,
-                child: const CircleAvatar(
-                  radius: 18,
-                  backgroundImage: AssetImage('assets/images/profile_placeholder.png'), // Se não existir, o Flutter mostra o fallback
-                  backgroundColor: Color(0xFFC4CAD3),
-                  child: Icon(Icons.person, size: 20, color: Colors.white),
+            const SizedBox(width: 8),
+            _ActionIconButton(
+              icon: Icons.notifications_none_outlined,
+              onTap: onNotificationsTap,
+            ),
+            const Spacer(),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'SOFTINSA',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: SoftinsaColors.blue,
+                    letterSpacing: 0.8,
+                  ),
                 ),
+                SizedBox(height: 2),
+                Text(
+                  'Badges Platform',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: SoftinsaColors.textMuted,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            _ActionIconButton(
+              icon: Icons.chat_bubble_outline,
+              onTap: () {},
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: onProfileTap,
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: const Color(0xFFEAF2FF),
+                child: const Icon(Icons.person, size: 20, color: SoftinsaColors.blueDark),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -85,7 +99,13 @@ class _ActionIconButton extends StatelessWidget {
         onPressed: onTap,
         padding: EdgeInsets.zero,
         splashRadius: 22,
-        icon: Icon(icon, size: 28, color: const Color(0xFF111827)),
+        style: IconButton.styleFrom(
+          backgroundColor: const Color(0xFFF5F9FF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        icon: Icon(icon, size: 22, color: SoftinsaColors.ink),
       ),
     );
   }

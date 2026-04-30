@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/achievement_center.dart';
+import '../theme/softinsa_theme.dart';
 import '../widgets/achievement_unlock_dialog.dart';
 import 'badge_request_screen.dart';
 import 'badges_screen.dart';
@@ -83,10 +84,19 @@ class _AppShellScreenState extends State<AppShellScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+      backgroundColor: SoftinsaColors.surfaceAlt,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFFFFFF), Color(0xFFF7F9FC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _pages,
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -100,7 +110,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           backgroundColor: Colors.white,
           indicatorColor: const Color(0xFFEAF2FF),
-          height: 74,
+          height: 78,
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_rounded),
