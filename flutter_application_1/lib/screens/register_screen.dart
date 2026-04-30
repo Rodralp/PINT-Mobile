@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_api.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -8,9 +10,110 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
   bool _hasAcceptedRgpd = false;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitRegister() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preencha todos os campos para continuar.'),
+        ),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('As palavras-passe não coincidem.')),
+      );
+      return;
+    }
+
+    if (!_hasAcceptedRgpd) {
+      final hasAccepted = await _showRgpdConsentDialog(context);
+
+      if (!hasAccepted || !mounted) {
+        return;
+      }
+
+      setState(() {
+        _hasAcceptedRgpd = true;
+      });
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      await AuthApi.instance.register(
+        nome: name,
+        email: email,
+        senha: password,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showRequestSentDialog(context);
+    } on AuthApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error.message.isEmpty
+          ? 'Não foi possível criar a conta.'
+          : error.message;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível criar a conta.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
 
   void _showRequestSentDialog(BuildContext context) {
     showDialog(
@@ -18,19 +121,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       barrierDismissible: false,
       builder: (context) => Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(28, 34, 28, 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.check,
-                color: Colors.blue,
-                size: 56,
-              ),
+              const Icon(Icons.check, color: Colors.blue, size: 56),
               const SizedBox(height: 28),
               const Text(
                 'Pedido enviado com sucesso!',
@@ -97,16 +194,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         canPop: false,
         child: StatefulBuilder(
           builder: (context, setDialogState) => Dialog(
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 24,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 640,
-                maxWidth: 700,
-              ),
+              constraints: const BoxConstraints(maxHeight: 640, maxWidth: 700),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -193,14 +289,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   Divider(height: 1, color: Colors.grey.shade200),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         ElevatedButton(
-                          onPressed:
-                              isChecked ? () => Navigator.pop(context, true) : null,
+                          onPressed: isChecked
+                              ? () => Navigator.pop(context, true)
+                              : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             disabledBackgroundColor: Colors.blue.shade200,
@@ -216,9 +315,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: const Text(
                             'Confirmar',
-                            style: TextStyle(
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(fontSize: 13),
                           ),
                         ),
                       ],
@@ -420,7 +517,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context) => PopScope(
         canPop: false,
         child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -485,8 +585,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 Divider(height: 1, color: Colors.grey.shade200),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -498,7 +600,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                         ),
                         child: const Text(
                           'Li e aceito os termos',
@@ -523,7 +627,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context) => PopScope(
         canPop: false,
         child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -588,8 +695,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 Divider(height: 1, color: Colors.grey.shade200),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -601,7 +710,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                         ),
                         child: const Text(
                           'Li e aceito a política',
@@ -632,19 +743,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const SizedBox(height: 24),
 
-                Image.asset(
-                  'assets/images/softinsa.png',
-                  width: 180,
-                ),
+                Image.asset('assets/images/softinsa.png', width: 180),
 
                 const SizedBox(height: 28),
 
                 const Text(
                   'Criar conta',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
@@ -660,6 +765,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildInputField(
                   hintText: 'Nome',
                   prefixPadding: 16,
+                  controller: _nameController,
                 ),
 
                 const SizedBox(height: 14),
@@ -667,6 +773,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildInputField(
                   hintText: 'email@dominio.com',
                   prefixPadding: 16,
+                  controller: _emailController,
                 ),
 
                 const SizedBox(height: 14),
@@ -674,6 +781,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildPasswordField(
                   hintText: 'Palavra-passe',
                   obscureText: obscurePassword,
+                  controller: _passwordController,
                   onToggle: () {
                     setState(() {
                       obscurePassword = !obscurePassword;
@@ -686,6 +794,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildPasswordField(
                   hintText: 'Confirmar Palavra-passe',
                   obscureText: obscureConfirmPassword,
+                  controller: _confirmPasswordController,
                   onToggle: () {
                     setState(() {
                       obscureConfirmPassword = !obscureConfirmPassword;
@@ -699,39 +808,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      if (!_hasAcceptedRgpd) {
-                        final hasAccepted = await _showRgpdConsentDialog(context);
-
-                        if (!hasAccepted || !mounted) {
-                          return;
-                        }
-
-                        setState(() {
-                          _hasAcceptedRgpd = true;
-                        });
-                      }
-
-                      if (!mounted) {
-                        return;
-                      }
-
-                      _showRequestSentDialog(context);
-                    },
+                    onPressed: _loading ? null : _submitRegister,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    child: const Text(
-                      'Continuar',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            'Continuar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -744,10 +846,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       const TextSpan(
                         text: 'Já tem conta? ',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.black87, fontSize: 12),
                       ),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
@@ -784,7 +883,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                     children: [
                       const TextSpan(
-                        text: 'Ao clicar em continuar, você concorda com os nossos\n',
+                        text:
+                            'Ao clicar em continuar, você concorda com os nossos\n',
                       ),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
@@ -793,10 +893,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onTap: () => _showTermsDialog(context),
                           child: const Text(
                             'Termos de Serviço',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.blue),
                           ),
                         ),
                       ),
@@ -808,10 +905,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onTap: () => _showPrivacyDialog(context),
                           child: const Text(
                             'Política de Privacidade',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.blue),
                           ),
                         ),
                       ),
@@ -831,6 +925,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildInputField({
     required String hintText,
     required double prefixPadding,
+    required TextEditingController controller,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -838,6 +933,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextField(
+        controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
           border: InputBorder.none,
@@ -853,6 +949,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildPasswordField({
     required String hintText,
     required bool obscureText,
+    required TextEditingController controller,
     required VoidCallback onToggle,
   }) {
     return Container(
@@ -861,6 +958,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextField(
+        controller: controller,
         obscureText: obscureText,
         decoration: InputDecoration(
           hintText: hintText,
@@ -871,7 +969,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           suffixIcon: IconButton(
             icon: Icon(
-              obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              obscureText
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
               color: Colors.grey.shade500,
             ),
             onPressed: onToggle,

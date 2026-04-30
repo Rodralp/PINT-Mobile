@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/auth_api.dart';
+import '../services/backend_config.dart';
+import '../services/auth_session.dart';
 import 'preferences_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,8 +14,176 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool obscurePassword = true;
   bool rememberMe = false;
+  bool _loading = false;
+
+  static const String _rememberedEmailKey = 'remembered_email';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedEmail();
+  }
+
+  Future<void> _loadRememberedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberedEmail = prefs.getString(_rememberedEmailKey);
+
+    if (!mounted || rememberedEmail == null || rememberedEmail.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _emailController.text = rememberedEmail;
+      rememberMe = true;
+    });
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitLogin() async {
+    final email = _emailController.text.trim();
+    final senha = _passwordController.text;
+
+    if (email.isEmpty || senha.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha o e-mail e a palavra-passe.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      final account = await AuthApi.instance.login(email: email, senha: senha);
+
+      if (account.role.trim().toLowerCase() != 'consultor') {
+        if (!mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'A aplicação mobile está disponível apenas para consultores.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      await AuthSession.saveAccount(account);
+
+      final prefs = await SharedPreferences.getInstance();
+      if (rememberMe) {
+        await prefs.setString(_rememberedEmailKey, email);
+      } else {
+        await prefs.remove(_rememberedEmailKey);
+      }
+
+      final hasPreferences =
+          account.hasPreferences ||
+          (await AuthSession.hasPreferences()) ||
+          (prefs.getBool(PreferencesScreen.firstLoginPreferencesDoneKey) ??
+              false);
+
+      if (!mounted) {
+        return;
+      }
+
+      if (hasPreferences) {
+        Navigator.pushReplacementNamed(context, '/app');
+      } else {
+        Navigator.pushReplacementNamed(context, '/preferences');
+      }
+    } on AuthApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error.code == 'ACCOUNT_PENDING_APPROVAL'
+          ? 'A sua conta ainda aguarda aprovação.'
+          : (error.message.isEmpty
+                ? 'Não foi possível iniciar sessão.'
+                : error.message);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível iniciar sessão.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showBackendConfigDialog() async {
+    final currentBaseUrl = await BackendConfig.getBaseUrl();
+    if (!mounted) {
+      return;
+    }
+
+    final controller = TextEditingController(text: currentBaseUrl);
+    final savedUrl = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Configurar servidor'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'API base URL',
+            hintText: 'http://192.168.1.10:4000/api',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    if (!mounted || savedUrl == null) {
+      return;
+    }
+
+    await BackendConfig.setBaseUrl(savedUrl);
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Servidor guardado.')));
+  }
 
   static const List<Map<String, String>> _terms = [
     {
@@ -199,7 +370,10 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => PopScope(
         canPop: false,
         child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -208,93 +382,97 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-              // Cabeçalho
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SOFTINSA BADGES',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[500],
-                              letterSpacing: 0.8,
+                // Cabeçalho
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'SOFTINSA BADGES',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[500],
+                                letterSpacing: 0.8,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Termos de Serviço',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Termos de Serviço',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: Colors.grey.shade200),
-
-              // Introdução
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                child: Text(
-                  'Bem-vindo à Plataforma de Badges da Softinsa. Estes Termos de Serviço regulam a sua utilização da plataforma, incluindo o acesso às funcionalidades, submissão de evidências, obtenção de badges e partilha de conquistas.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
-                ),
-              ),
-
-              // Lista scrollável
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: List.generate(
-                      _terms.length,
-                      (i) => _buildTermCard(i + 1, _terms[i]),
-                    ),
-                  ),
-                ),
-              ),
-
-              Divider(height: 1, color: Colors.grey.shade200),
-
-              // Rodapé
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          ],
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
                       ),
-                      child: const Text(
-                        'Li e aceito os termos',
-                        style: TextStyle(color: Colors.white, fontSize: 13),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: Colors.grey.shade200),
+
+                // Introdução
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  child: Text(
+                    'Bem-vindo à Plataforma de Badges da Softinsa. Estes Termos de Serviço regulam a sua utilização da plataforma, incluindo o acesso às funcionalidades, submissão de evidências, obtenção de badges e partilha de conquistas.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+
+                // Lista scrollável
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: List.generate(
+                        _terms.length,
+                        (i) => _buildTermCard(i + 1, _terms[i]),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+
+                Divider(height: 1, color: Colors.grey.shade200),
+
+                // Rodapé
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                        ),
+                        child: const Text(
+                          'Li e aceito os termos',
+                          style: TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -310,7 +488,10 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => PopScope(
         canPop: false,
         child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -319,89 +500,93 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SOFTINSA BADGES',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[500],
-                              letterSpacing: 0.8,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'SOFTINSA BADGES',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[500],
+                                letterSpacing: 0.8,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Política de Privacidade',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Política de Privacidade',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: Colors.grey.shade200),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                child: Text(
-                  'A Softinsa está comprometida com a proteção da sua privacidade e dos seus dados pessoais. Esta Política explica quais os dados que recolhemos, como os utilizamos, com quem os partilhamos e quais os seus direitos ao abrigo do Regulamento Geral sobre a Proteção de Dados (RGPD).',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
-                ),
-              ),
-
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: List.generate(
-                      _privacyPolicy.length,
-                      (i) => _buildTermCard(i + 1, _privacyPolicy[i]),
-                    ),
-                  ),
-                ),
-              ),
-
-              Divider(height: 1, color: Colors.grey.shade200),
-
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          ],
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
                       ),
-                      child: const Text(
-                        'Li e aceito a política',
-                        style: TextStyle(color: Colors.white, fontSize: 13),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: Colors.grey.shade200),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  child: Text(
+                    'A Softinsa está comprometida com a proteção da sua privacidade e dos seus dados pessoais. Esta Política explica quais os dados que recolhemos, como os utilizamos, com quem os partilhamos e quais os seus direitos ao abrigo do Regulamento Geral sobre a Proteção de Dados (RGPD).',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: List.generate(
+                        _privacyPolicy.length,
+                        (i) => _buildTermCard(i + 1, _privacyPolicy[i]),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+
+                Divider(height: 1, color: Colors.grey.shade200),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                        ),
+                        child: const Text(
+                          'Li e aceito a política',
+                          style: TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -424,20 +609,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 60),
 
                 // LOGO
-                Image.asset(
-                  "assets/images/softinsa.png",
-                  width: 220,
-                ),
+                Image.asset("assets/images/softinsa.png", width: 220),
 
                 const SizedBox(height: 40),
 
                 // TÍTULO
                 const Text(
                   "Entrar conta",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
@@ -457,12 +636,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const TextField(
+                  child: TextField(
+                    controller: _emailController,
                     decoration: InputDecoration(
                       hintText: "email@dominio.com",
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                     ),
                   ),
                 ),
@@ -476,12 +658,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: TextField(
+                    controller: _passwordController,
                     obscureText: obscurePassword,
                     decoration: InputDecoration(
                       hintText: "Palavra-passe",
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscurePassword
@@ -514,8 +699,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             rememberMe = value ?? false;
                           });
                         },
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                       ),
                     ),
@@ -542,6 +726,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _showBackendConfigDialog,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 40),
+                    ),
+                    child: const Text(
+                      'Configurar servidor',
+                      style: TextStyle(color: Colors.blue),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 20),
 
                 // BOTÃO CONTINUAR
@@ -549,34 +748,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      final hasCompletedPreferences = prefs.getBool(
-                            PreferencesScreen.firstLoginPreferencesDoneKey,
-                          ) ??
-                          false;
-
-                      if (!mounted) {
-                        return;
-                      }
-
-                      if (hasCompletedPreferences) {
-                        Navigator.pushReplacementNamed(context, '/app');
-                        return;
-                      }
-
-                      Navigator.pushReplacementNamed(context, '/preferences');
-                    },
+                    onPressed: _loading ? null : _submitLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
-                      "Continuar",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            "Continuar",
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                 ),
 
@@ -587,10 +780,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text(
                       'Primeiro acesso? ',
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.black87, fontSize: 12),
                     ),
                     GestureDetector(
                       onTap: () {
@@ -617,7 +807,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                     children: [
                       const TextSpan(
-                        text: 'Ao clicar em continuar, você concorda com os nossos\n',
+                        text:
+                            'Ao clicar em continuar, você concorda com os nossos\n',
                       ),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
@@ -626,16 +817,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           onTap: () => _showTermsDialog(context),
                           child: const Text(
                             'Termos de Serviço',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.blue),
                           ),
                         ),
                       ),
-                      const TextSpan(
-                        text: ' e ',
-                      ),
+                      const TextSpan(text: ' e '),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
                         baseline: TextBaseline.alphabetic,
@@ -643,10 +829,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onTap: () => _showPrivacyDialog(context),
                           child: const Text(
                             'Política de Privacidade',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.blue),
                           ),
                         ),
                       ),

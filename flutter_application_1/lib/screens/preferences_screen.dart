@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/auth_api.dart';
+import '../services/auth_session.dart';
 import '../services/achievement_center.dart';
 
 class PreferencesScreen extends StatefulWidget {
@@ -84,6 +86,24 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
   int get _selectedCount => _areas.where((area) => area.selected).length;
 
+  Future<List<int>> _resolveSelectedAreaIds(int accountId) async {
+    final backendAreas = await AuthApi.instance.fetchPreferenceAreas(accountId: accountId);
+    final areaIdByName = <String, int>{
+      for (final area in backendAreas)
+        area.name.trim().toLowerCase(): area.id,
+    };
+
+    final selectedIds = <int>[];
+    for (final area in _areas.where((area) => area.selected)) {
+      final areaId = areaIdByName[area.title.trim().toLowerCase()];
+      if (areaId != null) {
+        selectedIds.add(areaId);
+      }
+    }
+
+    return selectedIds.toSet().toList(growable: false);
+  }
+
   Future<void> _saveAndContinue() async {
     if (_selectedCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -94,28 +114,70 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       return;
     }
 
-    setState(() => _saving = true);
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(PreferencesScreen.firstLoginPreferencesDoneKey, true);
-
-    AchievementCenter.instance.unlock(
-      const AchievementUnlock(
-        id: 'welcome-achievement',
-        title: 'Bem-vindo a Bordo',
-        description:
-            'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
-        points: 50,
-        badgesCount: 1,
-        imageAsset: 'assets/images/welcome.png',
-      ),
-    );
-
+    final accountId = await AuthSession.getAccountId();
     if (!mounted) {
       return;
     }
 
-    Navigator.pushReplacementNamed(context, '/app');
+    if (accountId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível identificar a conta ativa.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    try {
+      final selectedAreaIds = await _resolveSelectedAreaIds(accountId);
+
+      if (selectedAreaIds.isEmpty) {
+        throw const FormatException('No matching backend areas were found.');
+      }
+
+      await AuthApi.instance.savePreferences(
+        accountId: accountId,
+        areaIds: selectedAreaIds,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(PreferencesScreen.firstLoginPreferencesDoneKey, true);
+      await AuthSession.setHasPreferences(true);
+
+      AchievementCenter.instance.unlock(
+        const AchievementUnlock(
+          id: 'welcome-achievement',
+          title: 'Bem-vindo a Bordo',
+          description:
+              'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
+          points: 50,
+          badgesCount: 1,
+          imageAsset: 'assets/images/welcome.png',
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushReplacementNamed(context, '/app');
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível guardar as preferências.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 
   void _resetSelections() {
@@ -222,7 +284,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 itemCount: _areas.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final area = _areas[index];
                   return _PreferenceCard(
