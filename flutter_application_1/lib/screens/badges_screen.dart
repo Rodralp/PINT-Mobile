@@ -128,144 +128,140 @@ class BadgesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppTopBar(
-                  padding: EdgeInsets.zero,
-                  onSettingsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsMenuScreen(),
-                      ),
-                    );
-                  },
-                  onNotificationsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsFullScreen(),
-                      ),
-                    );
-                  },
-                  onProfileTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BadgeCatalogScreen(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+      appBar: AppTopBar(
+        onSettingsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SettingsMenuScreen(),
+            ),
+          );
+        },
+        onNotificationsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsFullScreen(),
+            ),
+          );
+        },
+        onProfileTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BadgeCatalogScreen(),
                     ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFDDE5EF),
-                        width: 1.2,
-                      ),
-                      color: const Color(0xFFFAFCFF),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFDDE5EF),
+                      width: 1.2,
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified_outlined, size: 24),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Catálogo de Badges Completo',
-                            style: TextStyle(
-                              fontSize: 28 / 2,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    color: const Color(0xFFFAFCFF),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_outlined, size: 24),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Catálogo de Badges Completo',
+                          style: TextStyle(
+                            fontSize: 28 / 2,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: Colors.grey[500],
-                          size: 22,
-                        ),
-                      ],
-                    ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey[500],
+                        size: 22,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 64,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE0E6F0)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.search,
-                              color: Colors.grey[500],
-                              size: 30,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Pesquisar badges',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[500],
-                                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 64,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE0E6F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search,
+                            color: Colors.grey[500],
+                            size: 30,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Pesquisar badges',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[500],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    _toolbarButton(Icons.filter_alt_outlined),
-                    const SizedBox(width: 12),
-                    _toolbarButton(Icons.tune_rounded),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    const gap = 16.0;
-                    final itemWidth = (constraints.maxWidth - gap) / 2;
-                    return Wrap(
-                      spacing: gap,
-                      runSpacing: gap,
-                      children: ownedBadges
-                          .map(
-                            (badge) =>
-                                _OwnedBadgeCard(width: itemWidth, badge: badge),
-                          )
-                          .toList(),
-                    );
-                  },
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(width: 12),
+                  _toolbarButton(Icons.filter_alt_outlined),
+                  const SizedBox(width: 12),
+                  _toolbarButton(Icons.tune_rounded),
+                ],
+              ),
+              const SizedBox(height: 18),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 16.0;
+                  final itemWidth = (constraints.maxWidth - gap) / 2;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: ownedBadges
+                        .map(
+                          (badge) =>
+                              _OwnedBadgeCard(width: itemWidth, badge: badge),
+                        )
+                        .toList(),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -466,98 +462,91 @@ class BadgeCatalogScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Catálogo de Badges',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: const Color(0xFFE5E7EB),
+            height: 1,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 26),
-                  ),
-                  const SizedBox(width: 4),
-                  const Expanded(
-                    child: Text(
-                      'Catálogo de Badges',
-                      style: TextStyle(
-                        fontSize: 48 / 2,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF243047),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 64,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFE0E6F0),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-                child: Column(
-                  children: [
-                    Row(
+                    child: Row(
                       children: [
+                        Icon(
+                          Icons.search,
+                          color: Colors.grey[500],
+                          size: 30,
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Container(
-                            height: 64,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFFE0E6F0),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.search,
-                                  color: Colors.grey[500],
-                                  size: 30,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Pesquisar badges',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          child: Text(
+                            'Pesquisar badges',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[500],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        _toolButton(Icons.filter_alt_outlined),
-                        const SizedBox(width: 12),
-                        _toolButton(Icons.tune_rounded),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        const gap = 16.0;
-                        final itemWidth = (constraints.maxWidth - gap) / 2;
-                        return Wrap(
-                          spacing: gap,
-                          runSpacing: gap,
-                          children: _allBadges
-                              .map(
-                                (badge) => _CatalogBadgeCard(
-                                  width: itemWidth,
-                                  badge: badge,
-                                ),
-                              )
-                              .toList(),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                _toolButton(Icons.filter_alt_outlined),
+                const SizedBox(width: 12),
+                _toolButton(Icons.tune_rounded),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 16.0;
+                final itemWidth = (constraints.maxWidth - gap) / 2;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: _allBadges
+                      .map(
+                        (badge) => _CatalogBadgeCard(
+                          width: itemWidth,
+                          badge: badge,
+                        ),
+                      )
+                      .toList(),
+                );
+              },
             ),
           ],
         ),
@@ -804,269 +793,262 @@ class BadgeDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 26),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Badge',
-                      style: TextStyle(
-                        fontSize: 48 / 2,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF243047),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFFD9E2EC),
-                          width: 1.6,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 140,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              color: badge.iconBackground.withOpacity(0.35),
-                              shape: badge.shape,
-                              border: Border.all(
-                                color: badge.frameColor,
-                                width: 10,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.workspace_premium_outlined,
-                              size: 74,
-                              color: badge.frameColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            badge.title,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF243047),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Nível ${badge.level}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              color: Color(0xFF243047),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _metaItem(Icons.schedule, 'Expira ${badge.date}'),
-                              _metaItem(
-                                Icons.emoji_events_outlined,
-                                '${badge.points} pontos',
-                              ),
-                              _metaItem(
-                                Icons.description_outlined,
-                                '${detail.requirements.length} requisitos',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: detail.statusColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: detail.statusColor,
-                                width: 1.6,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.timelapse,
-                                  color: detail.statusColor,
-                                  size: 28,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    detail.statusText,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w500,
-                                      color: detail.statusColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      detail.journeyPath,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF6B7280),
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: const Color(0xFFD9E2EC),
-                          width: 1.6,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Requisitos',
-                            style: TextStyle(
-                              fontSize: 24 / 2,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ...detail.requirements.asMap().entries.map(
-                            (entry) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFFE2E8F0),
-                                  ),
-                                  color: Colors.white,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        entry.value,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          color: Color(0xFF111827),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      completedRequirementIndexes.contains(
-                                            entry.key,
-                                          )
-                                          ? Icons.check_circle
-                                          : Icons.visibility,
-                                      size: 24,
-                                      color:
-                                          completedRequirementIndexes.contains(
-                                            entry.key,
-                                          )
-                                          ? const Color(0xFF16C524)
-                                          : null,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: const Color(0xFFD9E2EC),
-                          width: 1.6,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Descrição',
-                            style: TextStyle(
-                              fontSize: 24 / 2,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              detail.description,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF374151),
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Badge',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: const Color(0xFFE5E7EB),
+            height: 1,
           ),
         ),
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFD9E2EC),
+                  width: 1.6,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: badge.iconBackground.withOpacity(0.35),
+                      shape: badge.shape,
+                      border: Border.all(
+                        color: badge.frameColor,
+                        width: 10,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.workspace_premium_outlined,
+                      size: 74,
+                      color: badge.frameColor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    badge.title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF243047),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Nível ${badge.level}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Color(0xFF243047),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _metaItem(Icons.schedule, 'Expira ${badge.date}'),
+                      _metaItem(
+                        Icons.emoji_events_outlined,
+                        '${badge.points} pontos',
+                      ),
+                      _metaItem(
+                        Icons.description_outlined,
+                        '${detail.requirements.length} requisitos',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: detail.statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: detail.statusColor,
+                        width: 1.6,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.timelapse,
+                          color: detail.statusColor,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            detail.statusText,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              color: detail.statusColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              detail.journeyPath,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF6B7280),
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: const Color(0xFFD9E2EC),
+                  width: 1.6,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Requisitos',
+                    style: TextStyle(
+                      fontSize: 24 / 2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...detail.requirements.asMap().entries.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                          ),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              completedRequirementIndexes.contains(
+                                    entry.key,
+                                  )
+                                  ? Icons.check_circle
+                                  : Icons.visibility,
+                              size: 24,
+                              color:
+                                  completedRequirementIndexes.contains(
+                                    entry.key,
+                                  )
+                                  ? const Color(0xFF16C524)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: const Color(0xFFD9E2EC),
+                  width: 1.6,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Descrição',
+                    style: TextStyle(
+                      fontSize: 24 / 2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      detail.description,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF374151),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: SafeArea(
-        top: false,
         child: NavigationBar(
           selectedIndex: selectedBottomNavIndex,
           onDestinationSelected: (index) {

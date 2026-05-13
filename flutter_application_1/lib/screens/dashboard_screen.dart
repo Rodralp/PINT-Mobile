@@ -14,180 +14,173 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // HEADER
-                AppTopBar(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  onSettingsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsMenuScreen(),
-                      ),
-                    );
-                  },
-                  onNotificationsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsFullScreen(),
-                      ),
-                    );
-                  },
-                  onProfileTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // METRIC CARDS
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _buildMetricCard(
-                        title: "Badges Obtidos",
-                        value: "12",
-                        subtitle: "2 este mês",
-                        icon: Icons.stars_rounded,
-                        iconColor: Colors.orange,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildMetricCard(
-                        title: "Sequência de Dias",
-                        value: "4",
-                        subtitle: "Recorde: 8 dias",
-                        icon: Icons.local_fire_department_rounded,
-                        iconColor: Colors.deepOrange,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildMetricCard(
-                        title: "Pedidos Pendentes",
-                        value: "5",
-                        subtitle: "2 concluídos",
-                        icon: Icons.watch_later,
-                        iconColor: Colors.blue,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildMetricCard(
-                        title: "Ranking",
-                        value: "#15",
-                        subtitle: "+3 posições este mês",
-                        icon: Icons.leaderboard,
-                        iconColor: Colors.amber,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // LEMBRETES (Reminders)
-                _buildSection(
-                  title: "Lembretes",
-                  onViewAll: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RemindersScreen(),
-                      ),
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      _buildReminderItem(
-                        message: "Conferir requisitos enviados.",
-                        date: "07 Dez 2025",
-                        barColor: Colors.greenAccent[400]!,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildReminderItem(
-                        message: "Badge \"C++ Mastery\" expira em 30 dias.",
-                        date: "29 Nov 2025",
-                        barColor: Colors.amber,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // EM PROGRESSO
-                _buildSection(
-                  title: "Em Progresso",
-                  onViewAll: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProgressFullScreen(),
-                      ),
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      _buildProgressCard(
-                        title: "LowCode (Outsystems)",
-                        subtitle: "Especialista",
-                        status: "reprovado",
-                      ),
-                      const SizedBox(height: 12),
-                      _buildProgressCard(
-                        title: "LowCode (Outsystems)",
-                        subtitle: "Sénior",
-                        status: "em_validacao",
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // SUGESTÕES
-                _buildSection(
-                  title: "Sugestões",
-                  onViewAll: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SuggestionsFullScreen(),
-                      ),
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      _buildBadgeCard(
-                        title: "LowCode (Outsystems)",
-                        subtitle: "Líder de Conhecimento",
-                        icon: Icons.hexagon_outlined,
-                        iconColor: Colors.green,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildBadgeCard(
-                        title: "Cloud Architecture",
-                        subtitle: "Especialista",
-                        icon: Icons.hexagon_outlined,
-                        iconColor: Colors.purple,
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 20),
-              ],
+      appBar: AppTopBar(
+        onSettingsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SettingsMenuScreen(),
             ),
+          );
+        },
+        onNotificationsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsFullScreen(),
+            ),
+          );
+        },
+        onProfileTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // METRIC CARDS
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _buildMetricCard(
+                      title: "Badges Obtidos",
+                      value: "12",
+                      subtitle: "2 este mês",
+                      icon: Icons.stars_rounded,
+                      iconColor: Colors.orange,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildMetricCard(
+                      title: "Sequência de Dias",
+                      value: "4",
+                      subtitle: "Recorde: 8 dias",
+                      icon: Icons.local_fire_department_rounded,
+                      iconColor: Colors.deepOrange,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildMetricCard(
+                      title: "Pedidos Pendentes",
+                      value: "5",
+                      subtitle: "2 concluídos",
+                      icon: Icons.watch_later,
+                      iconColor: Colors.blue,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildMetricCard(
+                      title: "Ranking",
+                      value: "#15",
+                      subtitle: "+3 posições este mês",
+                      icon: Icons.leaderboard,
+                      iconColor: Colors.amber,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // LEMBRETES (Reminders)
+              _buildSection(
+                title: "Lembretes",
+                onViewAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RemindersScreen(),
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    _buildReminderItem(
+                      message: "Conferir requisitos enviados.",
+                      date: "07 Dez 2025",
+                      barColor: Colors.greenAccent[400]!,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildReminderItem(
+                      message: "Badge \"C++ Mastery\" expira em 30 dias.",
+                      date: "29 Nov 2025",
+                      barColor: Colors.amber,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // EM PROGRESSO
+              _buildSection(
+                title: "Em Progresso",
+                onViewAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProgressFullScreen(),
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    _buildProgressCard(
+                      title: "LowCode (Outsystems)",
+                      subtitle: "Especialista",
+                      status: "reprovado",
+                    ),
+                    const SizedBox(height: 12),
+                    _buildProgressCard(
+                      title: "LowCode (Outsystems)",
+                      subtitle: "Sénior",
+                      status: "em_validacao",
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // SUGESTÕES
+              _buildSection(
+                title: "Sugestões",
+                onViewAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SuggestionsFullScreen(),
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    _buildBadgeCard(
+                      title: "LowCode (Outsystems)",
+                      subtitle: "Líder de Conhecimento",
+                      icon: Icons.hexagon_outlined,
+                      iconColor: Colors.green,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildBadgeCard(
+                      title: "Cloud Architecture",
+                      subtitle: "Especialista",
+                      icon: Icons.hexagon_outlined,
+                      iconColor: Colors.purple,
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),

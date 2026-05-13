@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'app_shell_screen.dart';
-import 'change_password_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
+import 'settings_menu_screen.dart';
 import '../widgets/app_top_bar.dart';
 
 class RankingScreen extends StatelessWidget {
@@ -13,130 +13,130 @@ class RankingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppTopBar(
-                  padding: EdgeInsets.zero,
-                  onSettingsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChangePasswordScreen(),
-                      ),
-                    );
-                  },
-                  onNotificationsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsFullScreen(),
-                      ),
-                    );
-                  },
-                  onProfileTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
-                  },
+      appBar: AppTopBar(
+        onSettingsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SettingsMenuScreen(),
+            ),
+          );
+        },
+        onNotificationsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsFullScreen(),
+            ),
+          );
+        },
+        onProfileTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ranking de Consultores',
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
                 ),
-                const SizedBox(height: 26),
-                const Text(
-                  'Ranking de Consultores',
-                  style: TextStyle(
-                    fontSize: 46 / 2,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Todas as Service Lines',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF64748B),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Todas as Service Lines',
-                  style: TextStyle(fontSize: 20, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 64,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE0E6F0)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.search,
-                              color: Colors.grey[500],
-                              size: 30,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Pesquisar consultores',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[500],
-                                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 58,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE0E6F0)),
+                        color: const Color(0xFFF8FAFC),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search,
+                            color: Colors.grey[400],
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Pesquisar consultores',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[400],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    _toolButton(icon: Icons.filter_alt_outlined),
-                    const SizedBox(width: 12),
-                    _toolButton(icon: Icons.tune_rounded),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                const _RankingCard(
-                  rank: 1,
-                  name: 'João Gomes',
-                  email: 'joaogomes1234@gmail.pt',
-                  points: 2450,
-                  badges: 12,
-                  avatarLetter: 'J',
-                ),
-                const SizedBox(height: 10),
-                const _RankingCard(
-                  rank: 2,
-                  name: 'Maria Santos',
-                  email: 'maria.santos@gmail.pt',
-                  points: 2200,
-                  badges: 10,
-                  avatarLetter: 'M',
-                ),
-                const SizedBox(height: 10),
-                const _RankingCard(
-                  rank: 3,
-                  name: 'Pedro Mendes',
-                  email: 'pedro.mendes@softinsa.pt',
-                  points: 1950,
-                  badges: 9,
-                  avatarLetter: 'P',
-                ),
-                const SizedBox(height: 10),
-                const _RankingCard(
-                  rank: 4,
-                  name: 'Ana Costa',
-                  email: 'ana.costa@gmail.pt',
-                  points: 1800,
-                  badges: 8,
-                  avatarLetter: 'A',
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(width: 12),
+                  _toolButton(icon: Icons.filter_alt_outlined),
+                  const SizedBox(width: 12),
+                  _toolButton(icon: Icons.tune_rounded),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const _RankingCard(
+                rank: 1,
+                name: 'João Gomes',
+                email: 'joaogomes1234@gmail.pt',
+                points: 2450,
+                badges: 12,
+                avatarLetter: 'J',
+              ),
+              const SizedBox(height: 12),
+              const _RankingCard(
+                rank: 2,
+                name: 'Maria Santos',
+                email: 'maria.santos@gmail.pt',
+                points: 2200,
+                badges: 10,
+                avatarLetter: 'M',
+              ),
+              const SizedBox(height: 12),
+              const _RankingCard(
+                rank: 3,
+                name: 'Pedro Mendes',
+                email: 'pedro.mendes@softinsa.pt',
+                points: 1950,
+                badges: 9,
+                avatarLetter: 'P',
+              ),
+              const SizedBox(height: 12),
+              const _RankingCard(
+                rank: 4,
+                name: 'Ana Costa',
+                email: 'ana.costa@gmail.pt',
+                points: 1800,
+                badges: 8,
+                avatarLetter: 'A',
+              ),
+            ],
           ),
         ),
       ),
@@ -189,14 +189,14 @@ class RankingScreen extends StatelessWidget {
 
   Widget _toolButton({required IconData icon}) {
     return Container(
-      width: 66,
-      height: 64,
+      width: 58,
+      height: 58,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE0E6F0)),
         color: Colors.white,
       ),
-      child: Icon(icon, size: 30),
+      child: Icon(icon, size: 24, color: const Color(0xFF64748B)),
     );
   }
 }
@@ -221,36 +221,29 @@ class _RankingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDCE3EC), width: 1.8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x15000000),
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
       ),
       child: Row(
         children: [
-          SizedBox(width: 56, child: Center(child: _rankBadge(rank))),
-          const SizedBox(width: 8),
+          SizedBox(width: 48, child: Center(child: _rankBadge(rank))),
+          const SizedBox(width: 12),
           CircleAvatar(
-            radius: 30,
-            backgroundColor: const Color(0xFFD1D5DB),
+            radius: 28,
+            backgroundColor: const Color(0xFFF1F5F9),
             child: Text(
               avatarLetter,
-              style: TextStyle(
-                fontSize: 22,
+              style: const TextStyle(
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1F2937),
+                color: Color(0xFF475569),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,14 +251,13 @@ class _RankingCard extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E293B),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
                 Text(
                   email,
                   style: const TextStyle(
@@ -275,40 +267,12 @@ class _RankingCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    Text(
-                      'Pontos',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-                    ),
-                    SizedBox(width: 24),
-                    Text(
-                      'Badges',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    Text(
-                      '$points',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Color(0xFF1980E6),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 28),
-                    Text(
-                      '$badges',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Color(0xFF1980E6),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    _metricInfo('Pontos', '$points'),
+                    const SizedBox(width: 24),
+                    _metricInfo('Badges', '$badges'),
                   ],
                 ),
               ],
@@ -319,30 +283,50 @@ class _RankingCard extends StatelessWidget {
     );
   }
 
+  Widget _metricInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Color(0xFF1A90F0),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _rankBadge(int rank) {
     if (rank == 1) {
-      return const Icon(Icons.emoji_events, size: 40, color: Color(0xFFF5B301));
+      return const Icon(Icons.emoji_events, size: 36, color: Color(0xFFF5B301));
     }
     if (rank == 2) {
-      return const Icon(Icons.emoji_events, size: 40, color: Color(0xFFB8BDC7));
+      return const Icon(Icons.emoji_events, size: 36, color: Color(0xFFB8BDC7));
     }
     if (rank == 3) {
-      return const Icon(Icons.emoji_events, size: 40, color: Color(0xFFC4742F));
+      return const Icon(Icons.emoji_events, size: 36, color: Color(0xFFC4742F));
     }
     return Container(
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Color(0xFFF2F4F8),
+        color: Color(0xFFF1F5F9),
       ),
       alignment: Alignment.center,
       child: Text(
         '#$rank',
         style: const TextStyle(
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF4B5563),
+          color: Color(0xFF64748B),
         ),
       ),
     );
