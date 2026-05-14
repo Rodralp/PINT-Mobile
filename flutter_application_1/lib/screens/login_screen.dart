@@ -16,11 +16,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _backendUrlController = TextEditingController();
   bool obscurePassword = true;
   bool rememberMe = false;
   bool _loading = false;
 
   static const String _rememberedEmailKey = 'remembered_email';
+  static const String _rememberedPasswordKey = 'remembered_password';
 
   @override
   void initState() {
@@ -31,13 +33,21 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loadRememberedEmail() async {
     final prefs = await SharedPreferences.getInstance();
     final rememberedEmail = prefs.getString(_rememberedEmailKey);
+    final rememberedPassword = prefs.getString(_rememberedPasswordKey);
 
-    if (!mounted || rememberedEmail == null || rememberedEmail.isEmpty) {
+    if (!mounted ||
+        ((rememberedEmail == null || rememberedEmail.isEmpty) &&
+            (rememberedPassword == null || rememberedPassword.isEmpty))) {
       return;
     }
 
     setState(() {
-      _emailController.text = rememberedEmail;
+      if (rememberedEmail != null && rememberedEmail.isNotEmpty) {
+        _emailController.text = rememberedEmail;
+      }
+      if (rememberedPassword != null && rememberedPassword.isNotEmpty) {
+        _passwordController.text = rememberedPassword;
+      }
       rememberMe = true;
     });
   }
@@ -46,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _backendUrlController.dispose();
     super.dispose();
   }
 
@@ -87,8 +98,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       if (rememberMe) {
         await prefs.setString(_rememberedEmailKey, email);
+        await prefs.setString(_rememberedPasswordKey, senha);
       } else {
         await prefs.remove(_rememberedEmailKey);
+        await prefs.remove(_rememberedPasswordKey);
       }
 
       final hasPreferences =
@@ -143,13 +156,13 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final controller = TextEditingController(text: currentBaseUrl);
+    _backendUrlController.text = currentBaseUrl;
     final savedUrl = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Configurar servidor'),
         content: TextField(
-          controller: controller,
+          controller: _backendUrlController,
           decoration: const InputDecoration(
             labelText: 'API base URL',
             hintText: 'http://192.168.1.10:4000/api',
@@ -161,14 +174,12 @@ class _LoginScreenState extends State<LoginScreen> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            onPressed: () => Navigator.pop(dialogContext, _backendUrlController.text),
             child: const Text('Guardar'),
           ),
         ],
       ),
     );
-
-    controller.dispose();
 
     if (!mounted || savedUrl == null) {
       return;

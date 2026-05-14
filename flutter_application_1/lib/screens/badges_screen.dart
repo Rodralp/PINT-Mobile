@@ -3,12 +3,15 @@ import 'app_shell_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
+import '../services/auth_session.dart';
+import '../services/badges_api.dart';
 import '../widgets/app_top_bar.dart';
 
 enum BadgeState { approved, warning, review }
 
 class _BadgeData {
   const _BadgeData({
+    required this.id,
     required this.title,
     required this.level,
     required this.points,
@@ -20,6 +23,7 @@ class _BadgeData {
     this.state,
   });
 
+  final int id;
   final String title;
   final String level;
   final int points;
@@ -31,101 +35,174 @@ class _BadgeData {
   final BadgeState? state;
 }
 
-const List<_BadgeData> _allBadges = [
-  _BadgeData(
-    title: 'LowCode (Outsystems)',
-    level: 'Júnior',
-    points: 100,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFFD67F45),
-    iconBackground: Color(0xFFFFE1C9),
-    shape: BoxShape.circle,
-    isOwned: true,
-    state: BadgeState.approved,
-  ),
-  _BadgeData(
-    title: 'LowCode (Outsystems)',
-    level: 'Intermédio',
-    points: 150,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFFBFC4CD),
-    iconBackground: Color(0xFFF0F0F0),
-    shape: BoxShape.rectangle,
-    isOwned: false,
-  ),
-  _BadgeData(
-    title: 'LowCode (Outsystems)',
-    level: 'Sénior',
-    points: 200,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFFF0C64A),
-    iconBackground: Color(0xFFFFF1CB),
-    shape: BoxShape.rectangle,
-    isOwned: true,
-    state: BadgeState.warning,
-  ),
-  _BadgeData(
-    title: 'LowCode (Outsystems)',
-    level: 'Especialista',
-    points: 250,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFF9B6CF2),
-    iconBackground: Color(0xFFDCC4FF),
-    shape: BoxShape.rectangle,
-    isOwned: true,
-    state: BadgeState.approved,
-  ),
-  _BadgeData(
-    title: 'LowCode (Outsystems)',
-    level: 'Líder de Conhecimento',
-    points: 300,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFF39C65A),
-    iconBackground: Color(0xFFDDF7E5),
-    shape: BoxShape.rectangle,
-    isOwned: false,
-  ),
-  _BadgeData(
-    title: 'C++ Mastery',
-    level: 'Especialista',
-    points: 250,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFF9B6CF2),
-    iconBackground: Color(0xFFDCC4FF),
-    shape: BoxShape.rectangle,
-    isOwned: true,
-    state: BadgeState.approved,
-  ),
-  _BadgeData(
-    title: 'Cloud Architecture',
-    level: 'Júnior',
-    points: 100,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFFD67F45),
-    iconBackground: Color(0xFFFFE1C9),
-    shape: BoxShape.circle,
-    isOwned: false,
-  ),
-  _BadgeData(
-    title: 'Cloud Architecture',
-    level: 'Intermédio',
-    points: 150,
-    date: '12 Jan 2026',
-    frameColor: Color(0xFFBFC4CD),
-    iconBackground: Color(0xFFF0F0F0),
-    shape: BoxShape.rectangle,
-    isOwned: true,
-    state: BadgeState.review,
-  ),
-];
+class _BadgePalette {
+  const _BadgePalette({
+    required this.frameColor,
+    required this.iconBackground,
+    required this.shape,
+  });
 
-class BadgesScreen extends StatelessWidget {
+  final Color frameColor;
+  final Color iconBackground;
+  final BoxShape shape;
+}
+
+_BadgePalette _paletteForLevel(String level) {
+  switch (level.toLowerCase()) {
+    case 'junior':
+    case 'júnior':
+      return const _BadgePalette(
+        frameColor: Color(0xFFD67F45),
+        iconBackground: Color(0xFFFFE1C9),
+        shape: BoxShape.circle,
+      );
+    case 'intermedio':
+    case 'intermédio':
+      return const _BadgePalette(
+        frameColor: Color(0xFFBFC4CD),
+        iconBackground: Color(0xFFF0F0F0),
+        shape: BoxShape.rectangle,
+      );
+    case 'senior':
+    case 'sénior':
+      return const _BadgePalette(
+        frameColor: Color(0xFFF0C64A),
+        iconBackground: Color(0xFFFFF1CB),
+        shape: BoxShape.rectangle,
+      );
+    case 'especialista':
+      return const _BadgePalette(
+        frameColor: Color(0xFF9B6CF2),
+        iconBackground: Color(0xFFDCC4FF),
+        shape: BoxShape.rectangle,
+      );
+    case 'lider de conhecimento':
+    case 'líder de conhecimento':
+      return const _BadgePalette(
+        frameColor: Color(0xFF39C65A),
+        iconBackground: Color(0xFFDDF7E5),
+        shape: BoxShape.rectangle,
+      );
+    default:
+      return const _BadgePalette(
+        frameColor: Color(0xFF1A90F0),
+        iconBackground: Color(0xFFE0F0FF),
+        shape: BoxShape.rectangle,
+      );
+  }
+}
+
+BadgeState? _badgeStateFromStatus(String? status) {
+  if (status == null) {
+    return null;
+  }
+  switch (status.toLowerCase()) {
+    case 'approved':
+    case 'aprovado':
+      return BadgeState.approved;
+    case 'warning':
+    case 'reprovado':
+    case 'recusado':
+    case 'rejeitado':
+      return BadgeState.warning;
+    case 'review':
+    case 'pendente':
+    case 'em_analise':
+    case 'em análise':
+    case 'em_validacao':
+    case 'em validacao':
+    case 'candidatura_em_progresso':
+    case 'candidatura em progresso':
+      return BadgeState.review;
+  }
+  return null;
+}
+
+String _formatBadgeDate(String? rawDate) {
+  if (rawDate == null || rawDate.trim().isEmpty) {
+    return '-';
+  }
+  final parsed = DateTime.tryParse(rawDate.trim());
+  if (parsed == null) {
+    return rawDate.trim();
+  }
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
+  final month = months[parsed.month - 1];
+  return '${parsed.day.toString().padLeft(2, '0')} $month ${parsed.year}';
+}
+
+_BadgeData _badgeDataFromBackend(
+  BackendBadge badge, {
+  bool? isOwnedOverride,
+}) {
+  final palette = _paletteForLevel(badge.level);
+  final owned = isOwnedOverride ?? badge.owned;
+  final title = (badge.area != null && badge.area!.trim().isNotEmpty)
+      ? badge.area!.trim()
+      : badge.title;
+  return _BadgeData(
+    id: badge.id,
+    title: title,
+    level: badge.level,
+    points: badge.points,
+    date: _formatBadgeDate(badge.date),
+    frameColor: palette.frameColor,
+    iconBackground: palette.iconBackground,
+    shape: palette.shape,
+    isOwned: owned,
+    state: _badgeStateFromStatus(badge.stateId ?? badge.status),
+  );
+}
+
+class BadgesScreen extends StatefulWidget {
   const BadgesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final ownedBadges = _allBadges.where((badge) => badge.isOwned).toList();
+  State<BadgesScreen> createState() => _BadgesScreenState();
+}
 
+class _BadgesScreenState extends State<BadgesScreen> {
+  late final Future<List<_BadgeData>> _catalogFuture;
+  late final Future<List<_BadgeData>> _myBadgesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _catalogFuture = _loadCatalogBadges();
+    _myBadgesFuture = _loadMyBadges();
+  }
+
+  Future<List<_BadgeData>> _loadCatalogBadges() async {
+    final items = await BadgesApi.instance.fetchCatalog();
+    return items.map(_badgeDataFromBackend).toList(growable: false);
+  }
+
+  Future<List<_BadgeData>> _loadMyBadges() async {
+    final accountId = await AuthSession.getAccountId();
+    if (accountId == null) {
+      return const <_BadgeData>[];
+    }
+    final items = await BadgesApi.instance.fetchMyBadges(accountId: accountId);
+    return items
+        .map((badge) => _badgeDataFromBackend(badge, isOwnedOverride: true))
+        .toList(growable: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppTopBar(
@@ -166,7 +243,8 @@ class BadgesScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const BadgeCatalogScreen(),
+                      builder: (context) =>
+                          BadgeCatalogScreen(catalogFuture: _catalogFuture),
                     ),
                   );
                 },
@@ -249,20 +327,59 @@ class BadgesScreen extends StatelessWidget {
                 builder: (context, constraints) {
                   const gap = 16.0;
                   final itemWidth = (constraints.maxWidth - gap) / 2;
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
-                    children: ownedBadges
-                        .map(
-                          (badge) =>
-                              _OwnedBadgeCard(width: itemWidth, badge: badge),
-                        )
-                        .toList(),
+                  return FutureBuilder<List<_BadgeData>>(
+                    future: _myBadgesFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return _buildInlineLoading();
+                      }
+                      if (snapshot.hasError) {
+                        return _buildInlineMessage(
+                          'Nao foi possivel carregar a base de dados.',
+                        );
+                      }
+                      final ownedBadges =
+                          snapshot.data ?? const <_BadgeData>[];
+                      if (ownedBadges.isEmpty) {
+                        return _buildInlineMessage('Ainda nao tem badges.');
+                      }
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: ownedBadges
+                            .map(
+                              (badge) => _OwnedBadgeCard(
+                                width: itemWidth,
+                                badge: badge,
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
                   );
                 },
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInlineLoading() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildInlineMessage(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Text(
+          message,
+          style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
         ),
       ),
     );
@@ -282,29 +399,182 @@ class BadgesScreen extends StatelessWidget {
   }
 }
 
-class _OwnedBadgeCard extends StatelessWidget {
-  const _OwnedBadgeCard({required this.width, required this.badge});
+class BadgeCatalogScreen extends StatelessWidget {
+  const BadgeCatalogScreen({
+    super.key,
+    required this.catalogFuture,
+  });
+
+  final Future<List<_BadgeData>> catalogFuture;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Catálogo de Badges',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: const Color(0xFFE5E7EB),
+            height: 1,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 64,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFE0E6F0),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.search,
+                          color: Colors.grey[500],
+                          size: 30,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Pesquisar badges',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _toolButton(Icons.filter_alt_outlined),
+                const SizedBox(width: 12),
+                _toolButton(Icons.tune_rounded),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 16.0;
+                final itemWidth = (constraints.maxWidth - gap) / 2;
+                return FutureBuilder<List<_BadgeData>>(
+                  future: catalogFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Nao foi possivel carregar a base de dados.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    final badges = snapshot.data ?? const <_BadgeData>[];
+                    if (badges.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Catalogo vazio.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: badges
+                          .map(
+                            (badge) => _CatalogBadgeCard(
+                              width: itemWidth,
+                              badge: badge,
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _toolButton(IconData icon) {
+    return Container(
+      width: 66,
+      height: 64,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE0E6F0)),
+        color: Colors.white,
+      ),
+      child: Icon(icon, size: 30),
+    );
+  }
+}
+
+class _CatalogBadgeCard extends StatelessWidget {
+  const _CatalogBadgeCard({required this.width, required this.badge});
 
   final double width;
   final _BadgeData badge;
 
   @override
   Widget build(BuildContext context) {
-    final detail = _lowCodeDetailForBadge(badge);
-
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: detail == null
-          ? null
-          : () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      BadgeDetailScreen(badge: badge, detail: detail),
-                ),
-              );
-            },
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BadgeLiveDetailScreen(badge: badge),
+          ),
+        );
+      },
       child: Container(
         width: width,
         padding: const EdgeInsets.all(11),
@@ -455,149 +725,34 @@ class _OwnedBadgeCard extends StatelessWidget {
   }
 }
 
-class BadgeCatalogScreen extends StatelessWidget {
-  const BadgeCatalogScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
-        ),
-        title: const Text(
-          'Catálogo de Badges',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF243047),
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE5E7EB),
-            height: 1,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 64,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFE0E6F0),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search,
-                          color: Colors.grey[500],
-                          size: 30,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Pesquisar badges',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                _toolButton(Icons.filter_alt_outlined),
-                const SizedBox(width: 12),
-                _toolButton(Icons.tune_rounded),
-              ],
-            ),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const gap = 16.0;
-                final itemWidth = (constraints.maxWidth - gap) / 2;
-                return Wrap(
-                  spacing: gap,
-                  runSpacing: gap,
-                  children: _allBadges
-                      .map(
-                        (badge) => _CatalogBadgeCard(
-                          width: itemWidth,
-                          badge: badge,
-                        ),
-                      )
-                      .toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _toolButton(IconData icon) {
-    return Container(
-      width: 66,
-      height: 64,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E6F0)),
-        color: Colors.white,
-      ),
-      child: Icon(icon, size: 30),
-    );
-  }
-}
-
-class _CatalogBadgeCard extends StatelessWidget {
-  const _CatalogBadgeCard({required this.width, required this.badge});
+class _OwnedBadgeCard extends StatelessWidget {
+  const _OwnedBadgeCard({required this.width, required this.badge});
 
   final double width;
   final _BadgeData badge;
 
   @override
   Widget build(BuildContext context) {
-    final detail = _lowCodeDetailForBadge(badge);
-
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: detail == null
-          ? null
-          : () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      BadgeDetailScreen(badge: badge, detail: detail),
-                ),
-              );
-            },
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BadgeLiveDetailScreen(badge: badge),
+          ),
+        );
+      },
       child: Container(
         width: width,
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: _badgeBackgroundColor(),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+          border: Border.all(
+            color: badge.frameColor.withOpacity(0.32),
+            width: 1.2,
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -631,28 +786,63 @@ class _CatalogBadgeCard extends StatelessWidget {
               badge.level,
               style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Icon(Icons.emoji_events_outlined, size: 18),
-                const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    '${badge.points} pontos',
-                    style: TextStyle(fontSize: 10.5, color: Colors.grey[700]),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.emoji_events_outlined, size: 16),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              '${badge.points} pontos',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.schedule_outlined, size: 16),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              badge.date,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.schedule_outlined, size: 18),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    badge.date,
-                    style: TextStyle(fontSize: 10.5, color: Colors.grey[700]),
+                const SizedBox(width: 8),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _stateColor(badge.state),
+                      width: 1.8,
+                    ),
+                    color: const Color(0xFFFFFFFF),
+                  ),
+                  child: Icon(
+                    _stateIcon(badge.state),
+                    color: _stateColor(badge.state),
+                    size: 18,
                   ),
                 ),
               ],
@@ -663,134 +853,80 @@ class _CatalogBadgeCard extends StatelessWidget {
     );
   }
 
-  Color _badgeBackgroundColor() {
-    if (badge.state != null) {
-      switch (badge.state!) {
-        case BadgeState.approved:
-          return const Color(0xFFF2F8F4);
-        case BadgeState.warning:
-          return const Color(0xFFFEF5F4);
-        case BadgeState.review:
-          return const Color(0xFFFFF9ED);
-      }
+  IconData _stateIcon(BadgeState? state) {
+    switch (state) {
+      case BadgeState.approved:
+        return Icons.check_rounded;
+      case BadgeState.warning:
+        return Icons.warning_amber_rounded;
+      case BadgeState.review:
+        return Icons.manage_search_outlined;
+      case null:
+        return Icons.radio_button_unchecked;
     }
-    return const Color(0xFFF8FAFC);
+  }
+
+  Color _stateColor(BadgeState? state) {
+    switch (state) {
+      case BadgeState.approved:
+        return const Color(0xFF16C524);
+      case BadgeState.warning:
+        return const Color(0xFFFF3B30);
+      case BadgeState.review:
+        return const Color(0xFFF7B500);
+      case null:
+        return const Color(0xFFC7CFD8);
+    }
+  }
+
+  Color _badgeBackgroundColor() {
+    switch (badge.state) {
+      case BadgeState.approved:
+        return const Color(0xFFF2F8F4);
+      case BadgeState.warning:
+        return const Color(0xFFFEF5F4);
+      case BadgeState.review:
+        return const Color(0xFFFFF9ED);
+      case null:
+        return const Color(0xFFF8FAFC);
+    }
   }
 }
 
-class _LowCodeDetailData {
-  const _LowCodeDetailData({
-    required this.statusText,
-    required this.statusColor,
-    required this.journeyPath,
-    required this.description,
-    required this.requirements,
-  });
-
-  final String statusText;
-  final Color statusColor;
-  final String journeyPath;
-  final String description;
-  final List<String> requirements;
-}
-
-_LowCodeDetailData? _lowCodeDetailForBadge(_BadgeData badge) {
-  if (badge.title != 'LowCode (Outsystems)') {
-    return null;
-  }
-
-  switch (badge.level) {
-    case 'Júnior':
-      return const _LowCodeDetailData(
-        statusText: 'Conquista obtida',
-        statusColor: Color(0xFF16C524),
-        journeyPath:
-            'Jornada Técnica -> Fundamentos Digitais -> LowCode (Outsystems) -> Nível Júnior',
-        description:
-            'Nível introdutório focado em noções base de desenvolvimento LowCode, estrutura de aplicações e boas práticas de publicação.',
-        requirements: [
-          'B1 - Criar aplicação simples com 2 ecrãs e navegação funcional',
-          'B2 - Modelar entidades básicas e relacionamentos essenciais',
-          'B3 - Publicar versão inicial com validação de dados no formulário',
-        ],
-      );
-    case 'Intermédio':
-      return const _LowCodeDetailData(
-        statusText: 'Candidatura em progresso',
-        statusColor: Color(0xFF1A90F0),
-        journeyPath:
-            'Jornada Técnica -> Application Operations -> LowCode (Outsystems) -> Nível Intermédio',
-        description:
-            'Nível intermédio para desenvolvimento de módulos reutilizáveis, integrações simples e monitorização operacional da solução.',
-        requirements: [
-          'B1 - Implementar conectividade híbrida com serviço externo',
-          'B2 - Monitorizar infraestrutura híbrida e tratar falhas comuns',
-          'B3 - Implementar disaster recovery para ambiente de testes',
-        ],
-      );
-    case 'Sénior':
-      return const _LowCodeDetailData(
-        statusText: 'Aguarda validação',
-        statusColor: Color(0xFFFF3B30),
-        journeyPath:
-            'Jornada Técnica -> Application Operations -> LowCode (Outsystems) -> Nível Sénior',
-        description:
-            'Nível sénior orientado a arquitetura, performance e práticas de escalabilidade para projetos enterprise com equipas multidisciplinares.',
-        requirements: [
-          'B1 - Definir arquitetura por camadas com separação de responsabilidades',
-          'B2 - Otimizar performance de queries e tempos de resposta críticos',
-          'B3 - Configurar pipeline de deploy com verificações automáticas',
-        ],
-      );
-    case 'Especialista':
-      return const _LowCodeDetailData(
-        statusText: 'Em revisão técnica',
-        statusColor: Color(0xFFF7B500),
-        journeyPath:
-            'Jornada Técnica -> Arquitetura de Soluções -> LowCode (Outsystems) -> Nível Especialista',
-        description:
-            'Nível especialista com foco em governança, padrões corporativos e aceleração de equipas através de componentes reutilizáveis.',
-        requirements: [
-          'B1 - Definir padrão de referência para componentes reutilizáveis',
-          'B2 - Liderar revisão técnica de 3 projetos com plano de melhoria',
-          'B3 - Implementar auditoria de segurança e conformidade aplicacional',
-        ],
-      );
-    case 'Líder de Conhecimento':
-      return const _LowCodeDetailData(
-        statusText: 'Avaliação final de liderança',
-        statusColor: Color(0xFF1A90F0),
-        journeyPath:
-            'Jornada Técnica -> Liderança Técnica -> LowCode (Outsystems) -> Líder de Conhecimento',
-        description:
-            'Tier máximo de impacto técnico e organizacional, com responsabilidade por estratégia de adoção, mentoria e evolução contínua da prática.',
-        requirements: [
-          'B1 - Criar roadmap anual de capacitação LowCode para a Service Line',
-          'B2 - Mentorar 5 consultores até evolução comprovada de tier',
-          'B3 - Publicar framework interno com métricas de qualidade e produtividade',
-        ],
-      );
-  }
-
-  return null;
-}
-
-class BadgeDetailScreen extends StatelessWidget {
-  const BadgeDetailScreen({
+class BadgeLiveDetailScreen extends StatefulWidget {
+  const BadgeLiveDetailScreen({
     super.key,
     required this.badge,
-    required this.detail,
-    this.completedRequirementIndexes = const <int>{},
     this.selectedBottomNavIndex = 1,
   });
 
   final _BadgeData badge;
-  final _LowCodeDetailData detail;
-  final Set<int> completedRequirementIndexes;
   final int selectedBottomNavIndex;
 
   @override
+  State<BadgeLiveDetailScreen> createState() => _BadgeLiveDetailScreenState();
+}
+
+class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
+  late final Future<List<BackendBadgeRequirement>> _requirementsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.badge.id > 0) {
+      _requirementsFuture = BadgesApi.instance
+          .fetchBadgeRequirements(badgeId: widget.badge.id);
+    } else {
+      _requirementsFuture = Future.value(const <BackendBadgeRequirement>[]);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final badge = widget.badge;
+    final statusText = _statusLabel(badge.state);
+    final statusColor = _statusColor(badge.state);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -817,242 +953,210 @@ class BadgeDetailScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFFD9E2EC),
-                  width: 1.6,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      color: badge.iconBackground.withOpacity(0.35),
-                      shape: badge.shape,
-                      border: Border.all(
-                        color: badge.frameColor,
-                        width: 10,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.workspace_premium_outlined,
-                      size: 74,
-                      color: badge.frameColor,
+      body: FutureBuilder<List<BackendBadgeRequirement>>(
+        future: _requirementsFuture,
+        builder: (context, snapshot) {
+          final requirements = snapshot.data ?? const <BackendBadgeRequirement>[];
+          final hasError = snapshot.hasError;
+          final errorText = snapshot.error?.toString();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFD9E2EC),
+                      width: 1.6,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    badge.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF243047),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Nível ${badge.level}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      color: Color(0xFF243047),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
                     children: [
-                      _metaItem(Icons.schedule, 'Expira ${badge.date}'),
-                      _metaItem(
-                        Icons.emoji_events_outlined,
-                        '${badge.points} pontos',
-                      ),
-                      _metaItem(
-                        Icons.description_outlined,
-                        '${detail.requirements.length} requisitos',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: detail.statusColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: detail.statusColor,
-                        width: 1.6,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.timelapse,
-                          color: detail.statusColor,
-                          size: 28,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            detail.statusText,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                              color: detail.statusColor,
-                            ),
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          color: badge.iconBackground.withOpacity(0.35),
+                          shape: badge.shape,
+                          border: Border.all(
+                            color: badge.frameColor,
+                            width: 10,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              detail.journeyPath,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF6B7280),
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: const Color(0xFFD9E2EC),
-                  width: 1.6,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Requisitos',
-                    style: TextStyle(
-                      fontSize: 24 / 2,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...detail.requirements.asMap().entries.map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Container(
+                        child: Icon(
+                          Icons.workspace_premium_outlined,
+                          size: 74,
+                          color: badge.frameColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        badge.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF243047),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Nível ${badge.level}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF243047),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _metaItem(Icons.schedule, 'Expira ${badge.date}'),
+                          _metaItem(
+                            Icons.emoji_events_outlined,
+                            '${badge.points} pontos',
+                          ),
+                          _metaItem(
+                            Icons.description_outlined,
+                            '${requirements.length} requisitos',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
-                          vertical: 16,
+                          vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
+                          color: statusColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFFE2E8F0),
+                            color: statusColor,
+                            width: 1.6,
                           ),
-                          color: Colors.white,
                         ),
                         child: Row(
                           children: [
+                            Icon(
+                              Icons.timelapse,
+                              color: statusColor,
+                              size: 28,
+                            ),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                entry.value,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF111827),
+                                statusText,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                  color: statusColor,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              completedRequirementIndexes.contains(
-                                    entry.key,
-                                  )
-                                  ? Icons.check_circle
-                                  : Icons.visibility,
-                              size: 24,
-                              color:
-                                  completedRequirementIndexes.contains(
-                                    entry.key,
-                                  )
-                                  ? const Color(0xFF16C524)
-                                  : null,
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: const Color(0xFFD9E2EC),
-                  width: 1.6,
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Descrição',
-                    style: TextStyle(
-                      fontSize: 24 / 2,
-                      fontWeight: FontWeight.w700,
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0xFFD9E2EC),
+                      width: 1.6,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      detail.description,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF374151),
-                        height: 1.4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Requisitos',
+                        style: TextStyle(
+                          fontSize: 24 / 2,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      if (snapshot.connectionState != ConnectionState.done)
+                        const Center(child: CircularProgressIndicator())
+                      else if (hasError)
+                        const Text(
+                          'Nao foi possivel carregar a base de dados.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF6B7280),
+                          ),
+                        )
+                      else if (requirements.isEmpty)
+                        const Text(
+                          'Sem requisitos associados.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF6B7280),
+                          ),
+                        )
+                      else
+                        ...requirements.asMap().entries.map(
+                              (entry) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                    ),
+                                    color: Colors.white,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          entry.value.text,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: Color(0xFF111827),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.visibility,
+                                        size: 24,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
       bottomNavigationBar: SafeArea(
         child: NavigationBar(
-          selectedIndex: selectedBottomNavIndex,
+          selectedIndex: widget.selectedBottomNavIndex,
           onDestinationSelected: (index) {
-            if (index == selectedBottomNavIndex) {
+            if (index == widget.selectedBottomNavIndex) {
               return;
             }
             Navigator.pushReplacement(
@@ -1090,6 +1194,32 @@ class BadgeDetailScreen extends StatelessWidget {
     );
   }
 
+  String _statusLabel(BadgeState? state) {
+    switch (state) {
+      case BadgeState.approved:
+        return 'Aprovado';
+      case BadgeState.warning:
+        return 'Rejeitado';
+      case BadgeState.review:
+        return 'Em validacao';
+      case null:
+        return 'Sem estado';
+    }
+  }
+
+  Color _statusColor(BadgeState? state) {
+    switch (state) {
+      case BadgeState.approved:
+        return const Color(0xFF16C524);
+      case BadgeState.warning:
+        return const Color(0xFFFF3B30);
+      case BadgeState.review:
+        return const Color(0xFFF7B500);
+      case null:
+        return const Color(0xFFC7CFD8);
+    }
+  }
+
   Widget _metaItem(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1105,41 +1235,3 @@ class BadgeDetailScreen extends StatelessWidget {
   }
 }
 
-class LowCodeSeniorProgressScreen extends StatelessWidget {
-  const LowCodeSeniorProgressScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    const seniorBadge = _BadgeData(
-      title: 'LowCode (Outsystems)',
-      level: 'Sénior',
-      points: 200,
-      date: '12 Jan 2026',
-      frameColor: Color(0xFFF0C64A),
-      iconBackground: Color(0xFFFFF7D7),
-      shape: BoxShape.circle,
-      isOwned: false,
-      state: BadgeState.warning,
-    );
-
-    final seniorDetail = _lowCodeDetailForBadge(seniorBadge);
-    if (seniorDetail == null) {
-      return const SizedBox.shrink();
-    }
-
-    final progressDetail = _LowCodeDetailData(
-      statusText: 'Candidatura em progresso (1/3)',
-      statusColor: const Color(0xFF1A90F0),
-      journeyPath: seniorDetail.journeyPath,
-      description: seniorDetail.description,
-      requirements: seniorDetail.requirements,
-    );
-
-    return BadgeDetailScreen(
-      badge: seniorBadge,
-      detail: progressDetail,
-      completedRequirementIndexes: const {0},
-      selectedBottomNavIndex: 2,
-    );
-  }
-}
