@@ -33,17 +33,13 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
       leadingWidth: 60,
       title: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          Text(
-            'SOFTINSA',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: SoftinsaColors.blue,
-              letterSpacing: 0.8,
-            ),
+        children: [
+          Image.asset(
+            'assets/images/softinsa.png',
+            height: 28,
+            fit: BoxFit.contain,
           ),
-          Text(
+          const Text(
             'Badges Platform',
             style: TextStyle(
               fontSize: 10,
