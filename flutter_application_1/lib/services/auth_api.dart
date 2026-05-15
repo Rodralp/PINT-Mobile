@@ -73,11 +73,17 @@ class BackendArea {
 }
 
 class AuthApiException implements Exception {
-  const AuthApiException(this.message, {this.statusCode, this.code});
+  const AuthApiException(
+    this.message, {
+    this.statusCode,
+    this.code,
+    this.responseBody,
+  });
 
   final String message;
   final int? statusCode;
   final String? code;
+  final String? responseBody;
 
   @override
   String toString() => message;
@@ -113,6 +119,7 @@ class AuthApi {
       body['message']?.toString() ?? 'Request failed.',
       statusCode: response.statusCode,
       code: body['code']?.toString(),
+      responseBody: response.body,
     );
   }
 
@@ -209,6 +216,23 @@ class AuthApi {
     }
 
     return AuthAccount.fromJson(_decodeBody(response));
+  }
+
+  Future<void> changePassword({
+    required int accountId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final uri = await _uri('/auth/change-password');
+    final response = await _postJson(uri, {
+      'accountId': accountId,
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
   }
 
   Future<List<BackendArea>> fetchPreferenceAreas({

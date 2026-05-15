@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'account_info_screen.dart';
+import 'notifications_full_screen.dart';
+import 'preferences_screen.dart';
 import 'change_password_screen.dart';
 
 class SettingsMenuScreen extends StatelessWidget {
@@ -21,7 +24,7 @@ class SettingsMenuScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   const Text(
-                    'Configurações',
+                    'Definições',
                     style: TextStyle(
                       fontSize: 42 / 2,
                       fontWeight: FontWeight.w700,
@@ -38,19 +41,28 @@ class SettingsMenuScreen extends StatelessWidget {
                 children: const [
                   _SettingsOptionTile(
                     icon: Icons.person_outline,
-                    title: 'Dados pessoais',
+                    title: 'Conta',
+                    subtitle: 'Dados da conta e atalhos',
                   ),
                   _SettingsOptionTile(
                     icon: Icons.lock_outline,
-                    title: 'Alterar password',
+                    title: 'Segurança',
+                    subtitle: 'Alterar senha de acesso',
                   ),
                   _SettingsOptionTile(
-                    icon: Icons.delete_outline,
-                    title: 'Eliminar Conta',
+                    icon: Icons.tune_rounded,
+                    title: 'Preferências',
+                    subtitle: 'Áreas de interesse e recomendações',
+                  ),
+                  _SettingsOptionTile(
+                    icon: Icons.notifications_outlined,
+                    title: 'Notificações',
+                    subtitle: 'Alertas e comunicações',
                   ),
                   _SettingsOptionTile(
                     icon: Icons.logout,
-                    title: 'Log Out',
+                    title: 'Terminar Sessão',
+                    subtitle: 'Terminar sessão e navegação',
                   ),
                 ],
               ),
@@ -66,10 +78,12 @@ class _SettingsOptionTile extends StatelessWidget {
   const _SettingsOptionTile({
     required this.icon,
     required this.title,
+    required this.subtitle,
   });
 
   final IconData icon;
   final String title;
+  final String subtitle;
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -77,9 +91,7 @@ class _SettingsOptionTile extends StatelessWidget {
       barrierDismissible: false,
       builder: (context) => Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(28, 34, 28, 28),
           child: Column(
@@ -180,26 +192,24 @@ class _SettingsOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-          leading: Icon(icon, size: 24, color: const Color(0xFF374151)),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF1F2937),
-            ),
-          ),
-          trailing: const Icon(
-            Icons.chevron_right,
-            size: 32,
-            color: Color(0xFF374151),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Material(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
           onTap: () {
-            if (title == 'Alterar password') {
+            if (title == 'Conta') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AccountInfoScreen(),
+                ),
+              );
+              return;
+            }
+            if (title == 'Segurança') {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -208,13 +218,76 @@ class _SettingsOptionTile extends StatelessWidget {
               );
               return;
             }
-            if (title == 'Log Out') {
+            if (title == 'Preferências') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PreferencesScreen(),
+                ),
+              );
+              return;
+            }
+            if (title == 'Notificações') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsFullScreen(),
+                ),
+              );
+              return;
+            }
+            if (title == 'Terminar Sessão') {
               _showLogoutDialog(context);
             }
           },
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE4EAF2)),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 10,
+              ),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE4EAF2)),
+                ),
+                child: Icon(icon, size: 22, color: const Color(0xFF374151)),
+              ),
+              title: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F2937),
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                size: 28,
+                color: Color(0xFF374151),
+              ),
+            ),
+          ),
         ),
-        const Divider(height: 1, color: Color(0xFFE5E7EB)),
-      ],
+      ),
     );
   }
 }

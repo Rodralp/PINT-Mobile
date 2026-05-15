@@ -5,378 +5,437 @@ import '../services/achievement_center.dart';
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
 import '../theme/softinsa_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/achievement_center.dart';
+import '../services/auth_api.dart';
+import '../services/auth_session.dart';
+import '../theme/softinsa_theme.dart';
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
 
-  static const String firstLoginPreferencesDoneKey = 'first_login_preferences_done';
+  static const String firstLoginPreferencesDoneKey =
+      'first_login_preferences_done';
 
   @override
   State<PreferencesScreen> createState() => _PreferencesScreenState();
 }
 
 class _PreferencesScreenState extends State<PreferencesScreen> {
-  final List<_PreferenceArea> _areas = [
-    _PreferenceArea(
-      title: 'LowCode (Outsystems)',
-      subtitle: 'Desenvolvimento de aplicações com plataformas low-code',
-      icon: Icons.laptop,
-      color: const Color(0xFF2F80ED),
-    ),
-    _PreferenceArea(
-      title: 'DevSecOps & IT Automation',
-      subtitle: 'Automação, segurança e práticas DevOps',
-      icon: Icons.build_circle_outlined,
-      color: const Color(0xFFEF7D32),
-    ),
-    _PreferenceArea(
-      title: 'Sourcing & Talent Management',
-      subtitle: 'Gestão de talento e recrutamento',
-      icon: Icons.groups_2_outlined,
-      color: const Color(0xFF8B5CF6),
-    ),
-    _PreferenceArea(
-      title: 'Cloud & Infrastructure',
-      subtitle: 'Arquitetura e infraestrutura cloud',
-      icon: Icons.cloud_outlined,
-      color: const Color(0xFF06B6D4),
-    ),
-    _PreferenceArea(
-      title: 'Data & Analytics',
-      subtitle: 'Análise de dados e business intelligence',
-      icon: Icons.bar_chart_outlined,
-      color: const Color(0xFF16A34A),
-    ),
-    _PreferenceArea(
-      title: 'Cybersecurity',
-      subtitle: 'Segurança da informação e proteção de dados',
-      icon: Icons.lock_outline,
-      color: const Color(0xFFDC2626),
-    ),
-    _PreferenceArea(
-      title: 'Agile & Project Management',
-      subtitle: 'Metodologias ágeis e gestão de projetos',
-      icon: Icons.assignment_outlined,
-      color: const Color(0xFFDB2777),
-    ),
-    _PreferenceArea(
-      title: 'Frontend Development',
-      subtitle: 'Desenvolvimento de interfaces e experiência do utilizador',
-      icon: Icons.palette_outlined,
-      color: const Color(0xFF4F46E5),
-    ),
-    _PreferenceArea(
-      title: 'Backend Development',
-      subtitle: 'Desenvolvimento de APIs e serviços',
-      icon: Icons.settings_outlined,
-      color: const Color(0xFFD4A017),
-    ),
-  ];
+  final TextEditingController _searchController = TextEditingController();
 
-  bool _saving = false;
+  List<BackendArea> _areas = const [];
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String _statusMessage = '';
+  String _searchTerm = '';
 
   int get _selectedCount => _areas.where((area) => area.selected).length;
 
-  Future<List<int>> _resolveSelectedAreaIds(int accountId) async {
-    final backendAreas = await AuthApi.instance.fetchPreferenceAreas(accountId: accountId);
-    final areaIdByName = <String, int>{
-      for (final area in backendAreas) area.name.trim().toLowerCase(): area.id,
-    };
-
-    final selectedIds = <int>[];
-    for (final area in _areas.where((area) => area.selected)) {
-      final areaId = areaIdByName[area.title.trim().toLowerCase()];
-      if (areaId != null) {
-        selectedIds.add(areaId);
-      }
-    }
-
-    return selectedIds.toSet().toList(growable: false);
+  @override
+  void initState() {
+    super.initState();
+    _loadAreas();
   }
 
-  void _toggleArea(_PreferenceArea area) {
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAreas() async {
+    try {
+      final accountId = await AuthSession.getAccountId();
+      if (!mounted) {
+        return;
+      }
+
+      if (accountId == null || accountId <= 0) {
+        setState(() {
+          _statusMessage = 'Não foi possível identificar a conta ativa.';
+          _areas = const [];
+        });
+        return;
+      }
+
+      final backendAreas = await AuthApi.instance.fetchPreferenceAreas(
+        accountId: accountId,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _areas = backendAreas;
+        _statusMessage = '';
+      });
+    } on AuthApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _statusMessage = error.message.isEmpty
+            ? 'Não foi possível carregar as áreas.'
+            : error.message;
+        _areas = const [];
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _statusMessage = 'Não foi possível carregar as áreas.';
+        _areas = const [];
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<BackendArea> get _filteredAreas {
+    final normalizedSearch = _searchTerm.trim().toLowerCase();
+    if (normalizedSearch.isEmpty) {
+      return _areas;
+    }
+
+    return _areas.where((area) {
+      final searchable =
+          '${area.name} ${area.description} ${area.serviceLine}'.toLowerCase();
+      return searchable.contains(normalizedSearch);
+    }).toList(growable: false);
+  }
+
+  void _toggleArea(int areaId) {
     setState(() {
-      area.selected = !area.selected;
+      _areas = _areas
+          .map(
+            (area) => area.id == areaId
+                ? BackendArea(
+                    id: area.id,
+                    name: area.name,
+                    description: area.description,
+                    serviceLine: area.serviceLine,
+                    badgeCount: area.badgeCount,
+                    selected: !area.selected,
+                  )
+                : area,
+          )
+          .toList(growable: false);
+      _statusMessage = '';
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _areas = _areas
+          .map(
+            (area) => BackendArea(
+              id: area.id,
+              name: area.name,
+              description: area.description,
+              serviceLine: area.serviceLine,
+              badgeCount: area.badgeCount,
+              selected: false,
+            ),
+          )
+          .toList(growable: false);
+      _statusMessage = '';
     });
   }
 
   Future<void> _saveAndContinue() async {
-    if (_selectedCount == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione pelo menos uma área de interesse.')),
-      );
+    final selectedAreaIds = _areas
+        .where((area) => area.selected)
+        .map((area) => area.id)
+        .toList(growable: false);
+
+    if (selectedAreaIds.isEmpty) {
+      setState(() {
+        _statusMessage = 'Selecione pelo menos uma área para continuar.';
+      });
       return;
     }
 
     final accountId = await AuthSession.getAccountId();
-    if (!mounted) return;
-
-    if (accountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível identificar a conta ativa.')),
-      );
+    if (!mounted) {
       return;
     }
 
-    setState(() => _saving = true);
+    if (accountId == null || accountId <= 0) {
+      setState(() {
+        _statusMessage = 'Não foi possível identificar a conta ativa.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _statusMessage = '';
+    });
 
     try {
-      final selectedAreaIds = await _resolveSelectedAreaIds(accountId);
-      if (selectedAreaIds.isEmpty) {
-        throw const FormatException('No matching backend areas were found.');
-      }
-
-      await AuthApi.instance.savePreferences(accountId: accountId, areaIds: selectedAreaIds);
+      await AuthApi.instance.savePreferences(
+        accountId: accountId,
+        areaIds: selectedAreaIds,
+      );
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(PreferencesScreen.firstLoginPreferencesDoneKey, true);
+      await prefs.setBool(
+        PreferencesScreen.firstLoginPreferencesDoneKey,
+        true,
+      );
       await AuthSession.setHasPreferences(true);
 
       AchievementCenter.instance.unlock(
         const AchievementUnlock(
           id: 'welcome-achievement',
           title: 'Bem-vindo a Bordo',
-          description: 'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
+          description:
+              'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
           points: 50,
           badgesCount: 1,
           imageAsset: 'assets/images/welcome.png',
         ),
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       Navigator.pushReplacementNamed(context, '/app');
+    } on AuthApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _statusMessage = error.message.isEmpty
+            ? 'Não foi possível guardar as preferências.'
+            : error.message;
+      });
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível guardar as preferências.')),
-      );
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _statusMessage = 'Não foi possível guardar as preferências.';
+      });
     } finally {
       if (mounted) {
-        setState(() => _saving = false);
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }
 
-  void _resetSelections() {
-    setState(() {
-      for (final area in _areas) {
-        area.selected = false;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final filteredAreas = _filteredAreas;
+
     return Scaffold(
-      backgroundColor: SoftinsaColors.surfaceAlt,
-      body: Container(
-        decoration: const BoxDecoration(gradient: SoftinsaColors.brandGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-                child: Row(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, size: 28),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
                       ),
-                      child: const Icon(Icons.tune_rounded, color: Colors.white),
                     ),
-                    const SizedBox(width: 14),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      alignment: Alignment.center,
-                      child: Image.asset('assets/images/softinsa.png', width: 30, fit: BoxFit.contain),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-                      ),
-                      child: Text(
-                        '$_selectedCount selecionadas',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Preferências',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF243047),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                const SizedBox(height: 10),
+                const Text(
+                  'Bem-vindo à personalização da sua conta',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                    height: 1.15,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Escolha as suas áreas',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Escolha uma ou mais áreas de preferência para orientar as sugestões de badges no dashboard.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _SearchField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchTerm = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: SoftinsaColors.border),
+                      ),
+                      child: Text(
+                        '$_selectedCount selecionadas',
+                        style: const TextStyle(
+                          color: Color(0xFF243047),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Isto ajuda a personalizar badges, conteúdos e recomendações no mobile e no web.',
-                        style: TextStyle(color: Colors.white, height: 1.45),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _isSaving ? null : _clearSelection,
+                      child: const Text(
+                        'Limpar seleção',
+                        style: TextStyle(
+                          color: SoftinsaColors.blueDark,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _saving ? null : _resetSelections,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white54),
-                              ),
-                              child: const Text('Limpar seleção'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _saving ? null : _saveAndContinue,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: SoftinsaColors.blueDark,
-                              ),
-                              child: _saving
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2.2),
-                                    )
-                                  : const Text('Guardar'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF3F6FA),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-                    child: GridView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: _areas.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.95,
+                if (_statusMessage.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4F4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF5C2C7)),
+                    ),
+                    child: Text(
+                      _statusMessage,
+                      style: const TextStyle(
+                        color: Color(0xFFB42318),
+                        fontSize: 13,
                       ),
-                      itemBuilder: (context, index) {
-                        final area = _areas[index];
-                        return InkWell(
-                          borderRadius: BorderRadius.circular(24),
-                          onTap: _saving ? null : () => _toggleArea(area),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: area.selected ? area.color : SoftinsaColors.border,
-                                width: area.selected ? 1.8 : 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 42,
-                                      height: 42,
-                                      decoration: BoxDecoration(
-                                        color: area.color.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: Icon(area.icon, color: area.color),
-                                    ),
-                                    const Spacer(),
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 180),
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        color: area.selected ? area.color : Colors.transparent,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: area.selected ? area.color : SoftinsaColors.border,
-                                        ),
-                                      ),
-                                      child: area.selected
-                                          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-                                          : null,
-                                    ),
-                                  ],
-                                ),
-                                const Spacer(),
-                                Text(
-                                  area.title,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: SoftinsaColors.ink,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  area.subtitle,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: SoftinsaColors.textMuted,
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
                     ),
                   ),
+                ],
+                const SizedBox(height: 12),
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: SoftinsaColors.blue,
+                      ),
+                    ),
+                  )
+                else if (filteredAreas.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text(
+                        _searchTerm.trim().isEmpty
+                            ? 'Não foram encontradas áreas.'
+                            : 'Nao foram encontradas areas com esse termo.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: SoftinsaColors.textMuted,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    itemCount: filteredAreas.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final area = filteredAreas[index];
+                      return _PreferenceCard(
+                        area: area,
+                        onTap: () => _toggleArea(area.id),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _saveAndContinue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            'Guardar preferências',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
@@ -384,17 +443,128 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   }
 }
 
-class _PreferenceArea {
-  _PreferenceArea({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller, required this.onChanged});
 
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  bool selected = false;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        decoration: const InputDecoration(
+          hintText: 'Pesquisar áreas de preferência',
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          prefixIcon: Icon(Icons.search, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceCard extends StatelessWidget {
+  const _PreferenceCard({required this.area, required this.onTap});
+
+  final BackendArea area;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = area.selected;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? SoftinsaColors.blue : SoftinsaColors.border,
+            width: isSelected ? 1.8 : 1,
+          ),
+          boxShadow: SoftinsaShadows.soft,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(top: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? SoftinsaColors.blue : SoftinsaColors.border,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    area.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: SoftinsaColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    area.serviceLine.isEmpty ? '-' : area.serviceLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: SoftinsaColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    area.description.isEmpty ? '-' : area.description,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: SoftinsaColors.textMuted,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${area.badgeCount} badges disponíveis',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: SoftinsaColors.blueDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.circle_outlined,
+              color: isSelected ? SoftinsaColors.blue : SoftinsaColors.border,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

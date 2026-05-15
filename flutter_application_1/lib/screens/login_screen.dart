@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -78,11 +79,15 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final account = await AuthApi.instance.login(email: email, senha: senha);
 
-      if (account.role.trim().toLowerCase() != 'consultor') {
+      final cleanedRoles = account.roles.map((r) => r.trim().toLowerCase()).where((r) => r.isNotEmpty).toList(growable: false);
+      final bool isConsultor = cleanedRoles.isNotEmpty
+          ? cleanedRoles.contains('consultor')
+          : account.role.trim().toLowerCase() == 'consultor';
+
+      if (!isConsultor) {
         if (!mounted) {
           return;
         }
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -133,6 +138,25 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+
+      if (kDebugMode) {
+        final details = StringBuffer();
+        details.writeln('Message: ${error.message}');
+        details.writeln('Status: ${error.statusCode ?? 'N/A'}');
+        details.writeln('Code: ${error.code ?? 'N/A'}');
+        details.writeln('Body: ${error.responseBody ?? 'N/A'}');
+
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Debug: API error'),
+            content: SingleChildScrollView(child: Text(details.toString())),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Fechar')),
+            ],
+          ),
+        );
+      }
     } catch (_) {
       if (!mounted) {
         return;
@@ -165,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _backendUrlController,
           decoration: const InputDecoration(
             labelText: 'API base URL',
-            hintText: 'http://192.168.1.10:4000/api',
+            hintText: 'http://10.65.8.74:4000/api',
           ),
         ),
         actions: [
@@ -174,7 +198,37 @@ class _LoginScreenState extends State<LoginScreen> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, _backendUrlController.text),
+            onPressed: () {
+              var input = _backendUrlController.text.trim();
+              if (input.isEmpty) {
+                Navigator.pop(dialogContext);
+                return;
+              }
+
+              if (!input.startsWith('http://') && !input.startsWith('https://')) {
+                input = 'http://$input';
+              }
+
+              // Remove trailing slashes
+              while (input.endsWith('/')) {
+                input = input.substring(0, input.length - 1);
+              }
+
+              // Ensure it contains /api (common backend prefix)
+              if (!input.contains('/api')) {
+                input = '$input/api';
+              }
+
+              final uri = Uri.tryParse(input);
+              if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || (uri.host == null || uri.host.isEmpty)) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(content: Text('URL inválida. Introduza uma URL válida, e.g. http://10.65.8.74:4000/api')),
+                );
+                return;
+              }
+
+              Navigator.pop(dialogContext, input);
+            },
             child: const Text('Guardar'),
           ),
         ],
@@ -393,7 +447,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Cabeçalho
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 12, 16),
                   child: Row(
@@ -427,11 +480,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 Divider(height: 1, color: Colors.grey.shade200),
 
-                // Introdução
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Text(
-                    'Bem-vindo à Plataforma de Badges da Softinsa. Estes Termos de Serviço regulam a sua utilização da plataforma, incluindo o acesso às funcionalidades, submissão de evidências, obtenção de badges e partilha de conquistas.',
+                    'A utilização da Plataforma de Badges da Softinsa está reservada a colaboradores autorizados. Estes Termos de Serviço regulam o acesso à plataforma, a gestão de contas, a submissão de evidências, a validação de badges e a utilização das funcionalidades associadas.',
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -440,7 +492,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // Lista scrollável
                 Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -455,7 +506,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 Divider(height: 1, color: Colors.grey.shade200),
 
-                // Rodapé
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -463,6 +513,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       ElevatedButton(
                         onPressed: () => Navigator.pop(context),
@@ -475,6 +526,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             horizontal: 16,
                             vertical: 10,
                           ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: const Text(
                           'Li e aceito os termos',

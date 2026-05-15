@@ -8,66 +8,106 @@ class SuggestionsFullScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, size: 36),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Sugestões',
-                    style: TextStyle(
-                      fontSize: 48 / 2,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF243047),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, size: 28),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Sugestões',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF243047),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Sugestões personalizadas para si',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                    height: 1.15,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Explore áreas alinhadas com o seu perfil e descubra badges que fazem sentido para a sua evolução.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const _SuggestionItemFull(
+                  title: 'LowCode (Outsystems)',
+                  subtitle: 'Líder de Conhecimento',
+                  description:
+                      'Conteúdos, badges e evolução focados em desenvolvimento rápido e integração de processos.',
+                  accentColor: Color(0xFF2F80ED),
+                ),
+                const SizedBox(height: 12),
+                const _SuggestionItemFull(
+                  title: 'Cloud Architecture',
+                  subtitle: 'Especialista',
+                  description:
+                      'Recomendações ligadas a arquitetura, escalabilidade e infraestrutura cloud.',
+                  accentColor: Color(0xFF7C3AED),
+                ),
+                const SizedBox(height: 12),
+                const _SuggestionItemFull(
+                  title: 'Hybrid Cloud',
+                  subtitle: 'Intermédio',
+                  description:
+                      'Sugestões para consolidar conhecimento entre ambientes públicos e privados.',
+                  accentColor: Color(0xFF0EA5E9),
+                ),
+                const SizedBox(height: 12),
+                const _SuggestionItemFull(
+                  title: 'Application Operations',
+                  subtitle: 'Especialista',
+                  description:
+                      'Aprendizagem prática sobre operação, estabilidade e suporte de aplicações.',
+                  accentColor: Color(0xFF16A34A),
+                ),
+                const SizedBox(height: 12),
+                const _SuggestionItemFull(
+                  title: 'C++ Mastery',
+                  subtitle: 'Sénior',
+                  description:
+                      'Badges técnicos mais profundos para perfis com foco em performance e programação avançada.',
+                  accentColor: Color(0xFFF59E0B),
+                ),
+                const SizedBox(height: 12),
+                const _SuggestionItemFull(
+                  title: 'Data Analytics',
+                  subtitle: 'Intermédio',
+                  description:
+                      'Sugestões ligadas a dados, métricas e leitura de informação para tomada de decisão.',
+                  accentColor: Color(0xFFDB2777),
+                ),
+              ],
             ),
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                children: const [
-                  _SuggestionItemFull(
-                    title: 'LowCode (Outsystems)',
-                    subtitle: 'Líder de Conhecimento',
-                  ),
-                  SizedBox(height: 12),
-                  _SuggestionItemFull(
-                    title: 'Cloud Architecture',
-                    subtitle: 'Especialista',
-                  ),
-                  SizedBox(height: 12),
-                  _SuggestionItemFull(
-                    title: 'Hybrid Cloud',
-                    subtitle: 'Intermédio',
-                  ),
-                  SizedBox(height: 12),
-                  _SuggestionItemFull(
-                    title: 'Application Operations',
-                    subtitle: 'Especialista',
-                  ),
-                  SizedBox(height: 12),
-                  _SuggestionItemFull(
-                    title: 'C++ Mastery',
-                    subtitle: 'Sénior',
-                  ),
-                  SizedBox(height: 12),
-                  _SuggestionItemFull(
-                    title: 'Data Analytics',
-                    subtitle: 'Intermédio',
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -78,56 +118,87 @@ class _SuggestionItemFull extends StatelessWidget {
   const _SuggestionItemFull({
     required this.title,
     required this.subtitle,
+    required this.description,
+    required this.accentColor,
   });
 
   final String title;
   final String subtitle;
+  final String description;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E6F0)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE4EAF2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.blue[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.rocket, color: Colors.blue, size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF243047),
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF243047),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: accentColor,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFFB7C0CE),
+                size: 16,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF5B6472),
+              height: 1.45,
             ),
           ),
-          Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 20),
         ],
       ),
     );
