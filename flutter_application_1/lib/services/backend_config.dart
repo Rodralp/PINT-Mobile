@@ -1,18 +1,36 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BackendConfig {
   BackendConfig._();
 
   static const String baseUrlKey = 'backend_base_url';
-  static const String _fallbackBaseUrl = 'http://10.0.2.2:4000/api';
-  static const String defaultBaseUrl = String.fromEnvironment(
+  static String _fallbackBaseUrl() {
+    if (kIsWeb) {
+      return 'http://localhost:4000/api';
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:4000/api';
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+        return 'http://localhost:4000/api';
+      case TargetPlatform.fuchsia:
+        return 'http://localhost:4000/api';
+    }
+  }
+
+  static final String defaultBaseUrl = String.fromEnvironment(
     'PINT_API_BASE_URL',
-    defaultValue: _fallbackBaseUrl,
+    defaultValue: _fallbackBaseUrl(),
   );
 
   static Future<String> getBaseUrl() async {
     // If the app was launched with --dart-define, honor it over stale saved values.
-    if (defaultBaseUrl != _fallbackBaseUrl) {
+    if (defaultBaseUrl != _fallbackBaseUrl()) {
       return defaultBaseUrl;
     }
 

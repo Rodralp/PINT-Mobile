@@ -451,11 +451,7 @@ class HybridCloudPathScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const HybridCloudBadgeDetailScreen(
-                                        levelTitle: 'Nível Júnior',
-                                        levelCode: 'Nível A',
-                                      ),
+                                  builder: (context) => const BadgesScreen(),
                                 ),
                               );
                             },
@@ -473,11 +469,7 @@ class HybridCloudPathScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const HybridCloudBadgeDetailScreen(
-                                        levelTitle: 'Nível Intermédio',
-                                        levelCode: 'Nível B',
-                                      ),
+                                  builder: (context) => const BadgesScreen(),
                                 ),
                               );
                             },
@@ -494,8 +486,7 @@ class HybridCloudPathScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const LowCodeSeniorProgressScreen(),
+                                  builder: (context) => const BadgesScreen(),
                                 ),
                               );
                             },
@@ -705,171 +696,3 @@ class _HybridLevelTile extends StatelessWidget {
   }
 }
 
-class HybridCloudBadgeDetailScreen extends StatelessWidget {
-  const HybridCloudBadgeDetailScreen({
-    super.key,
-    required this.levelTitle,
-    required this.levelCode,
-  });
-
-  final String levelTitle;
-  final String levelCode;
-
-  @override
-  Widget build(BuildContext context) {
-    const requirements = [
-      'B1 - Fundamentos de arquitetura híbrida concluídos',
-      'B2 - Segurança e conectividade em cloud híbrida concluídas',
-      'B3 - Gestão operacional e observabilidade concluídas',
-    ];
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-        ),
-        title: const Text(
-          'Badge',
-          style: TextStyle(
-            color: Color(0xFF243047),
-            fontWeight: FontWeight.w700,
-            fontSize: 24,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: 124,
-                  height: 124,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFFE9F4FF),
-                    border: Border.all(
-                      color: const Color(0xFF1A90F0),
-                      width: 8,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.cloud_done_outlined,
-                    color: Color(0xFF1A90F0),
-                    size: 64,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Hybrid Cloud',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF243047),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$levelTitle ($levelCode)',
-                  style: const TextStyle(
-                    fontSize: 19,
-                    color: Color(0xFF243047),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAF5ED),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF16C524),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Color(0xFF16C524)),
-                      SizedBox(width: 8),
-                      Text(
-                        'Concluído',
-                        style: TextStyle(
-                          color: Color(0xFF16C524),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFD9E2EC), width: 1.4),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Requisitos',
-                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-                ...requirements.map(
-                  (item) => Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF6F8FA),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE5EAF0)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle,
-                          color: Color(0xFF16C524),
-                          size: 22,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
