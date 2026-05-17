@@ -18,6 +18,7 @@ class BackendBadge {
     required this.area,
     required this.levelKey,
     required this.stateId,
+    required this.badgeImage,
   });
 
   factory BackendBadge.fromJson(Map<String, dynamic> json) {
@@ -49,7 +50,7 @@ class BackendBadge {
     final title = _readString(json, ['title', 'nome', 'name']) ?? area ?? '';
 
     return BackendBadge(
-      id: _readInt(json, ['id', 'badgeId']) ?? 0,
+      id: _readInt(json, ['badgeDbId', 'nbadge', 'badgeId', 'id']) ?? 0,
       title: title,
       level: level,
       points: points,
@@ -59,6 +60,7 @@ class BackendBadge {
       area: area,
       levelKey: levelKey,
       stateId: stateId,
+      badgeImage: _readString(json, ['badgeImage', 'image', 'imagem']),
     );
   }
 
@@ -72,6 +74,7 @@ class BackendBadge {
   final String? area;
   final String? levelKey;
   final String? stateId;
+  final String? badgeImage;
 
   static String _normalizeLevel(String? level, String? levelKey) {
     final cleanedLevel = level?.trim();
@@ -114,9 +117,18 @@ class BackendBadge {
       if (value == null) {
         continue;
       }
-      final parsed = int.tryParse(value.toString());
+      final text = value.toString().trim();
+      final parsed = int.tryParse(text);
       if (parsed != null) {
         return parsed;
+      }
+
+      final match = RegExp(r'(\d+)$').firstMatch(text);
+      if (match != null) {
+        final extracted = int.tryParse(match.group(1)!);
+        if (extracted != null) {
+          return extracted;
+        }
       }
     }
     return null;

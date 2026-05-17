@@ -300,14 +300,14 @@ class _BadgesScreenState extends State<BadgesScreen> {
                           Icon(
                             Icons.search,
                             color: Colors.grey[500],
-                            size: 30,
+                            size: 24,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Pesquisar badges',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 15,
                                 color: Colors.grey[500],
                               ),
                             ),
@@ -316,9 +316,9 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   _toolbarButton(Icons.filter_alt_outlined),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   _toolbarButton(Icons.tune_rounded),
                 ],
               ),
@@ -387,14 +387,14 @@ class _BadgesScreenState extends State<BadgesScreen> {
 
   Widget _toolbarButton(IconData icon) {
     return Container(
-      width: 66,
-      height: 64,
+      width: 54,
+      height: 54,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE0E6F0)),
         color: Colors.white,
       ),
-      child: Icon(icon, size: 30),
+      child: Icon(icon, size: 22),
     );
   }
 }
@@ -456,14 +456,14 @@ class BadgeCatalogScreen extends StatelessWidget {
                         Icon(
                           Icons.search,
                           color: Colors.grey[500],
-                          size: 30,
+                          size: 24,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Pesquisar badges',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 15,
                               color: Colors.grey[500],
                             ),
                           ),
@@ -472,9 +472,9 @@ class BadgeCatalogScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 _toolButton(Icons.filter_alt_outlined),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 _toolButton(Icons.tune_rounded),
               ],
             ),
@@ -545,14 +545,14 @@ class BadgeCatalogScreen extends StatelessWidget {
 
   Widget _toolButton(IconData icon) {
     return Container(
-      width: 66,
-      height: 64,
+      width: 54,
+      height: 54,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE0E6F0)),
         color: Colors.white,
       ),
-      child: Icon(icon, size: 30),
+      child: Icon(icon, size: 22),
     );
   }
 }
@@ -566,7 +566,7 @@ class _CatalogBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       onTap: () {
         Navigator.push(
           context,
@@ -577,104 +577,99 @@ class _CatalogBadgeCard extends StatelessWidget {
       },
       child: Container(
         width: width,
-        padding: const EdgeInsets.all(11),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: _badgeBackgroundColor(),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: badge.frameColor.withOpacity(0.32),
-            width: 1.2,
+            color: badge.frameColor.withOpacity(0.28),
+            width: 1,
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 76,
-              height: 76,
+              width: 96,
+              height: 96,
               decoration: BoxDecoration(
-                color: badge.iconBackground.withOpacity(0.24),
+                color: badge.iconBackground.withOpacity(0.3),
                 shape: badge.shape,
-                border: Border.all(color: badge.frameColor, width: 5),
+                border: Border.all(color: badge.frameColor, width: 6),
               ),
               child: Icon(
                 Icons.workspace_premium_outlined,
-                size: 31,
+                size: 40,
                 color: badge.frameColor,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               badge.title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                height: 1.25,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               badge.level,
-              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.emoji_events_outlined, size: 16),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: Text(
-                              '${badge.points} pontos',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                color: Colors.grey[700],
-                              ),
-                            ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.emoji_events_outlined, size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${badge.points}pt',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.schedule_outlined, size: 16),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: Text(
-                              badge.date,
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                color: Colors.grey[700],
-                              ),
-                            ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.schedule_outlined, size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          badge.date,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _stateColor(badge.state),
-                      width: 1.8,
+                      width: 1.5,
                     ),
-                    color: const Color(0xFFFFFFFF),
+                    color: _stateColor(badge.state).withOpacity(0.08),
                   ),
                   child: Icon(
                     _stateIcon(badge.state),
                     color: _stateColor(badge.state),
-                    size: 18,
+                    size: 16,
                   ),
                 ),
               ],
@@ -714,13 +709,13 @@ class _CatalogBadgeCard extends StatelessWidget {
   Color _badgeBackgroundColor() {
     switch (badge.state) {
       case BadgeState.approved:
-        return const Color(0xFFF2F8F4);
+        return const Color(0xFFF0F9F4);
       case BadgeState.warning:
-        return const Color(0xFFFEF5F4);
+        return const Color(0xFFFCF4F1);
       case BadgeState.review:
-        return const Color(0xFFFFF9ED);
+        return const Color(0xFFFFFAF0);
       case null:
-        return const Color(0xFFF8FAFC);
+        return const Color(0xFFF9FBFD);
     }
   }
 }
@@ -734,7 +729,7 @@ class _OwnedBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       onTap: () {
         Navigator.push(
           context,
@@ -882,13 +877,13 @@ class _OwnedBadgeCard extends StatelessWidget {
   Color _badgeBackgroundColor() {
     switch (badge.state) {
       case BadgeState.approved:
-        return const Color(0xFFF2F8F4);
+        return const Color(0xFFF0F9F4);
       case BadgeState.warning:
-        return const Color(0xFFFEF5F4);
+        return const Color(0xFFFCF4F1);
       case BadgeState.review:
-        return const Color(0xFFFFF9ED);
+        return const Color(0xFFFFFAF0);
       case null:
-        return const Color(0xFFF8FAFC);
+        return const Color(0xFFF9FBFD);
     }
   }
 }

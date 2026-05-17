@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'account_info_screen.dart';
-import 'notifications_full_screen.dart';
+import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
 import 'change_password_screen.dart';
 
@@ -231,7 +231,7 @@ class _SettingsOptionTile extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const NotificationsFullScreen(),
+                  builder: (context) => const NotificationPreferencesScreen(),
                 ),
               );
               return;

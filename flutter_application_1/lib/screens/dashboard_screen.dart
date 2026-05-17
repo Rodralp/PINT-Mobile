@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/auth_session.dart';
+import '../services/reminder_api.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
@@ -7,8 +9,93 @@ import 'suggestions_full_screen.dart';
 import 'reminders_screen.dart';
 import '../widgets/app_top_bar.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  List<Reminder> _dashboardReminders = [];
+  bool _isRemindersLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardReminders();
+  }
+
+  Future<void> _loadDashboardReminders() async {
+    try {
+      final accountId = await AuthSession.getAccountId();
+
+      if (!mounted) return;
+
+      if (accountId == null || accountId <= 0) {
+        setState(() {
+          _dashboardReminders = [];
+          _isRemindersLoading = false;
+        });
+        return;
+      }
+
+      final reminders = await ReminderApi.instance.fetchReminders(
+        accountId: accountId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _dashboardReminders = reminders.take(2).toList();
+        _isRemindersLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _dashboardReminders = [];
+        _isRemindersLoading = false;
+      });
+    }
+  }
+
+  Color _colorStringToColor(String colorStr) {
+    switch (colorStr) {
+      case 'green':
+      case '#4cd07d':
+        return const Color(0xFF4cd07d);
+      case 'yellow':
+      case '#f4c20d':
+        return const Color(0xFFF4c20d);
+      case 'blue':
+      case '#1f8fe5':
+        return const Color(0xFF1f8fe5);
+      case 'purple':
+      case '#9851e8':
+        return const Color(0xFF9851e8);
+      default:
+        return const Color(0xFF4cd07d);
+    }
+  }
+
+  String _formatReminderDate(String value) {
+    final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    final parts = value.split('-');
+    if (parts.length != 3) {
+      return value;
+    }
+
+    final year = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final day = int.tryParse(parts[2]);
+
+    if (year == null || month == null || day == null || month < 1 || month > 12) {
+      return value;
+    }
+
+    return '${day.toString().padLeft(2, '0')} ${months[month - 1]} $year';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,17 +189,38 @@ class DashboardScreen extends StatelessWidget {
                 },
                 child: Column(
                   children: [
-                    _buildReminderItem(
-                      message: "Conferir requisitos enviados.",
-                      date: "07 Dez 2025",
-                      barColor: Colors.greenAccent[400]!,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildReminderItem(
-                      message: "Badge \"C++ Mastery\" expira em 30 dias.",
-                      date: "29 Nov 2025",
-                      barColor: Colors.amber,
-                    ),
+                    if (_isRemindersLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ),
+                      )
+                    else if (_dashboardReminders.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          "Sem lembretes para mostrar.",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      )
+                    else
+                      ...List.generate(_dashboardReminders.length, (index) {
+                        final reminder = _dashboardReminders[index];
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: index == _dashboardReminders.length - 1 ? 0 : 12),
+                          child: _buildReminderItem(
+                            message: reminder.title,
+                            date: _formatReminderDate(reminder.date),
+                            barColor: _colorStringToColor(reminder.color),
+                          ),
+                        );
+                      }),
                   ],
                 ),
               ),

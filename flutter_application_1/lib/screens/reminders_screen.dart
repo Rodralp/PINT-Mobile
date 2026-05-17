@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_session.dart';
+import '../services/reminder_api.dart';
 import 'app_shell_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
@@ -14,35 +16,104 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
-  final List<_ReminderItem> _reminders = [
-    _ReminderItem(
-      title: 'Conferir requisitos enviados',
-      description: 'Rever todos os requisitos do novo projeto',
-      date: '07 Dez 2025',
-      color: const Color(0xFF39D98A),
-    ),
-    _ReminderItem(
-      title: 'Badge "C++ Mastery" expira em 30 dias',
-      description: 'Renovar certificação antes do prazo',
-      date: '29 Nov 2025',
-      color: const Color(0xFFF7C500),
-    ),
-    _ReminderItem(
-      title: 'Lembrete: Meta de 15 badges até ao fim do mês',
-      description: 'Completar badges restantes para atingir a meta',
-      date: '27 Nov 2025',
-      color: const Color(0xFF1A90F0),
-    ),
-    _ReminderItem(
-      title: 'Reunião de equipe trimestral',
-      description: 'Preparar atualização de conquistas para partilha',
-      date: '25 Nov 2025',
-      color: const Color(0xFFA855F7),
-    ),
-  ];
+  List<Reminder> _reminders = [];
+  bool _isLoading = true;
+  int? _accountId;
 
-  Future<void> _openReminderForm({_ReminderItem? existing, int? index}) async {
-    final result = await showDialog<_ReminderItem>(
+  @override
+  void initState() {
+    super.initState();
+    _loadReminders();
+  }
+
+  Future<void> _loadReminders() async {
+    try {
+      final accountId = await AuthSession.getAccountId();
+      
+      if (!mounted) return;
+
+      if (accountId == null || accountId <= 0) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Não foi possível identificar a sua conta.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() {
+        _accountId = accountId;
+      });
+
+      final reminders = await ReminderApi.instance.fetchReminders(
+        accountId: accountId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _reminders = List<Reminder>.from(reminders);
+          _isLoading = false;
+        });
+      }
+    } on ReminderApiException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.message.isEmpty
+                ? 'Erro ao carregar lembretes.'
+                : error.message,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erro ao carregar lembretes: ${e.toString()}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Color _colorStringToColor(String colorStr) {
+    switch (colorStr) {
+      case 'green':
+      case '#4cd07d':
+        return const Color(0xFF4cd07d);
+      case 'yellow':
+      case '#f4c20d':
+        return const Color(0xFFF4c20d);
+      case 'blue':
+      case '#1f8fe5':
+        return const Color(0xFF1f8fe5);
+      case 'purple':
+      case '#9851e8':
+        return const Color(0xFF9851e8);
+      default:
+        return const Color(0xFF4cd07d);
+    }
+  }
+
+  Future<void> _openReminderForm({Reminder? existing}) async {
+    final result = await showDialog<Map<String, dynamic>?>(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) => _ReminderFormDialog(existing: existing),
@@ -52,34 +123,177 @@ class _RemindersScreenState extends State<RemindersScreen> {
       return;
     }
 
-    setState(() {
-      if (index != null) {
-        _reminders[index] = result;
-      } else {
-        _reminders.insert(0, result);
+    if (_accountId == null || _accountId! <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível identificar a conta ativa.'),
+          ),
+        );
       }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          index == null
-              ? 'Lembrete criado com sucesso.'
-              : 'Lembrete atualizado com sucesso.',
+    try {
+      final isEditing = existing != null;
+      if (isEditing) {
+        final updated = await ReminderApi.instance.updateReminder(
+          accountId: _accountId!,
+          reminderId: existing.id,
+          title: result['title']!,
+          description: result['description']!,
+          date: result['date']!,
+          color: result['color']!,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          final index = _reminders.indexWhere((r) => r.id == existing.id);
+          if (index != -1) {
+            _reminders[index] = updated;
+          }
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lembrete atualizado com sucesso.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        final created = await ReminderApi.instance.createReminder(
+          accountId: _accountId!,
+          title: result['title']!,
+          description: result['description']!,
+          date: result['date']!,
+          color: result['color']!,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _reminders.insert(0, created);
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lembrete criado com sucesso.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } on ReminderApiException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.message.isEmpty
+                ? 'Não foi possível processar o lembrete.'
+                : error.message,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erro ao processar lembrete: ${e.toString()}',
+          ),
+        ),
+      );
+    }
   }
 
-  void _removeReminder(int index) {
-    final removedTitle = _reminders[index].title;
+  Future<void> _deleteReminder(Reminder reminder) async {
+    if (_accountId == null || _accountId! <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível identificar a conta ativa.'),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
-      _reminders.removeAt(index);
+      _isLoading = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Lembrete "$removedTitle" removido.')),
-    );
+    try {
+      await ReminderApi.instance.deleteReminder(
+        accountId: _accountId!,
+        reminderId: reminder.id,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _reminders.removeWhere((r) => r.id == reminder.id);
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lembrete "${reminder.title}" removido.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } on ReminderApiException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.message.isEmpty
+                ? 'Não foi possível remover o lembrete.'
+                : error.message,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erro ao remover lembrete: ${e.toString()}',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -112,77 +326,108 @@ class _RemindersScreenState extends State<RemindersScreen> {
           );
         },
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Lembretes',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF243047),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              const SizedBox(height: 24),
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => _openReminderForm(),
-                child: Container(
-                  width: double.infinity,
-                  height: 92,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFFC6D2E1),
-                      width: 1.8,
+      body: _isLoading && _reminders.isEmpty
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.maybePop(context),
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Color(0xFF243047),
+                          ),
+                          tooltip: 'Voltar',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Lembretes',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF243047),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.add_rounded,
-                        size: 32,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Novo Lembrete',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.blueGrey[600],
-                          fontWeight: FontWeight.w600,
+                    const SizedBox(height: 8),
+                    const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                    const SizedBox(height: 24),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => _openReminderForm(),
+                      child: Container(
+                        width: double.infinity,
+                        height: 92,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFFC6D2E1),
+                            width: 1.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.add_rounded,
+                              size: 32,
+                              color: Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Novo Lembrete',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.blueGrey[600],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_reminders.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Text(
+                            'Sem lembretes para mostrar.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      ...List.generate(_reminders.length, (index) {
+                        final reminder = _reminders[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _ReminderCard(
+                            color: _colorStringToColor(reminder.color),
+                            title: reminder.title,
+                            subtitle: reminder.description,
+                            date: reminder.date,
+                            onEdit: () => _openReminderForm(existing: reminder),
+                            onDelete: () => _deleteReminder(reminder),
+                          ),
+                        );
+                      }),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-              ...List.generate(_reminders.length, (index) {
-                final reminder = _reminders[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _ReminderCard(
-                    color: reminder.color,
-                    title: reminder.title,
-                    subtitle: reminder.description,
-                    date: reminder.date,
-                    onEdit: () =>
-                        _openReminderForm(existing: reminder, index: index),
-                    onDelete: () => _removeReminder(index),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
+            ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
@@ -234,7 +479,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
 class _ReminderFormDialog extends StatefulWidget {
   const _ReminderFormDialog({this.existing});
 
-  final _ReminderItem? existing;
+  final Reminder? existing;
 
   @override
   State<_ReminderFormDialog> createState() => _ReminderFormDialogState();
@@ -244,7 +489,34 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _dateController;
-  late Color _selectedColor;
+  late String _selectedColor;
+
+  Future<void> _pickDate() async {
+    DateTime initial = DateTime.now();
+    try {
+      if (_dateController.text.isNotEmpty) {
+        initial = DateTime.parse(_dateController.text);
+      }
+    } catch (_) {}
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      _dateController.text = picked.toIso8601String().split('T')[0];
+    }
+  }
+
+  final List<Map<String, dynamic>> _colorOptions = [
+    {'id': 'green', 'color': Color(0xFF4cd07d)},
+    {'id': 'yellow', 'color': Color(0xFFf4c20d)},
+    {'id': 'blue', 'color': Color(0xFF1f8fe5)},
+    {'id': 'purple', 'color': Color(0xFF9851e8)},
+  ];
 
   @override
   void initState() {
@@ -256,7 +528,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
       text: widget.existing?.description ?? '',
     );
     _dateController = TextEditingController(text: widget.existing?.date ?? '');
-    _selectedColor = widget.existing?.color ?? const Color(0xFF39D98A);
+    _selectedColor = widget.existing?.color ?? 'green';
   }
 
   @override
@@ -281,12 +553,12 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
 
     Navigator.pop(
       context,
-      _ReminderItem(
-        title: title,
-        description: description,
-        date: date,
-        color: _selectedColor,
-      ),
+      {
+        'title': title,
+        'description': description,
+        'date': date,
+        'color': _selectedColor,
+      },
     );
   }
 
@@ -330,19 +602,21 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
               const SizedBox(height: 8),
               _formField(
                 controller: _dateController,
-                hintText: 'Ex: 15 Jan 2026',
+                hintText: 'YYYY-MM-DD',
+                readOnly: true,
+                onTap: _pickDate,
               ),
               const SizedBox(height: 20),
               _fieldLabel('Cor'),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _colorOption(const Color(0xFF39D98A)),
-                  _colorOption(const Color(0xFFF7C500)),
-                  _colorOption(const Color(0xFF1A90F0)),
-                  _colorOption(const Color(0xFFA855F7)),
-                ],
+                children: _colorOptions.map((option) {
+                  return _colorOption(
+                    option['id'] as String,
+                    option['color'] as Color,
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 32),
               Row(
@@ -412,10 +686,14 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
     required TextEditingController controller,
     required String hintText,
     int maxLines = 1,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
+      readOnly: readOnly,
+      onTap: onTap,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(fontSize: 16, color: Color(0xFF94A3B8)),
@@ -441,10 +719,10 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
     );
   }
 
-  Widget _colorOption(Color color) {
-    final isSelected = _selectedColor == color;
+  Widget _colorOption(String colorId, Color color) {
+    final isSelected = _selectedColor == colorId;
     return InkWell(
-      onTap: () => setState(() => _selectedColor = color),
+      onTap: () => setState(() => _selectedColor = colorId),
       borderRadius: BorderRadius.circular(999),
       child: Container(
         width: 48,
@@ -527,11 +805,36 @@ class _ReminderCard extends StatelessWidget {
                         Material(
                           color: Colors.transparent,
                           child: PopupMenuButton<String>(
-                            onSelected: (value) {
+                            onSelected: (value) async {
                               if (value == 'edit') {
                                 onEdit();
                               } else if (value == 'delete') {
-                                onDelete();
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    title: const Text('Confirmar eliminação'),
+                                    content: Text(
+                                      'Tem a certeza que deseja eliminar o lembrete "$title"?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialogContext, false),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialogContext, true),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: const Text('Eliminar'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                
+                                if (confirmed == true) {
+                                  onDelete();
+                                }
                               }
                             },
                             itemBuilder: (context) => [
@@ -600,18 +903,4 @@ class _ReminderCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ReminderItem {
-  _ReminderItem({
-    required this.title,
-    required this.description,
-    required this.date,
-    required this.color,
-  });
-
-  final String title;
-  final String description;
-  final String date;
-  final Color color;
 }
