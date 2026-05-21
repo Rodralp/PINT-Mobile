@@ -5,6 +5,7 @@ import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import '../services/auth_session.dart';
 import '../services/badges_api.dart';
+import 'messages_screen.dart';
 import '../widgets/app_top_bar.dart';
 
 enum BadgeState { approved, warning, review }
@@ -227,6 +228,14 @@ class _BadgesScreenState extends State<BadgesScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+        onMessagesTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MessagesScreen(),
             ),
           );
         },

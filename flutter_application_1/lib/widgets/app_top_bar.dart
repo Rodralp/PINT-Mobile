@@ -7,11 +7,13 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onSettingsTap,
     required this.onNotificationsTap,
     required this.onProfileTap,
+    required this.onMessagesTap,
   });
 
   final VoidCallback onSettingsTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onProfileTap;
+  final VoidCallback onMessagesTap;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +30,13 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             icon: Icons.settings_outlined,
             onTap: onSettingsTap,
           ),
+          _ActionIconButton(
+            icon: Icons.chat_bubble_outline_rounded,
+            onTap: onMessagesTap,
+          ),
         ],
       ),
-      leadingWidth: 60,
+      leadingWidth: 100,
       title: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

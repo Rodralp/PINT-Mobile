@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
+import 'messages_screen.dart';
 import '../widgets/app_top_bar.dart';
 
 enum _RequestStatus { approved, pending, rejected }
@@ -130,6 +131,14 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+              onMessagesTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MessagesScreen(),
                   ),
                 );
               },

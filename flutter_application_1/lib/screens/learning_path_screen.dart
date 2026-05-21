@@ -4,6 +4,7 @@ import 'badges_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
+import 'messages_screen.dart';
 import '../widgets/app_top_bar.dart';
 
 class LearningPathScreen extends StatelessWidget {
@@ -40,6 +41,14 @@ class LearningPathScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                },
+                onMessagesTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MessagesScreen(),
                     ),
                   );
                 },
@@ -300,6 +309,14 @@ class HybridCloudPathScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+              onMessagesTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MessagesScreen(),
                   ),
                 );
               },

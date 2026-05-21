@@ -5,6 +5,7 @@ import 'ranking_screen.dart';
 import 'reminders_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
+import 'messages_screen.dart';
 import '../widgets/app_top_bar.dart';
 
 class MoreOptionsScreen extends StatelessWidget {
@@ -39,6 +40,14 @@ class MoreOptionsScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+              onMessagesTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MessagesScreen(),
                   ),
                 );
               },

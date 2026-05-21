@@ -7,6 +7,7 @@ import 'profile_screen.dart';
 import 'progress_full_screen.dart';
 import 'suggestions_full_screen.dart';
 import 'reminders_screen.dart';
+import 'messages_screen.dart';
 import '../widgets/app_top_bar.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -115,6 +116,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => const NotificationsFullScreen(),
+            ),
+          );
+        },
+        onMessagesTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MessagesScreen(),
             ),
           );
         },
