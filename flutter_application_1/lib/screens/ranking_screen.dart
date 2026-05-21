@@ -5,13 +5,316 @@ import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import 'messages_screen.dart';
+import '../services/consultor_api.dart';
 import '../widgets/app_top_bar.dart';
 
-class RankingScreen extends StatelessWidget {
+class _RankingConsultant {
+  const _RankingConsultant({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.points,
+    required this.badges,
+    required this.serviceLine,
+    required this.avatar,
+  });
+
+  factory _RankingConsultant.fromBackend(BackendRankingConsultant consultant) {
+    return _RankingConsultant(
+      id: consultant.id,
+      name: consultant.name,
+      email: consultant.email,
+      points: consultant.points,
+      badges: consultant.badges,
+      serviceLine: consultant.serviceLine,
+      avatar: consultant.avatar,
+    );
+  }
+
+  final int id;
+  final String name;
+  final String email;
+  final int points;
+  final int badges;
+  final String serviceLine;
+  final String? avatar;
+}
+
+class _FilterOption {
+  const _FilterOption(this.id, this.label);
+
+  final String id;
+  final String label;
+}
+
+const List<_RankingConsultant> _fallbackRanking = [
+  _RankingConsultant(
+    id: 1,
+    name: 'João Gomes',
+    email: 'joaogomes1234@softinsa.pt',
+    points: 2450,
+    badges: 12,
+    serviceLine: 'Cloud',
+    avatar: null,
+  ),
+  _RankingConsultant(
+    id: 2,
+    name: 'Maria Santos',
+    email: 'maria.santos@softinsa.pt',
+    points: 2200,
+    badges: 10,
+    serviceLine: 'Data & AI',
+    avatar: null,
+  ),
+  _RankingConsultant(
+    id: 3,
+    name: 'Pedro Mendes',
+    email: 'pedro.mendes@softinsa.pt',
+    points: 1950,
+    badges: 9,
+    serviceLine: 'Cloud',
+    avatar: null,
+  ),
+  _RankingConsultant(
+    id: 4,
+    name: 'Ana Costa',
+    email: 'ana.costa@softinsa.pt',
+    points: 1700,
+    badges: 8,
+    serviceLine: 'LowCode',
+    avatar: null,
+  ),
+];
+
+const List<_FilterOption> _rankingSortOptions = [
+  _FilterOption('points_desc', 'Pontos (Maior para Menor)'),
+  _FilterOption('points_asc', 'Pontos (Menor para Maior)'),
+  _FilterOption('badges_desc', 'Badges (Maior para Menor)'),
+  _FilterOption('badges_asc', 'Badges (Menor para Maior)'),
+  _FilterOption('name_asc', 'Nome (A-Z)'),
+  _FilterOption('name_desc', 'Nome (Z-A)'),
+];
+
+class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
 
   @override
+  State<RankingScreen> createState() => _RankingScreenState();
+}
+
+class _RankingScreenState extends State<RankingScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<_RankingConsultant> _consultants = _fallbackRanking;
+  String _searchTerm = '';
+  String _activeServiceLine = 'all';
+  String _sortBy = 'points_desc';
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRanking();
+  }
+
+  Future<void> _loadRanking() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final data = await ConsultorApi.instance.fetchRankingConsultores();
+      setState(() {
+        _consultants = data.map(_RankingConsultant.fromBackend).toList();
+      });
+    } catch (error) {
+      setState(() {
+        _errorMessage = 'Nao foi possivel carregar a base de dados.';
+        _consultants = _fallbackRanking;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<String> _serviceLineOptions() {
+    final lines = _consultants.map((item) => item.serviceLine).where((line) => line.isNotEmpty).toSet();
+    return ['all', ...lines];
+  }
+
+  List<_RankingConsultant> _applyFilters() {
+    final normalizedSearch = _searchTerm.trim().toLowerCase();
+
+    final filtered = _consultants.where((item) {
+      final matchesServiceLine = _activeServiceLine == 'all' || item.serviceLine == _activeServiceLine;
+      final matchesSearch = normalizedSearch.isEmpty
+          || item.name.toLowerCase().contains(normalizedSearch)
+          || item.email.toLowerCase().contains(normalizedSearch)
+          || item.serviceLine.toLowerCase().contains(normalizedSearch);
+      return matchesServiceLine && matchesSearch;
+    }).toList();
+
+    filtered.sort((a, b) {
+      switch (_sortBy) {
+        case 'points_asc':
+          return a.points.compareTo(b.points) != 0
+              ? a.points.compareTo(b.points)
+              : a.badges.compareTo(b.badges) != 0
+                  ? a.badges.compareTo(b.badges)
+                  : a.name.compareTo(b.name);
+        case 'badges_desc':
+          return b.badges.compareTo(a.badges) != 0
+              ? b.badges.compareTo(a.badges)
+              : b.points.compareTo(a.points) != 0
+                  ? b.points.compareTo(a.points)
+                  : a.name.compareTo(b.name);
+        case 'badges_asc':
+          return a.badges.compareTo(b.badges) != 0
+              ? a.badges.compareTo(b.badges)
+              : a.points.compareTo(b.points) != 0
+                  ? a.points.compareTo(b.points)
+                  : a.name.compareTo(b.name);
+        case 'name_asc':
+          return a.name.compareTo(b.name);
+        case 'name_desc':
+          return b.name.compareTo(a.name);
+        case 'points_desc':
+        default:
+          return b.points.compareTo(a.points) != 0
+              ? b.points.compareTo(a.points)
+              : b.badges.compareTo(a.badges) != 0
+                  ? b.badges.compareTo(a.badges)
+                  : a.name.compareTo(b.name);
+      }
+    });
+
+    return filtered;
+  }
+
+  Map<int, int> _rankingByConsultantId(List<_RankingConsultant> filtered) {
+    final rankMode = _sortBy == 'badges_desc' || _sortBy == 'badges_asc' ? 'badges' : 'points';
+    final reference = [...filtered]..sort((a, b) {
+      if (rankMode == 'badges') {
+        return b.badges.compareTo(a.badges) != 0
+            ? b.badges.compareTo(a.badges)
+            : b.points.compareTo(a.points) != 0
+                ? b.points.compareTo(a.points)
+                : a.name.compareTo(b.name);
+      }
+      return b.points.compareTo(a.points) != 0
+          ? b.points.compareTo(a.points)
+          : b.badges.compareTo(a.badges) != 0
+              ? b.badges.compareTo(a.badges)
+              : a.name.compareTo(b.name);
+    });
+
+    final ranking = <int, int>{};
+    _RankingConsultant? previous;
+    var currentRank = 0;
+    for (var index = 0; index < reference.length; index++) {
+      final item = reference[index];
+      final hasSameScore = previous != null && previous!.points == item.points && previous!.badges == item.badges;
+      if (!hasSameScore) {
+        currentRank = index + 1;
+      }
+      ranking[item.id] = currentRank;
+      previous = item;
+    }
+    return ranking;
+  }
+
+  void _showFilterSheet() {
+    final options = _serviceLineOptions().map(
+      (line) => _FilterOption(line, line == 'all' ? 'Todas as Service Lines' : line),
+    ).toList();
+
+    _showOptionsSheet(
+      title: 'Filtrar consultores',
+      options: options,
+      selectedId: _activeServiceLine,
+      onSelected: (value) {
+        setState(() {
+          _activeServiceLine = value;
+        });
+      },
+    );
+  }
+
+  void _showSortSheet() {
+    _showOptionsSheet(
+      title: 'Ordenar ranking',
+      options: _rankingSortOptions,
+      selectedId: _sortBy,
+      onSelected: (value) {
+        setState(() {
+          _sortBy = value;
+        });
+      },
+    );
+  }
+
+  void _showOptionsSheet({
+    required String title,
+    required List<_FilterOption> options,
+    required String selectedId,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                ...options.map(
+                  (option) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(option.label),
+                    trailing: selectedId == option.id
+                        ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                        : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onSelected(option.id);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final filtered = _applyFilters();
+    final rankingById = _rankingByConsultantId(filtered);
+    final activeFilterLabel = _activeServiceLine == 'all' ? 'Todas as Service Lines' : _activeServiceLine;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppTopBar(
@@ -63,9 +366,9 @@ class RankingScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Todas as Service Lines',
-                style: TextStyle(
+              Text(
+                activeFilterLabel,
+                style: const TextStyle(
                   fontSize: 16,
                   color: Color(0xFF64748B),
                 ),
@@ -91,12 +394,18 @@ class RankingScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              'Pesquisar consultores',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[400],
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Pesquisar consultores',
+                                border: InputBorder.none,
+                                isDense: true,
                               ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchTerm = value;
+                                });
+                              },
                             ),
                           ),
                         ],
@@ -104,47 +413,47 @@ class RankingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _toolButton(icon: Icons.filter_alt_outlined),
+                  _toolButton(icon: Icons.filter_alt_outlined, onTap: _showFilterSheet),
                   const SizedBox(width: 12),
-                  _toolButton(icon: Icons.tune_rounded),
+                  _toolButton(icon: Icons.tune_rounded, onTap: _showSortSheet),
                 ],
               ),
               const SizedBox(height: 24),
-              const _RankingCard(
-                rank: 1,
-                name: 'João Gomes',
-                email: 'joaogomes1234@gmail.pt',
-                points: 2450,
-                badges: 12,
-                avatarLetter: 'J',
-              ),
-              const SizedBox(height: 12),
-              const _RankingCard(
-                rank: 2,
-                name: 'Maria Santos',
-                email: 'maria.santos@gmail.pt',
-                points: 2200,
-                badges: 10,
-                avatarLetter: 'M',
-              ),
-              const SizedBox(height: 12),
-              const _RankingCard(
-                rank: 3,
-                name: 'Pedro Mendes',
-                email: 'pedro.mendes@softinsa.pt',
-                points: 1950,
-                badges: 9,
-                avatarLetter: 'P',
-              ),
-              const SizedBox(height: 12),
-              const _RankingCard(
-                rank: 4,
-                name: 'Ana Costa',
-                email: 'ana.costa@gmail.pt',
-                points: 1800,
-                badges: 8,
-                avatarLetter: 'A',
-              ),
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Color(0xFFEF4444)),
+                  ),
+                ),
+              if (filtered.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'Nao ha consultores para os filtros escolhidos.',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+                  ),
+                )
+              else
+                ...filtered.map(
+                  (consultant) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _RankingCard(
+                      rank: rankingById[consultant.id] ?? 0,
+                      name: consultant.name,
+                      email: consultant.email,
+                      points: consultant.points,
+                      badges: consultant.badges,
+                      avatarLetter: consultant.name.isNotEmpty
+                          ? consultant.name.characters.first
+                          : '?',
+                      avatarUrl: consultant.avatar,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -196,16 +505,20 @@ class RankingScreen extends StatelessWidget {
     );
   }
 
-  Widget _toolButton({required IconData icon}) {
-    return Container(
-      width: 58,
-      height: 58,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E6F0)),
-        color: Colors.white,
+  Widget _toolButton({required IconData icon, VoidCallback? onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        width: 58,
+        height: 58,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE0E6F0)),
+          color: Colors.white,
+        ),
+        child: Icon(icon, size: 24, color: const Color(0xFF64748B)),
       ),
-      child: Icon(icon, size: 24, color: const Color(0xFF64748B)),
     );
   }
 }
@@ -218,6 +531,7 @@ class _RankingCard extends StatelessWidget {
     required this.points,
     required this.badges,
     required this.avatarLetter,
+    this.avatarUrl,
   });
 
   final int rank;
@@ -226,6 +540,7 @@ class _RankingCard extends StatelessWidget {
   final int points;
   final int badges;
   final String avatarLetter;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -243,14 +558,18 @@ class _RankingCard extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: const Color(0xFFF1F5F9),
-            child: Text(
-              avatarLetter,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF475569),
-              ),
-            ),
+            backgroundImage:
+                avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
+            child: avatarUrl == null || avatarUrl!.isEmpty
+                ? Text(
+                    avatarLetter,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

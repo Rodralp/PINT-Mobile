@@ -21,6 +21,9 @@ class _BadgeData {
     required this.iconBackground,
     required this.shape,
     required this.isOwned,
+    required this.isSpecial,
+    this.levelKey,
+    this.stateId,
     this.state,
   });
 
@@ -33,6 +36,9 @@ class _BadgeData {
   final Color iconBackground;
   final BoxShape shape;
   final bool isOwned;
+  final bool isSpecial;
+  final String? levelKey;
+  final String? stateId;
   final BadgeState? state;
 }
 
@@ -154,6 +160,10 @@ _BadgeData _badgeDataFromBackend(
   final title = (badge.area != null && badge.area!.trim().isNotEmpty)
       ? badge.area!.trim()
       : badge.title;
+  final levelKey = badge.levelKey?.trim();
+  final stateId = (badge.stateId ?? badge.status)?.trim();
+  final isSpecial = levelKey == null || levelKey.isEmpty || levelKey == 'special';
+
   return _BadgeData(
     id: badge.id,
     title: title,
@@ -164,8 +174,114 @@ _BadgeData _badgeDataFromBackend(
     iconBackground: palette.iconBackground,
     shape: palette.shape,
     isOwned: owned,
-    state: _badgeStateFromStatus(badge.stateId ?? badge.status),
+    isSpecial: isSpecial,
+    levelKey: levelKey,
+    stateId: stateId,
+    state: _badgeStateFromStatus(stateId),
   );
+}
+
+class _FilterOption {
+  const _FilterOption(this.id, this.label);
+
+  final String id;
+  final String label;
+}
+
+const String _specialBadgeType = 'special';
+
+const Map<String, String> _badgeLevelLabels = {
+  'badge_level_junior': 'Júnior',
+  'badge_level_intermediate': 'Intermédio',
+  'badge_level_senior': 'Sénior',
+  'badge_level_specialist': 'Especialista',
+  'badge_level_knowledge_lead': 'Líder de Conhecimento',
+};
+
+const Map<String, String> _badgeStateLabels = {
+  'aprovado': 'Aprovado',
+  'em_validacao': 'Em Validação',
+  'candidatura_em_progresso': 'Candidatura em Progresso',
+  'rejeitado': 'Rejeitado',
+};
+
+const List<_FilterOption> _catalogFilters = [
+  _FilterOption('todos', 'Todos'),
+  _FilterOption('badge_level_junior', 'Júnior'),
+  _FilterOption('badge_level_intermediate', 'Intermédio'),
+  _FilterOption('badge_level_senior', 'Sénior'),
+  _FilterOption('badge_level_specialist', 'Especialista'),
+  _FilterOption('badge_level_knowledge_lead', 'Líder de Conhecimento'),
+  _FilterOption(_specialBadgeType, 'Especial'),
+];
+
+const List<_FilterOption> _myBadgesFilters = [
+  _FilterOption('todos', 'Todos'),
+  _FilterOption(_specialBadgeType, 'Especial'),
+  _FilterOption('aprovado', 'Aprovado'),
+  _FilterOption('em_validacao', 'Em Validação'),
+  _FilterOption('candidatura_em_progresso', 'Candidatura em Progresso'),
+  _FilterOption('rejeitado', 'Rejeitado'),
+];
+
+const List<_FilterOption> _badgeSortOptions = [
+  _FilterOption('points_desc', 'Pontos (Maior para Menor)'),
+  _FilterOption('points_asc', 'Pontos (Menor para Maior)'),
+  _FilterOption('area_asc', 'Area (A-Z)'),
+  _FilterOption('area_desc', 'Area (Z-A)'),
+];
+
+String _normalizeKey(String? value) =>
+    value?.trim().toLowerCase().replaceAll(' ', '_') ?? '';
+
+String _levelLabelForBadge(_BadgeData badge) {
+  if (badge.isSpecial) {
+    return 'Especial';
+  }
+  final key = _normalizeKey(badge.levelKey);
+  return _badgeLevelLabels[key] ?? badge.level;
+}
+
+String _stateIdForBadge(_BadgeData badge) {
+  final raw = _normalizeKey(badge.stateId);
+  if (raw.isNotEmpty) {
+    return raw;
+  }
+  switch (badge.state) {
+    case BadgeState.approved:
+      return 'aprovado';
+    case BadgeState.warning:
+      return 'rejeitado';
+    case BadgeState.review:
+      return 'em_validacao';
+    case null:
+      return '';
+  }
+}
+
+String _stateLabelForBadge(_BadgeData badge) {
+  final stateId = _stateIdForBadge(badge);
+  return _badgeStateLabels[stateId] ?? 'Sem estado';
+}
+
+List<_BadgeData> _sortBadges(List<_BadgeData> badges, String sortBy) {
+  final items = [...badges];
+  switch (sortBy) {
+    case 'points_asc':
+      items.sort((a, b) => a.points.compareTo(b.points));
+      break;
+    case 'area_asc':
+      items.sort((a, b) => a.title.compareTo(b.title));
+      break;
+    case 'area_desc':
+      items.sort((a, b) => b.title.compareTo(a.title));
+      break;
+    case 'points_desc':
+    default:
+      items.sort((a, b) => b.points.compareTo(a.points));
+      break;
+  }
+  return items;
 }
 
 class BadgesScreen extends StatefulWidget {
@@ -178,6 +294,10 @@ class BadgesScreen extends StatefulWidget {
 class _BadgesScreenState extends State<BadgesScreen> {
   late final Future<List<_BadgeData>> _catalogFuture;
   late final Future<List<_BadgeData>> _myBadgesFuture;
+  final TextEditingController _myBadgesSearchController = TextEditingController();
+  String _myBadgesSearchTerm = '';
+  String _myBadgesFilter = 'todos';
+  String _myBadgesSort = 'points_desc';
 
   @override
   void initState() {
@@ -200,6 +320,100 @@ class _BadgesScreenState extends State<BadgesScreen> {
     return items
         .map((badge) => _badgeDataFromBackend(badge, isOwnedOverride: true))
         .toList(growable: false);
+  }
+
+  @override
+  void dispose() {
+    _myBadgesSearchController.dispose();
+    super.dispose();
+  }
+
+  List<_BadgeData> _applyMyBadgesFilters(List<_BadgeData> badges) {
+    final normalizedSearch = _myBadgesSearchTerm.trim().toLowerCase();
+    final filtered = badges.where((badge) {
+      final matchesFilter = _myBadgesFilter == 'todos'
+          || (_myBadgesFilter == _specialBadgeType
+              ? badge.isSpecial
+              : _stateIdForBadge(badge) == _myBadgesFilter);
+      final searchMatch = normalizedSearch.isEmpty
+          || badge.title.toLowerCase().contains(normalizedSearch)
+          || _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch)
+          || _stateLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
+      return matchesFilter && searchMatch;
+    }).toList();
+
+    return _sortBadges(filtered, _myBadgesSort);
+  }
+
+  void _showMyBadgesFilterSheet() {
+    _showOptionsSheet(
+      title: 'Filtrar badges',
+      options: _myBadgesFilters,
+      selectedId: _myBadgesFilter,
+      onSelected: (value) {
+        setState(() {
+          _myBadgesFilter = value;
+        });
+      },
+    );
+  }
+
+  void _showMyBadgesSortSheet() {
+    _showOptionsSheet(
+      title: 'Ordenar badges',
+      options: _badgeSortOptions,
+      selectedId: _myBadgesSort,
+      onSelected: (value) {
+        setState(() {
+          _myBadgesSort = value;
+        });
+      },
+    );
+  }
+
+  void _showOptionsSheet({
+    required String title,
+    required List<_FilterOption> options,
+    required String selectedId,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                ...options.map(
+                  (option) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(option.label),
+                    trailing: selectedId == option.id
+                        ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                        : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onSelected(option.id);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -241,180 +455,310 @@ class _BadgesScreenState extends State<BadgesScreen> {
         },
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          BadgeCatalogScreen(catalogFuture: _catalogFuture),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        BadgeCatalogScreen(catalogFuture: _catalogFuture),
                   ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFFDDE5EF),
-                      width: 1.2,
-                    ),
-                    color: const Color(0xFFFAFCFF),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFDDE5EF),
+                    width: 1.2,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.verified_outlined, size: 24),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Catálogo de Badges Completo',
-                          style: TextStyle(
-                            fontSize: 28 / 2,
-                            fontWeight: FontWeight.w500,
-                          ),
+                  color: const Color(0xFFFAFCFF),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_outlined, size: 24),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Catálogo de Badges Completo',
+                        style: TextStyle(
+                          fontSize: 28 / 2,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey[500],
-                        size: 22,
-                      ),
-                    ],
-                  ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey[500],
+                      size: 22,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 64,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE0E6F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search,
-                            color: Colors.grey[500],
-                            size: 24,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Pesquisar badges',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ),
-                        ],
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 64,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFE0E6F0),
                       ),
                     ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.search,
+                          color: Colors.grey[500],
+                          size: 24,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _myBadgesSearchController,
+                            decoration: const InputDecoration(
+                              hintText: 'Pesquisar badges',
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _myBadgesSearchTerm = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 10),
-                  _toolbarButton(Icons.filter_alt_outlined),
-                  const SizedBox(width: 10),
-                  _toolbarButton(Icons.tune_rounded),
-                ],
-              ),
-              const SizedBox(height: 18),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const gap = 16.0;
-                  final itemWidth = (constraints.maxWidth - gap) / 2;
-                  return FutureBuilder<List<_BadgeData>>(
-                    future: _myBadgesFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState != ConnectionState.done) {
-                        return _buildInlineLoading();
-                      }
-                      if (snapshot.hasError) {
-                        return _buildInlineMessage(
-                          'Nao foi possivel carregar a base de dados.',
-                        );
-                      }
-                      final ownedBadges =
-                          snapshot.data ?? const <_BadgeData>[];
-                      if (ownedBadges.isEmpty) {
-                        return _buildInlineMessage('Ainda nao tem badges.');
-                      }
-                      return Wrap(
-                        spacing: gap,
-                        runSpacing: gap,
-                        children: ownedBadges
-                            .map(
-                              (badge) => _OwnedBadgeCard(
-                                width: itemWidth,
-                                badge: badge,
-                              ),
-                            )
-                            .toList(),
+                ),
+                const SizedBox(width: 10),
+                _toolButton(Icons.filter_alt_outlined, onTap: _showMyBadgesFilterSheet),
+                const SizedBox(width: 10),
+                _toolButton(Icons.tune_rounded, onTap: _showMyBadgesSortSheet),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 16.0;
+                final itemWidth = (constraints.maxWidth - gap) / 2;
+                return FutureBuilder<List<_BadgeData>>(
+                  future: _myBadgesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
                       );
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
+                    }
+                    if (snapshot.hasError) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Nao foi possivel carregar a base de dados.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    final ownedBadges =
+                        snapshot.data ?? const <_BadgeData>[];
+                    if (ownedBadges.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Ainda nao tem badges.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    final visibleBadges = _applyMyBadgesFilters(ownedBadges);
+                    if (visibleBadges.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Nenhum badge encontrado com os filtros escolhidos.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: visibleBadges
+                          .map(
+                            (badge) => _OwnedBadgeCard(
+                              width: itemWidth,
+                              badge: badge,
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInlineLoading() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 24),
-      child: Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget _buildInlineMessage(String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Text(
-          message,
-          style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+  Widget _toolButton(IconData icon, {VoidCallback? onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE0E6F0)),
+          color: Colors.white,
         ),
+        child: Icon(icon, size: 22),
       ),
-    );
-  }
-
-  Widget _toolbarButton(IconData icon) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE0E6F0)),
-        color: Colors.white,
-      ),
-      child: Icon(icon, size: 22),
     );
   }
 }
 
-class BadgeCatalogScreen extends StatelessWidget {
+class BadgeCatalogScreen extends StatefulWidget {
   const BadgeCatalogScreen({
     super.key,
     required this.catalogFuture,
   });
 
   final Future<List<_BadgeData>> catalogFuture;
+
+  @override
+  State<BadgeCatalogScreen> createState() => _BadgeCatalogScreenState();
+}
+
+class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchTerm = '';
+  String _activeFilter = 'todos';
+  String _sortBy = 'points_desc';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<_BadgeData> _applyCatalogFilters(List<_BadgeData> badges) {
+    final normalizedSearch = _searchTerm.trim().toLowerCase();
+    final filtered = badges.where((badge) {
+      final typeId = badge.isSpecial ? _specialBadgeType : _normalizeKey(badge.levelKey);
+      final matchesFilter =
+          _activeFilter == 'todos' || typeId == _activeFilter;
+      final searchMatch = normalizedSearch.isEmpty
+          || badge.title.toLowerCase().contains(normalizedSearch)
+          || _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
+      return matchesFilter && searchMatch;
+    }).toList();
+
+    return _sortBadges(filtered, _sortBy);
+  }
+
+  void _showFilterSheet() {
+    _showOptionsSheet(
+      title: 'Filtrar badges',
+      options: _catalogFilters,
+      selectedId: _activeFilter,
+      onSelected: (value) {
+        setState(() {
+          _activeFilter = value;
+        });
+      },
+    );
+  }
+
+  void _showSortSheet() {
+    _showOptionsSheet(
+      title: 'Ordenar badges',
+      options: _badgeSortOptions,
+      selectedId: _sortBy,
+      onSelected: (value) {
+        setState(() {
+          _sortBy = value;
+        });
+      },
+    );
+  }
+
+  void _showOptionsSheet({
+    required String title,
+    required List<_FilterOption> options,
+    required String selectedId,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                ...options.map(
+                  (option) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(option.label),
+                    trailing: selectedId == option.id
+                        ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                        : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onSelected(option.id);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +789,7 @@ class BadgeCatalogScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
         child: Column(
           children: [
             Row(
@@ -469,12 +813,18 @@ class BadgeCatalogScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            'Pesquisar badges',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey[500],
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              hintText: 'Pesquisar badges',
+                              border: InputBorder.none,
+                              isDense: true,
                             ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchTerm = value;
+                              });
+                            },
                           ),
                         ),
                       ],
@@ -482,9 +832,9 @@ class BadgeCatalogScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                _toolButton(Icons.filter_alt_outlined),
+                _toolButton(Icons.filter_alt_outlined, onTap: _showFilterSheet),
                 const SizedBox(width: 10),
-                _toolButton(Icons.tune_rounded),
+                _toolButton(Icons.tune_rounded, onTap: _showSortSheet),
               ],
             ),
             const SizedBox(height: 14),
@@ -493,7 +843,7 @@ class BadgeCatalogScreen extends StatelessWidget {
                 const gap = 16.0;
                 final itemWidth = (constraints.maxWidth - gap) / 2;
                 return FutureBuilder<List<_BadgeData>>(
-                  future: catalogFuture,
+                  future: widget.catalogFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
                       return const Padding(
@@ -530,10 +880,25 @@ class BadgeCatalogScreen extends StatelessWidget {
                         ),
                       );
                     }
+                    final visibleBadges = _applyCatalogFilters(badges);
+                    if (visibleBadges.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Nenhum badge encontrado com os filtros escolhidos.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
                     return Wrap(
                       spacing: gap,
                       runSpacing: gap,
-                      children: badges
+                      children: visibleBadges
                           .map(
                             (badge) => _CatalogBadgeCard(
                               width: itemWidth,
@@ -552,16 +917,20 @@ class BadgeCatalogScreen extends StatelessWidget {
     );
   }
 
-  Widget _toolButton(IconData icon) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE0E6F0)),
-        color: Colors.white,
+  Widget _toolButton(IconData icon, {VoidCallback? onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE0E6F0)),
+          color: Colors.white,
+        ),
+        child: Icon(icon, size: 22),
       ),
-      child: Icon(icon, size: 22),
     );
   }
 }
@@ -1238,4 +1607,3 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     );
   }
 }
-
