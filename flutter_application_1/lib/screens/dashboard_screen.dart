@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_session.dart';
+import '../services/consultor_api.dart';
 import '../services/reminder_api.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
@@ -8,7 +9,24 @@ import 'progress_full_screen.dart';
 import 'suggestions_full_screen.dart';
 import 'reminders_screen.dart';
 import 'messages_screen.dart';
+import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
+
+class _DashboardMetricData {
+  const _DashboardMetricData({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,11 +38,53 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   List<Reminder> _dashboardReminders = [];
   bool _isRemindersLoading = true;
+  List<_DashboardMetricData> _dashboardMetrics = const [];
+  bool _isMetricsLoading = true;
+  List<BackendSuggestionItem> _dashboardSuggestions = const [];
 
   @override
   void initState() {
     super.initState();
     _loadDashboardReminders();
+    _loadDashboardMetrics();
+  }
+
+  Future<void> _loadDashboardMetrics() async {
+    try {
+      final accountId = await AuthSession.getAccountId();
+
+      if (!mounted) return;
+
+      if (accountId == null || accountId <= 0) {
+        setState(() {
+          _dashboardMetrics = _defaultDashboardMetrics;
+          _isMetricsLoading = false;
+        });
+        return;
+      }
+
+      final dashboard = await ConsultorApi.instance.fetchConsultorDashboard(
+        accountId: accountId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _dashboardMetrics = dashboard.stats
+            .map(_metricFromBackend)
+            .toList(growable: false);
+        _dashboardSuggestions = dashboard.suggestionItems;
+        _isMetricsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _dashboardMetrics = _defaultDashboardMetrics;
+        _dashboardSuggestions = const [];
+        _isMetricsLoading = false;
+      });
+    }
   }
 
   Future<void> _loadDashboardReminders() async {
@@ -80,8 +140,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  static const List<_DashboardMetricData> _defaultDashboardMetrics = [
+    _DashboardMetricData(
+      title: 'Badges Obtidos',
+      value: '0',
+      subtitle: '0 este mês',
+      icon: Icons.stars_rounded,
+      iconColor: Colors.orange,
+    ),
+    _DashboardMetricData(
+      title: 'Sequência de Dias',
+      value: '0',
+      subtitle: 'Recorde: 0 dias',
+      icon: Icons.local_fire_department_rounded,
+      iconColor: Colors.deepOrange,
+    ),
+    _DashboardMetricData(
+      title: 'Pedidos Pendentes',
+      value: '0',
+      subtitle: '0 em validação',
+      icon: Icons.watch_later,
+      iconColor: Colors.blue,
+    ),
+    _DashboardMetricData(
+      title: 'Ranking',
+      value: '#0',
+      subtitle: '+0 posições este mês',
+      icon: Icons.leaderboard,
+      iconColor: Colors.amber,
+    ),
+  ];
+
+  _DashboardMetricData _metricFromBackend(BackendDashboardStat stat) {
+    switch (stat.titleKey) {
+      case 'dashboard_stat_badges_title':
+        return _DashboardMetricData(
+          title: 'Badges Obtidos',
+          value: stat.value,
+          subtitle: stat.noteKey == 'dashboard_stat_badges_note'
+              ? '2 este mês'
+              : stat.noteKey,
+          icon: Icons.stars_rounded,
+          iconColor: Colors.orange,
+        );
+      case 'dashboard_stat_streak_title':
+        return _DashboardMetricData(
+          title: 'Sequência de Dias',
+          value: stat.value,
+          subtitle: stat.noteKey == 'dashboard_stat_streak_note'
+              ? 'Recorde: 8 dias'
+              : stat.noteKey,
+          icon: Icons.local_fire_department_rounded,
+          iconColor: Colors.deepOrange,
+        );
+      case 'dashboard_stat_requests_title':
+        return _DashboardMetricData(
+          title: 'Pedidos Pendentes',
+          value: stat.value,
+          subtitle: stat.noteKey == 'dashboard_stat_requests_note'
+              ? '2 em validação'
+              : stat.noteKey,
+          icon: Icons.watch_later,
+          iconColor: Colors.blue,
+        );
+      case 'dashboard_stat_ranking_title':
+        return _DashboardMetricData(
+          title: 'Ranking',
+          value: stat.value,
+          subtitle: stat.noteKey == 'dashboard_stat_ranking_note'
+              ? '+3 posições este mês'
+              : stat.noteKey,
+          icon: Icons.leaderboard,
+          iconColor: Colors.amber,
+        );
+      default:
+        return _DashboardMetricData(
+          title: stat.titleKey,
+          value: stat.value,
+          subtitle: stat.noteKey,
+          icon: Icons.circle,
+          iconColor: Colors.grey,
+        );
+    }
+  }
+
   String _formatReminderDate(String value) {
-    final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    final months = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
     final parts = value.split('-');
     if (parts.length != 3) {
       return value;
@@ -91,7 +248,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final month = int.tryParse(parts[1]);
     final day = int.tryParse(parts[2]);
 
-    if (year == null || month == null || day == null || month < 1 || month > 12) {
+    if (year == null ||
+        month == null ||
+        day == null ||
+        month < 1 ||
+        month > 12) {
       return value;
     }
 
@@ -106,9 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onSettingsTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const SettingsMenuScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const SettingsMenuScreen()),
           );
         },
         onNotificationsTap: () {
@@ -122,17 +281,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onMessagesTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const MessagesScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const MessagesScreen()),
           );
         },
         onProfileTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ProfileScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
           );
         },
       ),
@@ -147,39 +302,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
-                  children: [
-                    _buildMetricCard(
-                      title: "Badges Obtidos",
-                      value: "12",
-                      subtitle: "2 este mês",
-                      icon: Icons.stars_rounded,
-                      iconColor: Colors.orange,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMetricCard(
-                      title: "Sequência de Dias",
-                      value: "4",
-                      subtitle: "Recorde: 8 dias",
-                      icon: Icons.local_fire_department_rounded,
-                      iconColor: Colors.deepOrange,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMetricCard(
-                      title: "Pedidos Pendentes",
-                      value: "5",
-                      subtitle: "2 concluídos",
-                      icon: Icons.watch_later,
-                      iconColor: Colors.blue,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMetricCard(
-                      title: "Ranking",
-                      value: "#15",
-                      subtitle: "+3 posições este mês",
-                      icon: Icons.leaderboard,
-                      iconColor: Colors.amber,
-                    ),
-                  ],
+                  children: _dashboardMetrics.isEmpty && _isMetricsLoading
+                      ? [
+                          _buildMetricCard(
+                            title: 'A carregar...',
+                            value: '—',
+                            subtitle: 'A obter dados do dashboard',
+                            icon: Icons.sync,
+                            iconColor: Colors.grey,
+                          ),
+                        ]
+                      : List.generate(_dashboardMetrics.length, (index) {
+                          final metric = _dashboardMetrics[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              right: index == _dashboardMetrics.length - 1
+                                  ? 0
+                                  : 16,
+                            ),
+                            child: _buildMetricCard(
+                              title: metric.title,
+                              value: metric.value,
+                              subtitle: metric.subtitle,
+                              icon: metric.icon,
+                              iconColor: metric.iconColor,
+                            ),
+                          );
+                        }),
                 ),
               ),
 
@@ -222,7 +371,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ...List.generate(_dashboardReminders.length, (index) {
                         final reminder = _dashboardReminders[index];
                         return Padding(
-                          padding: EdgeInsets.only(bottom: index == _dashboardReminders.length - 1 ? 0 : 12),
+                          padding: EdgeInsets.only(
+                            bottom: index == _dashboardReminders.length - 1
+                                ? 0
+                                : 12,
+                          ),
                           child: _buildReminderItem(
                             message: reminder.title,
                             date: _formatReminderDate(reminder.date),
@@ -273,29 +426,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SuggestionsFullScreen(),
+                      builder: (context) => SuggestionsFullScreen(
+                        suggestions: _dashboardSuggestions,
+                        isLoading: _isMetricsLoading,
+                      ),
                     ),
                   );
                 },
                 child: Column(
-                  children: [
-                    _buildBadgeCard(
-                      title: "LowCode (Outsystems)",
-                      subtitle: "Líder de Conhecimento",
-                      icon: Icons.hexagon_outlined,
-                      iconColor: Colors.green,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildBadgeCard(
-                      title: "Cloud Architecture",
-                      subtitle: "Especialista",
-                      icon: Icons.hexagon_outlined,
-                      iconColor: Colors.purple,
-                    ),
-                  ],
+                  children: _isMetricsLoading && _dashboardSuggestions.isEmpty
+                      ? [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            ),
+                          ),
+                        ]
+                      : _dashboardSuggestions.isEmpty
+                      ? [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Defina as suas preferências para ver sugestões de badges.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ),
+                        ]
+                      : List.generate(
+                          _dashboardSuggestions.length > 2
+                              ? 2
+                              : _dashboardSuggestions.length,
+                          (index) {
+                            final suggestion = _dashboardSuggestions[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    index ==
+                                        (_dashboardSuggestions.length > 2
+                                            ? 1
+                                            : _dashboardSuggestions.length - 1)
+                                    ? 0
+                                    : 12,
+                              ),
+                              child: _buildBadgeCard(
+                                title: suggestion.title,
+                                subtitleKey: suggestion.subtitleKey,
+                                accent: suggestion.accent,
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
             ],
           ),
@@ -304,7 +495,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required VoidCallback onViewAll, required Widget child}) {
+  Widget _buildSection({
+    required String title,
+    required VoidCallback onViewAll,
+    required Widget child,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
@@ -356,7 +551,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color iconColor,
   }) {
     return Container(
-      width: 170, // Ajustado ligeiramente para caber melhor o conteúdo do Ranking
+      width:
+          170, // Ajustado ligeiramente para caber melhor o conteúdo do Ranking
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -445,11 +641,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey[400]),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 14,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           date,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                          ),
                         ),
                       ],
                     ),
@@ -497,13 +700,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.deepPurple[50],
+            width: 50,
+            height: 50,
+            child: BadgeArtwork(
+              size: 50,
+              frameColor: Colors.deepPurple,
+              backgroundColor: Colors.deepPurple[50]!,
               shape: BoxShape.circle,
+              borderWidth: 0,
+              iconSize: 28,
+              title: title,
+              subtitle: subtitle,
             ),
-            child: const Icon(Icons.hexagon, color: Colors.deepPurple, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -520,10 +728,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -545,10 +750,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildBadgeCard({
     required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
+    required String subtitleKey,
+    required String accent,
   }) {
+    final accentColor = _accentColorForSuggestion(accent);
+    final subtitle = _badgeLevelLabelFromKey(subtitleKey);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -559,13 +766,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+            width: 50,
+            height: 50,
+            child: BadgeArtwork(
+              size: 50,
+              frameColor: accentColor,
+              backgroundColor: accentColor.withOpacity(0.1),
               shape: BoxShape.circle,
+              borderWidth: 0,
+              iconSize: 28,
+              title: title,
+              subtitle: subtitleKey,
             ),
-            child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -582,10 +794,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -593,5 +802,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  String _badgeLevelLabelFromKey(String key) {
+    switch (key.trim().toLowerCase()) {
+      case 'badge_level_junior':
+        return 'Júnior';
+      case 'badge_level_intermediate':
+        return 'Intermédio';
+      case 'badge_level_senior':
+        return 'Sénior';
+      case 'badge_level_specialist':
+        return 'Especialista';
+      case 'badge_level_knowledge_lead':
+        return 'Líder de Conhecimento';
+      default:
+        return key;
+    }
+  }
+
+  Color _accentColorForSuggestion(String accent) {
+    switch (accent.toLowerCase()) {
+      case 'success':
+        return const Color(0xFF16A34A);
+      case 'violet':
+        return const Color(0xFF7C3AED);
+      case 'amber':
+        return const Color(0xFFF59E0B);
+      case 'warning':
+        return const Color(0xFFEF4444);
+      case 'info':
+        return const Color(0xFF0EA5E9);
+      case 'yellow':
+        return const Color(0xFFEAB308);
+      default:
+        return const Color(0xFF16A34A);
+    }
   }
 }

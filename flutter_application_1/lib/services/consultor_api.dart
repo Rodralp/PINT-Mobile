@@ -44,15 +44,14 @@ class BackendRequest {
 }
 
 class ProfileSkillItem {
-  const ProfileSkillItem({
-    required this.title,
-    required this.subtitle,
-  });
+  const ProfileSkillItem({required this.title, required this.subtitle});
 
   factory ProfileSkillItem.fromJson(Map<String, dynamic> json) {
     return ProfileSkillItem(
       title: _readString(json, ['title', 'name', 'badge']) ?? '',
-      subtitle: _readString(json, ['subtitle', 'level', 'nivel', 'subtitleKey']) ?? '',
+      subtitle:
+          _readString(json, ['subtitle', 'level', 'nivel', 'subtitleKey']) ??
+          '',
     );
   }
 
@@ -69,7 +68,8 @@ class ServiceLineStat {
 
   factory ServiceLineStat.fromJson(Map<String, dynamic> json) {
     return ServiceLineStat(
-      serviceLine: _readString(json, ['serviceLine', 'service_line', 'name']) ?? '',
+      serviceLine:
+          _readString(json, ['serviceLine', 'service_line', 'name']) ?? '',
       badges: _readInt(json, ['badges', 'badgeCount', 'count']) ?? 0,
       points: _readInt(json, ['points', 'pontos']) ?? 0,
     );
@@ -81,15 +81,13 @@ class ServiceLineStat {
 }
 
 class BackendRequirement {
-  const BackendRequirement({
-    required this.title,
-    required this.description,
-  });
+  const BackendRequirement({required this.title, required this.description});
 
   factory BackendRequirement.fromJson(Map<String, dynamic> json) {
     return BackendRequirement(
       title: _readString(json, ['title', 'titulo', 'name']) ?? '',
-      description: _readString(json, ['description', 'descricao', 'details']) ?? '',
+      description:
+          _readString(json, ['description', 'descricao', 'details']) ?? '',
     );
   }
 
@@ -298,6 +296,93 @@ class BackendProfile {
   final List<ServiceLineStat> serviceLineStats;
 }
 
+class BackendDashboardStat {
+  const BackendDashboardStat({
+    required this.titleKey,
+    required this.value,
+    required this.noteKey,
+    required this.iconKey,
+    required this.tone,
+  });
+
+  factory BackendDashboardStat.fromJson(Map<String, dynamic> json) {
+    return BackendDashboardStat(
+      titleKey: _readString(json, ['titleKey']) ?? '',
+      value: _readString(json, ['value']) ?? '0',
+      noteKey: _readString(json, ['noteKey']) ?? '',
+      iconKey: _readString(json, ['iconKey']) ?? '',
+      tone: _readString(json, ['tone']) ?? 'gold',
+    );
+  }
+
+  final String titleKey;
+  final String value;
+  final String noteKey;
+  final String iconKey;
+  final String tone;
+}
+
+class BackendSuggestionItem {
+  const BackendSuggestionItem({
+    required this.title,
+    required this.subtitleKey,
+    required this.accent,
+    required this.badgeDbId,
+  });
+
+  factory BackendSuggestionItem.fromJson(Map<String, dynamic> json) {
+    return BackendSuggestionItem(
+      title: _readString(json, ['title', 'name', 'area']) ?? '',
+      subtitleKey:
+          _readString(json, ['subtitleKey', 'subtitle_key', 'levelKey']) ?? '',
+      accent: _readString(json, ['accent', 'tone']) ?? 'success',
+      badgeDbId: _readInt(json, ['badgeDbId', 'badgeId', 'nbadge']) ?? 0,
+    );
+  }
+
+  final String title;
+  final String subtitleKey;
+  final String accent;
+  final int badgeDbId;
+}
+
+class BackendConsultorDashboard {
+  const BackendConsultorDashboard({
+    required this.timelineValues,
+    required this.stats,
+    required this.suggestionItems,
+  });
+
+  factory BackendConsultorDashboard.fromJson(Map<String, dynamic> json) {
+    final timelineValues =
+        (json['timelineValues'] as List<dynamic>? ?? const [])
+            .map((value) => int.tryParse(value.toString()) ?? 0)
+            .toList(growable: false);
+
+    final stats = (json['stats'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(BackendDashboardStat.fromJson)
+        .toList(growable: false);
+
+    final suggestionItems =
+        (json['suggestionItems'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(BackendSuggestionItem.fromJson)
+            .where((item) => item.title.isNotEmpty)
+            .toList(growable: false);
+
+    return BackendConsultorDashboard(
+      timelineValues: timelineValues,
+      stats: stats,
+      suggestionItems: suggestionItems,
+    );
+  }
+
+  final List<int> timelineValues;
+  final List<BackendDashboardStat> stats;
+  final List<BackendSuggestionItem> suggestionItems;
+}
+
 class BackendRankingConsultant {
   const BackendRankingConsultant({
     required this.id,
@@ -316,7 +401,8 @@ class BackendRankingConsultant {
       email: _readString(json, ['email']) ?? '',
       points: _readInt(json, ['points', 'pontos']) ?? 0,
       badges: _readInt(json, ['badges', 'badgeCount', 'totalBadges']) ?? 0,
-      serviceLine: _readString(json, ['serviceLine', 'service_line', 'area']) ?? '',
+      serviceLine:
+          _readString(json, ['serviceLine', 'service_line', 'area']) ?? '',
       avatar: _readString(json, ['avatar', 'photo', 'photoUrl']),
     );
   }
@@ -373,7 +459,9 @@ class ConsultorApi {
         'Nao foi possivel ligar ao servidor ($uri). Verifique a rede e o endereco da API.',
       );
     } on HttpException {
-      throw ConsultorApiException('Falha de comunicacao com o servidor ($uri).');
+      throw ConsultorApiException(
+        'Falha de comunicacao com o servidor ($uri).',
+      );
     } on TimeoutException {
       throw ConsultorApiException(
         'O servidor demorou demasiado tempo a responder ($uri).',
@@ -433,6 +521,35 @@ class ConsultorApi {
       skillsItems: [],
       certificationsItems: [],
       serviceLineStats: [],
+    );
+  }
+
+  Future<BackendConsultorDashboard> fetchConsultorDashboard({
+    int? accountId,
+  }) async {
+    final path = accountId == null
+        ? '/dashboard/consultor'
+        : '/dashboard/consultor?accountId=$accountId';
+    final uri = await _uri(path);
+    final response = await _getJson(uri);
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      final data = decoded['data'];
+      if (data is Map<String, dynamic>) {
+        return BackendConsultorDashboard.fromJson(data);
+      }
+      return BackendConsultorDashboard.fromJson(decoded);
+    }
+
+    return const BackendConsultorDashboard(
+      timelineValues: [],
+      stats: [],
+      suggestionItems: [],
     );
   }
 

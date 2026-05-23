@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/badge_artwork.dart';
 
 class ProgressFullScreen extends StatelessWidget {
   const ProgressFullScreen({super.key});
@@ -33,7 +34,10 @@ class ProgressFullScreen extends StatelessWidget {
             const Divider(height: 1, color: Color(0xFFE5E7EB)),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 20,
+                ),
                 children: const [
                   _ProgressItemFull(
                     title: 'LowCode (Outsystems)',
@@ -114,13 +118,18 @@ class _ProgressItemFull extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(10),
+            width: 56,
+            height: 56,
+            child: BadgeArtwork(
+              size: 56,
+              frameColor: Colors.grey,
+              backgroundColor: Colors.grey[50]!,
+              shape: BoxShape.rectangle,
+              borderWidth: 0,
+              iconSize: 32,
+              title: title,
+              subtitle: subtitle,
             ),
-            child: const Icon(Icons.workspace_premium, color: Colors.grey, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -138,10 +147,7 @@ class _ProgressItemFull extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 ),
               ],
             ),

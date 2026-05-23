@@ -6,6 +6,7 @@ import 'settings_menu_screen.dart';
 import '../services/auth_session.dart';
 import '../services/badges_api.dart';
 import 'messages_screen.dart';
+import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
 
 enum BadgeState { approved, warning, review }
@@ -17,6 +18,7 @@ class _BadgeData {
     required this.level,
     required this.points,
     required this.date,
+    required this.badgeImage,
     required this.frameColor,
     required this.iconBackground,
     required this.shape,
@@ -32,6 +34,7 @@ class _BadgeData {
   final String level;
   final int points;
   final String date;
+  final String? badgeImage;
   final Color frameColor;
   final Color iconBackground;
   final BoxShape shape;
@@ -145,16 +148,13 @@ String _formatBadgeDate(String? rawDate) {
     'Sep',
     'Oct',
     'Nov',
-    'Dec'
+    'Dec',
   ];
   final month = months[parsed.month - 1];
   return '${parsed.day.toString().padLeft(2, '0')} $month ${parsed.year}';
 }
 
-_BadgeData _badgeDataFromBackend(
-  BackendBadge badge, {
-  bool? isOwnedOverride,
-}) {
+_BadgeData _badgeDataFromBackend(BackendBadge badge, {bool? isOwnedOverride}) {
   final palette = _paletteForLevel(badge.level);
   final owned = isOwnedOverride ?? badge.owned;
   final title = (badge.area != null && badge.area!.trim().isNotEmpty)
@@ -162,7 +162,8 @@ _BadgeData _badgeDataFromBackend(
       : badge.title;
   final levelKey = badge.levelKey?.trim();
   final stateId = (badge.stateId ?? badge.status)?.trim();
-  final isSpecial = levelKey == null || levelKey.isEmpty || levelKey == 'special';
+  final isSpecial =
+      levelKey == null || levelKey.isEmpty || levelKey == 'special';
 
   return _BadgeData(
     id: badge.id,
@@ -170,6 +171,7 @@ _BadgeData _badgeDataFromBackend(
     level: badge.level,
     points: badge.points,
     date: _formatBadgeDate(badge.date),
+    badgeImage: badge.badgeImage,
     frameColor: palette.frameColor,
     iconBackground: palette.iconBackground,
     shape: palette.shape,
@@ -294,7 +296,8 @@ class BadgesScreen extends StatefulWidget {
 class _BadgesScreenState extends State<BadgesScreen> {
   late final Future<List<_BadgeData>> _catalogFuture;
   late final Future<List<_BadgeData>> _myBadgesFuture;
-  final TextEditingController _myBadgesSearchController = TextEditingController();
+  final TextEditingController _myBadgesSearchController =
+      TextEditingController();
   String _myBadgesSearchTerm = '';
   String _myBadgesFilter = 'todos';
   String _myBadgesSort = 'points_desc';
@@ -331,14 +334,16 @@ class _BadgesScreenState extends State<BadgesScreen> {
   List<_BadgeData> _applyMyBadgesFilters(List<_BadgeData> badges) {
     final normalizedSearch = _myBadgesSearchTerm.trim().toLowerCase();
     final filtered = badges.where((badge) {
-      final matchesFilter = _myBadgesFilter == 'todos'
-          || (_myBadgesFilter == _specialBadgeType
+      final matchesFilter =
+          _myBadgesFilter == 'todos' ||
+          (_myBadgesFilter == _specialBadgeType
               ? badge.isSpecial
               : _stateIdForBadge(badge) == _myBadgesFilter);
-      final searchMatch = normalizedSearch.isEmpty
-          || badge.title.toLowerCase().contains(normalizedSearch)
-          || _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch)
-          || _stateLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
+      final searchMatch =
+          normalizedSearch.isEmpty ||
+          badge.title.toLowerCase().contains(normalizedSearch) ||
+          _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch) ||
+          _stateLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
       return matchesFilter && searchMatch;
     }).toList();
 
@@ -392,7 +397,10 @@ class _BadgesScreenState extends State<BadgesScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...options.map(
@@ -424,9 +432,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
         onSettingsTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const SettingsMenuScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const SettingsMenuScreen()),
           );
         },
         onNotificationsTap: () {
@@ -440,17 +446,13 @@ class _BadgesScreenState extends State<BadgesScreen> {
         onProfileTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ProfileScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
           );
         },
         onMessagesTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const MessagesScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const MessagesScreen()),
           );
         },
       ),
@@ -514,17 +516,11 @@ class _BadgesScreenState extends State<BadgesScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFE0E6F0),
-                      ),
+                      border: Border.all(color: const Color(0xFFE0E6F0)),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.search,
-                          color: Colors.grey[500],
-                          size: 24,
-                        ),
+                        Icon(Icons.search, color: Colors.grey[500], size: 24),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -546,7 +542,10 @@ class _BadgesScreenState extends State<BadgesScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                _toolButton(Icons.filter_alt_outlined, onTap: _showMyBadgesFilterSheet),
+                _toolButton(
+                  Icons.filter_alt_outlined,
+                  onTap: _showMyBadgesFilterSheet,
+                ),
                 const SizedBox(width: 10),
                 _toolButton(Icons.tune_rounded, onTap: _showMyBadgesSortSheet),
               ],
@@ -579,8 +578,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                         ),
                       );
                     }
-                    final ownedBadges =
-                        snapshot.data ?? const <_BadgeData>[];
+                    final ownedBadges = snapshot.data ?? const <_BadgeData>[];
                     if (ownedBadges.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
@@ -615,10 +613,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       runSpacing: gap,
                       children: visibleBadges
                           .map(
-                            (badge) => _OwnedBadgeCard(
-                              width: itemWidth,
-                              badge: badge,
-                            ),
+                            (badge) =>
+                                _OwnedBadgeCard(width: itemWidth, badge: badge),
                           )
                           .toList(),
                     );
@@ -651,10 +647,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
 }
 
 class BadgeCatalogScreen extends StatefulWidget {
-  const BadgeCatalogScreen({
-    super.key,
-    required this.catalogFuture,
-  });
+  const BadgeCatalogScreen({super.key, required this.catalogFuture});
 
   final Future<List<_BadgeData>> catalogFuture;
 
@@ -677,12 +670,14 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
   List<_BadgeData> _applyCatalogFilters(List<_BadgeData> badges) {
     final normalizedSearch = _searchTerm.trim().toLowerCase();
     final filtered = badges.where((badge) {
-      final typeId = badge.isSpecial ? _specialBadgeType : _normalizeKey(badge.levelKey);
-      final matchesFilter =
-          _activeFilter == 'todos' || typeId == _activeFilter;
-      final searchMatch = normalizedSearch.isEmpty
-          || badge.title.toLowerCase().contains(normalizedSearch)
-          || _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
+      final typeId = badge.isSpecial
+          ? _specialBadgeType
+          : _normalizeKey(badge.levelKey);
+      final matchesFilter = _activeFilter == 'todos' || typeId == _activeFilter;
+      final searchMatch =
+          normalizedSearch.isEmpty ||
+          badge.title.toLowerCase().contains(normalizedSearch) ||
+          _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
       return matchesFilter && searchMatch;
     }).toList();
 
@@ -736,7 +731,10 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...options.map(
@@ -782,10 +780,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE5E7EB),
-            height: 1,
-          ),
+          child: Container(color: const Color(0xFFE5E7EB), height: 1),
         ),
       ),
       body: SingleChildScrollView(
@@ -800,17 +795,11 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFE0E6F0),
-                      ),
+                      border: Border.all(color: const Color(0xFFE0E6F0)),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.search,
-                          color: Colors.grey[500],
-                          size: 24,
-                        ),
+                        Icon(Icons.search, color: Colors.grey[500], size: 24),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -968,17 +957,19 @@ class _CatalogBadgeCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: badge.iconBackground.withOpacity(0.3),
+              width: 112,
+              height: 112,
+              child: BadgeArtwork(
+                size: 112,
+                frameColor: badge.frameColor,
+                backgroundColor: badge.iconBackground.withOpacity(0.3),
                 shape: badge.shape,
-                border: Border.all(color: badge.frameColor, width: 6),
-              ),
-              child: Icon(
-                Icons.workspace_premium_outlined,
-                size: 40,
-                color: badge.frameColor,
+                borderWidth: 6,
+                iconSize: 48,
+                badgeImage: badge.badgeImage,
+                levelKey: badge.levelKey,
+                title: badge.title,
+                subtitle: badge.level,
               ),
             ),
             const SizedBox(height: 10),
@@ -1005,7 +996,11 @@ class _CatalogBadgeCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.emoji_events_outlined, size: 14, color: Colors.grey[600]),
+                        Icon(
+                          Icons.emoji_events_outlined,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '${badge.points}pt',
@@ -1020,7 +1015,11 @@ class _CatalogBadgeCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.schedule_outlined, size: 14, color: Colors.grey[600]),
+                        Icon(
+                          Icons.schedule_outlined,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           badge.date,
@@ -1131,17 +1130,19 @@ class _OwnedBadgeCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                color: badge.iconBackground.withOpacity(0.24),
+              width: 92,
+              height: 92,
+              child: BadgeArtwork(
+                size: 92,
+                frameColor: badge.frameColor,
+                backgroundColor: badge.iconBackground.withOpacity(0.24),
                 shape: badge.shape,
-                border: Border.all(color: badge.frameColor, width: 5),
-              ),
-              child: Icon(
-                Icons.workspace_premium_outlined,
-                size: 31,
-                color: badge.frameColor,
+                borderWidth: 5,
+                iconSize: 38,
+                badgeImage: badge.badgeImage,
+                levelKey: badge.levelKey,
+                title: badge.title,
+                subtitle: badge.level,
               ),
             ),
             const SizedBox(height: 12),
@@ -1287,8 +1288,9 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   void initState() {
     super.initState();
     if (widget.badge.id > 0) {
-      _requirementsFuture = BadgesApi.instance
-          .fetchBadgeRequirements(badgeId: widget.badge.id);
+      _requirementsFuture = BadgesApi.instance.fetchBadgeRequirements(
+        badgeId: widget.badge.id,
+      );
     } else {
       _requirementsFuture = Future.value(const <BackendBadgeRequirement>[]);
     }
@@ -1320,16 +1322,14 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE5E7EB),
-            height: 1,
-          ),
+          child: Container(color: const Color(0xFFE5E7EB), height: 1),
         ),
       ),
       body: FutureBuilder<List<BackendBadgeRequirement>>(
         future: _requirementsFuture,
         builder: (context, snapshot) {
-          final requirements = snapshot.data ?? const <BackendBadgeRequirement>[];
+          final requirements =
+              snapshot.data ?? const <BackendBadgeRequirement>[];
           final hasError = snapshot.hasError;
           final errorText = snapshot.error?.toString();
 
@@ -1351,20 +1351,21 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                   child: Column(
                     children: [
                       Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          color: badge.iconBackground.withOpacity(0.35),
-                          shape: badge.shape,
-                          border: Border.all(
-                            color: badge.frameColor,
-                            width: 10,
+                        width: 160,
+                        height: 160,
+                        child: BadgeArtwork(
+                          size: 160,
+                          frameColor: badge.frameColor,
+                          backgroundColor: badge.iconBackground.withOpacity(
+                            0.35,
                           ),
-                        ),
-                        child: Icon(
-                          Icons.workspace_premium_outlined,
-                          size: 74,
-                          color: badge.frameColor,
+                          shape: badge.shape,
+                          borderWidth: 10,
+                          iconSize: 86,
+                          badgeImage: badge.badgeImage,
+                          levelKey: badge.levelKey,
+                          title: badge.title,
+                          subtitle: badge.level,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1410,18 +1411,11 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                         decoration: BoxDecoration(
                           color: statusColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: statusColor,
-                            width: 1.6,
-                          ),
+                          border: Border.all(color: statusColor, width: 1.6),
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.timelapse,
-                              color: statusColor,
-                              size: 28,
-                            ),
+                            Icon(Icons.timelapse, color: statusColor, size: 28),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -1481,42 +1475,39 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                         )
                       else
                         ...requirements.asMap().entries.map(
-                              (entry) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: const Color(0xFFE2E8F0),
-                                    ),
-                                    color: Colors.white,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          entry.value.text,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Color(0xFF111827),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.visibility,
-                                        size: 24,
-                                      ),
-                                    ],
-                                  ),
+                          (entry) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
                                 ),
+                                color: Colors.white,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      entry.value.text,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Color(0xFF111827),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.visibility, size: 24),
+                                ],
                               ),
                             ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
