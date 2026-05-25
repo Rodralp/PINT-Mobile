@@ -1,17 +1,27 @@
 # flutter_application_1
 
-A new Flutter project.
+App Flutter + Dart com consumo de API REST e suporte offline-first.
 
-## Getting Started
+## Requisitos cobertos
 
-This project is a starting point for a Flutter application.
+- Flutter + Dart para Android/iOS.
+- Consumo de API REST com `http`.
+- Persistencia local com `sqflite`.
+- Sincronizacao quando a internet estiver disponivel.
 
-A few resources to get you started if this is your first Flutter project:
+## Offline-first (estado atual)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Lembretes sao armazenados em SQLite e sincronizados com a API.
+- Alteracoes offline ficam marcadas como pendentes e sao enviadas quando houver rede.
+- O cache local e usado como fonte principal de leitura.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Testes
+
+```bash
+flutter test
+```
+
+## Notas
+
+- A base de dados local e criada automaticamente em `pint_offline.db`.
+- A configuracao de API esta em `lib/services/backend_config.dart`.

@@ -11,6 +11,7 @@ class AuthSession {
   static const String _accountRoleKey = 'current_account_role';
   static const String _accountPermissionsKey = 'current_account_permissions';
   static const String _accountHasPreferencesKey = 'current_account_has_preferences';
+  static const String _rememberLoginKey = 'remember_login';
 
   static Future<void> saveAccount(AuthAccount account) async {
     final prefs = await SharedPreferences.getInstance();
@@ -21,6 +22,16 @@ class AuthSession {
     final permissions = account.roles.isNotEmpty ? account.roles.join(';') : account.role;
     await prefs.setString(_accountPermissionsKey, permissions);
     await prefs.setBool(_accountHasPreferencesKey, account.hasPreferences);
+  }
+
+  static Future<void> setRememberLogin(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_rememberLoginKey, value);
+  }
+
+  static Future<bool> shouldRememberLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_rememberLoginKey) ?? false;
   }
 
   static Future<int?> getAccountId() async {

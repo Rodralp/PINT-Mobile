@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_session.dart';
 import '../services/reminder_api.dart';
+import '../services/reminder_repository.dart';
 import 'app_shell_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
@@ -30,7 +31,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
   Future<void> _loadReminders() async {
     try {
       final accountId = await AuthSession.getAccountId();
-      
+
       if (!mounted) return;
 
       if (accountId == null || accountId <= 0) {
@@ -51,7 +52,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
         _accountId = accountId;
       });
 
-      final reminders = await ReminderApi.instance.fetchReminders(
+      final reminders = await ReminderRepository.instance.loadReminders(
         accountId: accountId,
       );
 
@@ -61,22 +62,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
           _isLoading = false;
         });
       }
-    } on ReminderApiException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error.message.isEmpty
-                ? 'Erro ao carregar lembretes.'
-                : error.message,
-          ),
-        ),
-      );
     } catch (e) {
       if (!mounted) return;
 
@@ -142,9 +127,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
     try {
       final isEditing = existing != null;
       if (isEditing) {
-        final updated = await ReminderApi.instance.updateReminder(
+        final updated = await ReminderRepository.instance.updateReminder(
           accountId: _accountId!,
-          reminderId: existing.id,
+          reminder: existing!,
           title: result['title']!,
           description: result['description']!,
           date: result['date']!,
@@ -170,7 +155,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
           );
         }
       } else {
-        final created = await ReminderApi.instance.createReminder(
+        final created = await ReminderRepository.instance.createReminder(
           accountId: _accountId!,
           title: result['title']!,
           description: result['description']!,
@@ -194,22 +179,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
           );
         }
       }
-    } on ReminderApiException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error.message.isEmpty
-                ? 'Não foi possível processar o lembrete.'
-                : error.message,
-          ),
-        ),
-      );
     } catch (e) {
       if (!mounted) return;
 
@@ -244,9 +213,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
     });
 
     try {
-      await ReminderApi.instance.deleteReminder(
+      await ReminderRepository.instance.deleteReminder(
         accountId: _accountId!,
-        reminderId: reminder.id,
+        reminder: reminder,
       );
 
       if (!mounted) return;
@@ -264,22 +233,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
           ),
         );
       }
-    } on ReminderApiException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error.message.isEmpty
-                ? 'Não foi possível remover o lembrete.'
-                : error.message,
-          ),
-        ),
-      );
     } catch (e) {
       if (!mounted) return;
 

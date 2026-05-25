@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
 import '../services/reminder_api.dart';
+import '../services/reminder_repository.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
@@ -101,7 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return;
       }
 
-      final reminders = await ReminderApi.instance.fetchReminders(
+      final reminders = await ReminderRepository.instance.loadReminders(
         accountId: accountId,
       );
 

@@ -29,16 +29,22 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _loadRememberedEmail();
+    _attemptAutoLogin();
   }
 
   Future<void> _loadRememberedEmail() async {
     final prefs = await SharedPreferences.getInstance();
     final rememberedEmail = prefs.getString(_rememberedEmailKey);
     final rememberedPassword = prefs.getString(_rememberedPasswordKey);
+    final rememberLogin = await AuthSession.shouldRememberLogin();
 
-    if (!mounted ||
-        ((rememberedEmail == null || rememberedEmail.isEmpty) &&
-            (rememberedPassword == null || rememberedPassword.isEmpty))) {
+    if (!mounted) {
+      return;
+    }
+
+    if ((rememberedEmail == null || rememberedEmail.isEmpty) &&
+        (rememberedPassword == null || rememberedPassword.isEmpty) &&
+        !rememberLogin) {
       return;
     }
 
@@ -49,7 +55,42 @@ class _LoginScreenState extends State<LoginScreen> {
       if (rememberedPassword != null && rememberedPassword.isNotEmpty) {
         _passwordController.text = rememberedPassword;
       }
-      rememberMe = true;
+      rememberMe = rememberLogin;
+    });
+  }
+
+  Future<void> _attemptAutoLogin() async {
+    final rememberLogin = await AuthSession.shouldRememberLogin();
+    if (!rememberLogin) {
+      return;
+    }
+
+    final accountId = await AuthSession.getAccountId();
+    if (accountId == null || accountId <= 0) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasPreferences = (await AuthSession.hasPreferences()) ||
+        (prefs.getBool(PreferencesScreen.firstLoginPreferencesDoneKey) ?? false);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushReplacementNamed(
+        context,
+        hasPreferences ? '/app' : '/preferences',
+      );
     });
   }
 
@@ -108,6 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.remove(_rememberedEmailKey);
         await prefs.remove(_rememberedPasswordKey);
       }
+      await AuthSession.setRememberLogin(rememberMe);
 
       final hasPreferences =
           account.hasPreferences ||

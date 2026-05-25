@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backend_config.dart';
 
@@ -211,6 +212,31 @@ class BadgesApi {
 
   static final BadgesApi instance = BadgesApi._();
   static const Duration _requestTimeout = Duration(seconds: 8);
+  static const String _catalogCacheKey = 'cache_badges_catalog';
+  static const String _myBadgesCacheKey = 'cache_badges_my';
+
+  String _cacheKey(String baseKey, int? accountId) {
+    return accountId == null ? baseKey : '$baseKey:$accountId';
+  }
+
+  Future<void> _writeCache(String key, Object data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, jsonEncode(data));
+  }
+
+  Future<List<dynamic>?> _readCacheList(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+
+    final decoded = jsonDecode(raw);
+    if (decoded is List) {
+      return decoded;
+    }
+    return null;
+  }
 
   Future<Uri> _uri(String path) async {
     final baseUrl = await BackendConfig.getBaseUrl();
@@ -280,70 +306,84 @@ class BadgesApi {
   }
 
   Future<List<BackendBadge>> fetchCatalog() async {
-    final uri = await _uri('/consultor/catalog-badges');
-    final response = await _getJson(uri);
-
-    if (_looksLikeHtml(response.body)) {
-      throw BadgesApiException(
-        'A resposta do servidor nao e JSON ($uri). Verifique se a rota /consultor/catalog-badges existe no backend.',
-        statusCode: response.statusCode,
-      );
-    }
-
-    if (response.statusCode != 200) {
-      _throwApiError(response);
-    }
-
+    final cacheKey = _cacheKey(_catalogCacheKey, null);
     try {
+      final uri = await _uri('/consultor/catalog-badges');
+      final response = await _getJson(uri);
+
+      if (_looksLikeHtml(response.body)) {
+        throw BadgesApiException(
+          'A resposta do servidor nao e JSON ($uri). Verifique se a rota /consultor/catalog-badges existe no backend.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
       final decoded = jsonDecode(response.body);
       final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
       if (data is! List) {
         return const [];
       }
 
+      await _writeCache(cacheKey, data);
+
       return data
           .whereType<Map<String, dynamic>>()
           .map(BackendBadge.fromJson)
           .toList(growable: false);
-    } on FormatException {
-      throw BadgesApiException(
-        'Falha ao interpretar a resposta do servidor ($uri).',
-        statusCode: response.statusCode,
-      );
+    } catch (_) {
+      final cached = await _readCacheList(cacheKey);
+      if (cached != null) {
+        return cached
+            .whereType<Map<String, dynamic>>()
+            .map(BackendBadge.fromJson)
+            .toList(growable: false);
+      }
+      rethrow;
     }
   }
 
   Future<List<BackendBadge>> fetchMyBadges({required int accountId}) async {
-    final uri = await _uri('/consultor/meus-badges?accountId=$accountId');
-    final response = await _getJson(uri);
-
-    if (_looksLikeHtml(response.body)) {
-      throw BadgesApiException(
-        'A resposta do servidor nao e JSON ($uri). Verifique se a rota /consultor/meus-badges existe no backend.',
-        statusCode: response.statusCode,
-      );
-    }
-
-    if (response.statusCode != 200) {
-      _throwApiError(response);
-    }
-
+    final cacheKey = _cacheKey(_myBadgesCacheKey, accountId);
     try {
+      final uri = await _uri('/consultor/meus-badges?accountId=$accountId');
+      final response = await _getJson(uri);
+
+      if (_looksLikeHtml(response.body)) {
+        throw BadgesApiException(
+          'A resposta do servidor nao e JSON ($uri). Verifique se a rota /consultor/meus-badges existe no backend.',
+          statusCode: response.statusCode,
+        );
+      }
+
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
       final decoded = jsonDecode(response.body);
       final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
       if (data is! List) {
         return const [];
       }
 
+      await _writeCache(cacheKey, data);
+
       return data
           .whereType<Map<String, dynamic>>()
           .map(BackendBadge.fromJson)
           .toList(growable: false);
-    } on FormatException {
-      throw BadgesApiException(
-        'Falha ao interpretar a resposta do servidor ($uri).',
-        statusCode: response.statusCode,
-      );
+    } catch (_) {
+      final cached = await _readCacheList(cacheKey);
+      if (cached != null) {
+        return cached
+            .whereType<Map<String, dynamic>>()
+            .map(BackendBadge.fromJson)
+            .toList(growable: false);
+      }
+      rethrow;
     }
   }
 

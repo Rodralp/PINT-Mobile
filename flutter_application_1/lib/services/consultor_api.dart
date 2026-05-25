@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backend_config.dart';
 
@@ -421,6 +422,48 @@ class ConsultorApi {
 
   static final ConsultorApi instance = ConsultorApi._();
   static const Duration _requestTimeout = Duration(seconds: 8);
+  static const String _profileCacheKey = 'cache_consultor_profile';
+  static const String _dashboardCacheKey = 'cache_consultor_dashboard';
+  static const String _rankingCacheKey = 'cache_consultor_ranking';
+  static const String _learningPathCacheKey = 'cache_consultor_learning_paths';
+  static const String _requestsCacheKey = 'cache_consultor_requests';
+
+  String _cacheKey(String baseKey, int? accountId) {
+    return accountId == null ? baseKey : '$baseKey:$accountId';
+  }
+
+  Future<void> _writeCache(String key, Object data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, jsonEncode(data));
+  }
+
+  Future<Map<String, dynamic>?> _readCacheMap(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+
+    final decoded = jsonDecode(raw);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    return null;
+  }
+
+  Future<List<dynamic>?> _readCacheList(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+
+    final decoded = jsonDecode(raw);
+    if (decoded is List) {
+      return decoded;
+    }
+    return null;
+  }
 
   Future<Uri> _uri(String path) async {
     final baseUrl = await BackendConfig.getBaseUrl();
@@ -470,130 +513,189 @@ class ConsultorApi {
   }
 
   Future<List<BackendRequest>> fetchMyRequests({required int accountId}) async {
-    final uri = await _uri('/consultor/meus-pedidos?accountId=$accountId');
-    final response = await _getJson(uri);
+    final cacheKey = _cacheKey(_requestsCacheKey, accountId);
+    try {
+      final uri = await _uri('/consultor/meus-pedidos?accountId=$accountId');
+      final response = await _getJson(uri);
 
-    if (response.statusCode != 200) {
-      _throwApiError(response);
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
+      final decoded = jsonDecode(response.body);
+      final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+      if (data is! List) {
+        return const [];
+      }
+
+      await _writeCache(cacheKey, data);
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(BackendRequest.fromJson)
+          .toList(growable: false);
+    } catch (_) {
+      final cached = await _readCacheList(cacheKey);
+      if (cached != null) {
+        return cached
+            .whereType<Map<String, dynamic>>()
+            .map(BackendRequest.fromJson)
+            .toList(growable: false);
+      }
+      rethrow;
     }
-
-    final decoded = jsonDecode(response.body);
-    final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
-    if (data is! List) {
-      return const [];
-    }
-
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(BackendRequest.fromJson)
-        .toList(growable: false);
   }
 
   Future<BackendProfile> fetchProfile({int? accountId}) async {
-    final path = accountId == null
-        ? '/consultor/profile'
-        : '/consultor/profile?accountId=$accountId';
-    final uri = await _uri(path);
-    final response = await _getJson(uri);
+    final cacheKey = _cacheKey(_profileCacheKey, accountId);
+    try {
+      final path = accountId == null
+          ? '/consultor/profile'
+          : '/consultor/profile?accountId=$accountId';
+      final uri = await _uri(path);
+      final response = await _getJson(uri);
 
-    if (response.statusCode != 200) {
-      _throwApiError(response);
-    }
-
-    final decoded = jsonDecode(response.body);
-    if (decoded is Map<String, dynamic>) {
-      final data = decoded['data'];
-      if (data is Map<String, dynamic>) {
-        return BackendProfile.fromJson(data);
+      if (response.statusCode != 200) {
+        _throwApiError(response);
       }
-      return BackendProfile.fromJson(decoded);
-    }
 
-    return const BackendProfile(
-      name: '',
-      email: '',
-      location: '',
-      joined: '',
-      avatar: '',
-      points: null,
-      ranking: null,
-      badges: null,
-      skillsItems: [],
-      certificationsItems: [],
-      serviceLineStats: [],
-    );
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final data = decoded['data'];
+        final resolved = data is Map<String, dynamic> ? data : decoded;
+        await _writeCache(cacheKey, resolved);
+        return BackendProfile.fromJson(resolved);
+      }
+
+      return const BackendProfile(
+        name: '',
+        email: '',
+        location: '',
+        joined: '',
+        avatar: '',
+        points: null,
+        ranking: null,
+        badges: null,
+        skillsItems: [],
+        certificationsItems: [],
+        serviceLineStats: [],
+      );
+    } catch (_) {
+      final cached = await _readCacheMap(cacheKey);
+      if (cached != null) {
+        return BackendProfile.fromJson(cached);
+      }
+      rethrow;
+    }
   }
 
   Future<BackendConsultorDashboard> fetchConsultorDashboard({
     int? accountId,
   }) async {
-    final path = accountId == null
-        ? '/dashboard/consultor'
-        : '/dashboard/consultor?accountId=$accountId';
-    final uri = await _uri(path);
-    final response = await _getJson(uri);
+    final cacheKey = _cacheKey(_dashboardCacheKey, accountId);
+    try {
+      final path = accountId == null
+          ? '/dashboard/consultor'
+          : '/dashboard/consultor?accountId=$accountId';
+      final uri = await _uri(path);
+      final response = await _getJson(uri);
 
-    if (response.statusCode != 200) {
-      _throwApiError(response);
-    }
-
-    final decoded = jsonDecode(response.body);
-    if (decoded is Map<String, dynamic>) {
-      final data = decoded['data'];
-      if (data is Map<String, dynamic>) {
-        return BackendConsultorDashboard.fromJson(data);
+      if (response.statusCode != 200) {
+        _throwApiError(response);
       }
-      return BackendConsultorDashboard.fromJson(decoded);
-    }
 
-    return const BackendConsultorDashboard(
-      timelineValues: [],
-      stats: [],
-      suggestionItems: [],
-    );
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final data = decoded['data'];
+        final resolved = data is Map<String, dynamic> ? data : decoded;
+        await _writeCache(cacheKey, resolved);
+        return BackendConsultorDashboard.fromJson(resolved);
+      }
+
+      return const BackendConsultorDashboard(
+        timelineValues: [],
+        stats: [],
+        suggestionItems: [],
+      );
+    } catch (_) {
+      final cached = await _readCacheMap(cacheKey);
+      if (cached != null) {
+        return BackendConsultorDashboard.fromJson(cached);
+      }
+      rethrow;
+    }
   }
 
   Future<List<BackendRankingConsultant>> fetchRankingConsultores() async {
-    final uri = await _uri('/consultor/ranking');
-    final response = await _getJson(uri);
+    final cacheKey = _cacheKey(_rankingCacheKey, null);
+    try {
+      final uri = await _uri('/consultor/ranking');
+      final response = await _getJson(uri);
 
-    if (response.statusCode != 200) {
-      _throwApiError(response);
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
+      final decoded = jsonDecode(response.body);
+      final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+      if (data is! List) {
+        return const [];
+      }
+
+      await _writeCache(cacheKey, data);
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(BackendRankingConsultant.fromJson)
+          .toList(growable: false);
+    } catch (_) {
+      final cached = await _readCacheList(cacheKey);
+      if (cached != null) {
+        return cached
+            .whereType<Map<String, dynamic>>()
+            .map(BackendRankingConsultant.fromJson)
+            .toList(growable: false);
+      }
+      rethrow;
     }
-
-    final decoded = jsonDecode(response.body);
-    final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
-    if (data is! List) {
-      return const [];
-    }
-
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(BackendRankingConsultant.fromJson)
-        .toList(growable: false);
   }
 
   Future<List<BackendLearningPath>> fetchLearningPaths({
     required int accountId,
   }) async {
-    final uri = await _uri('/consultor/learning-paths?accountId=$accountId');
-    final response = await _getJson(uri);
+    final cacheKey = _cacheKey(_learningPathCacheKey, accountId);
+    try {
+      final uri = await _uri('/consultor/learning-paths?accountId=$accountId');
+      final response = await _getJson(uri);
 
-    if (response.statusCode != 200) {
-      _throwApiError(response);
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
+      final decoded = jsonDecode(response.body);
+      final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+      if (data is! List) {
+        return const [];
+      }
+
+      await _writeCache(cacheKey, data);
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(BackendLearningPath.fromJson)
+          .toList(growable: false);
+    } catch (_) {
+      final cached = await _readCacheList(cacheKey);
+      if (cached != null) {
+        return cached
+            .whereType<Map<String, dynamic>>()
+            .map(BackendLearningPath.fromJson)
+            .toList(growable: false);
+      }
+      rethrow;
     }
-
-    final decoded = jsonDecode(response.body);
-    final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
-    if (data is! List) {
-      return const [];
-    }
-
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(BackendLearningPath.fromJson)
-        .toList(growable: false);
   }
+
 }
 
 String? _readString(Map<String, dynamic> json, List<String> keys) {
