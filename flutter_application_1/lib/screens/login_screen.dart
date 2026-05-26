@@ -60,6 +60,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _attemptAutoLogin() async {
+    final skipAutoLogin = await AuthSession.shouldSkipAutoLoginOnce();
+    if (skipAutoLogin) {
+      await AuthSession.setSkipAutoLoginOnce(false);
+      return;
+    }
+
     final rememberLogin = await AuthSession.shouldRememberLogin();
     if (!rememberLogin) {
       return;

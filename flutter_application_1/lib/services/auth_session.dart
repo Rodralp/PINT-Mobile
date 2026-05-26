@@ -12,6 +12,7 @@ class AuthSession {
   static const String _accountPermissionsKey = 'current_account_permissions';
   static const String _accountHasPreferencesKey = 'current_account_has_preferences';
   static const String _rememberLoginKey = 'remember_login';
+  static const String _skipAutoLoginOnceKey = 'skip_auto_login_once';
 
   static Future<void> saveAccount(AuthAccount account) async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,6 +33,16 @@ class AuthSession {
   static Future<bool> shouldRememberLogin() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_rememberLoginKey) ?? false;
+  }
+
+  static Future<void> setSkipAutoLoginOnce(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_skipAutoLoginOnceKey, value);
+  }
+
+  static Future<bool> shouldSkipAutoLoginOnce() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_skipAutoLoginOnceKey) ?? false;
   }
 
   static Future<int?> getAccountId() async {
@@ -67,5 +78,15 @@ class AuthSession {
   static Future<void> setHasPreferences(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_accountHasPreferencesKey, value);
+  }
+
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accountIdKey);
+    await prefs.remove(_accountNameKey);
+    await prefs.remove(_accountEmailKey);
+    await prefs.remove(_accountRoleKey);
+    await prefs.remove(_accountPermissionsKey);
+    await prefs.remove(_accountHasPreferencesKey);
   }
 }

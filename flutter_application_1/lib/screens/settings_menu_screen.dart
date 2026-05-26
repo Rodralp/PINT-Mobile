@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_session.dart';
 import 'account_info_screen.dart';
 import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
@@ -85,11 +86,11 @@ class _SettingsOptionTile extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext parentContext) {
     showDialog(
-      context: context,
+      context: parentContext,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         child: Padding(
@@ -135,7 +136,7 @@ class _SettingsOptionTile extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF3F4F6),
                         elevation: 0,
@@ -158,9 +159,18 @@ class _SettingsOptionTile extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pushReplacementNamed(context, '/login');
+                      onPressed: () async {
+                        Navigator.pop(dialogContext);
+                        await AuthSession.setSkipAutoLoginOnce(true);
+                        await AuthSession.clearSession();
+                        if (!parentContext.mounted) {
+                          return;
+                        }
+                        Navigator.pushNamedAndRemoveUntil(
+                          parentContext,
+                          '/login',
+                          (_) => false,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFDC2626),
