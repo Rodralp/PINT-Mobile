@@ -68,4 +68,15 @@ class AuthSession {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_accountHasPreferencesKey, value);
   }
+
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accountIdKey);
+    await prefs.remove(_accountNameKey);
+    await prefs.remove(_accountEmailKey);
+    await prefs.remove(_accountRoleKey);
+    await prefs.remove(_accountPermissionsKey);
+    await prefs.remove(_accountHasPreferencesKey);
+    await prefs.setBool(_rememberLoginKey, false);
+  }
 }
