@@ -50,9 +50,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
         _learningPaths = data;
         _selectedPathId = data.isNotEmpty ? data.first.id : null;
         _selectedServiceLineId = null;
-        _expandedPathIds
-          ..clear()
-          ..addAll(data.map((path) => path.id));
+        _expandedPathIds.clear(); // Starts closed to show the dropdown effect
         _expandedAreaIds.clear();
         _loadError = null;
       });
@@ -255,70 +253,79 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
               );
             },
           ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 28,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFF00A8),
-                  Color(0xFFFF0075),
-                  Color(0xFFFF2A00),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: const Text(
-              'Jornada Tecnica',
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(
+              'Learning Paths',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 46 / 2,
-                fontWeight: FontWeight.w400,
+                fontSize: 23,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF263238),
               ),
             ),
           ),
-          const SizedBox(height: 16),
           for (final path in _learningPaths) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      path.name,
-                      style: TextStyle(
-                        fontSize: 38 / 2,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.blueGrey[900],
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFFF00A8),
+                      Color(0xFFFF0075),
+                      Color(0xFFFF2A00),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _togglePath(path.id),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 28,
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Jornada Técnica',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 23,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            _expandedPathIds.contains(path.id)
+                                ? Icons.expand_less
+                                : Icons.expand_more,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => _togglePath(path.id),
-                    icon: Icon(
-                      _expandedPathIds.contains(path.id)
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      color: const Color(0xFF1A90F0),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (path.description.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: Text(
-                  path.description,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ),
-            if (_expandedPathIds.contains(path.id))
+            ),
+            if (_expandedPathIds.contains(path.id)) ...[
+              if (path.description.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Text(
+                    path.description,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ),
+              const SizedBox(height: 8),
               for (final line in path.serviceLines) ...[
                 Builder(
                   builder: (context) {
@@ -343,6 +350,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
+            ],
           ],
           const SizedBox(height: 12),
         ],
@@ -1351,4 +1359,3 @@ class _HybridLevelTile extends StatelessWidget {
     );
   }
 }
-
