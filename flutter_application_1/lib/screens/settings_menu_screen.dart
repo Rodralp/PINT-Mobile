@@ -161,6 +161,7 @@ class _SettingsOptionTile extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(dialogContext);
+                        await AuthSession.setSkipAutoLoginOnce(true);
                         await AuthSession.clearSession();
                         if (!parentContext.mounted) {
                           return;
