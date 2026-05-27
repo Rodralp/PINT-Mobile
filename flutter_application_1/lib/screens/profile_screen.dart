@@ -12,7 +12,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late final Future<void> _loadFuture;
+  late Future<void> _loadFuture;
   String? _loadError;
 
   String _name = '';
@@ -71,6 +71,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _loadError = 'Nao foi possivel carregar a base de dados';
       });
     }
+  }
+
+  Future<void> _refreshProfile() async {
+    setState(() {
+      _loadFuture = _loadProfile();
+    });
+    await _loadFuture;
   }
 
   List<_CompetencyData> _buildCompetencies(BackendProfile profile) {
@@ -134,192 +141,169 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: FutureBuilder<void>(
-          future: _loadFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                _name.isEmpty &&
-                _competencies.isEmpty &&
-                _requirements.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (_loadError != null) {
-              return Center(
-                child: Text(
-                  _loadError!,
-                  style: const TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-                ),
-              );
-            }
-
-            return SingleChildScrollView(
+        child: RefreshIndicator(
+          onRefresh: _refreshProfile,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back, size: 36),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, size: 36),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Perfil',
+                        style: TextStyle(
+                          fontSize: 48 / 2,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF243047),
                         ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Perfil',
-                          style: TextStyle(
-                            fontSize: 48 / 2,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF243047),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 132,
-                          height: 132,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD5D8DD),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
+                  const SizedBox(height: 10),
+                  FutureBuilder<void>(
+                    future: _loadFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 30),
+                            child: CircularProgressIndicator(),
                           ),
-                          child: _avatar.isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(
-                                    _avatar,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.person, size: 76, color: Colors.white),
-                                  ),
-                                )
-                              : const Icon(Icons.person, size: 76, color: Colors.white),
-                        ),
-                        const SizedBox(width: 18),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        );
+                      }
+
+                      if (_loadError != null) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Text(
+                            _loadError!,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFFEF4444),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final initials = _name.isNotEmpty
+                          ? _name.trim().characters.first.toUpperCase()
+                          : '?';
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                _name.isEmpty ? '-' : _name,
-                                style: const TextStyle(
-                                  fontSize: 48 / 2,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF121A2A),
-                                ),
+                              CircleAvatar(
+                                radius: 36,
+                                backgroundColor: const Color(0xFFEFF6FF),
+                                backgroundImage: _avatar.isNotEmpty
+                                    ? NetworkImage(_avatar)
+                                    : null,
+                                child: _avatar.isEmpty
+                                    ? Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1A90F0),
+                                        ),
+                                      )
+                                    : null,
                               ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  const Icon(Icons.mail_outline, size: 30),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _name.isEmpty ? 'Sem nome' : _name,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF111827),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
                                       _email.isEmpty ? '-' : _email,
-                                      style: const TextStyle(fontSize: 17),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF6B7280),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on_outlined, size: 30),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      _location.isEmpty ? '-' : _location,
-                                      style: const TextStyle(fontSize: 17),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  const Icon(Icons.calendar_month_outlined, size: 30),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      _joined.isEmpty ? '-' : 'Membro desde $_joined',
-                                      style: const TextStyle(fontSize: 17),
-                                    ),
-                                  ),
-                                ],
+                                    if (_location.isNotEmpty || _joined.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 6),
+                                        child: Text(
+                                          [
+                                            if (_location.isNotEmpty)
+                                              _location,
+                                            if (_joined.isNotEmpty)
+                                              'Membro desde $_joined',
+                                          ].join(' · '),
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                        Column(
-                          children: [
-                            _iconActionButton(
-                              icon: Icons.remove_red_eye_outlined,
-                              color: const Color(0xFF1A90F0),
+                          const SizedBox(height: 20),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _MetricInfoCard(
+                                  title: 'Pontos',
+                                  value: '${_points ?? 0}',
+                                  subtitle: '',
+                                  icon: Icons.emoji_events_outlined,
+                                  iconColor: const Color(0xFF1A90F0),
+                                ),
+                                const SizedBox(width: 12),
+                                _MetricInfoCard(
+                                  title: 'Ranking',
+                                  value: _ranking == null ? '-' : '#${_ranking!}',
+                                  subtitle: '',
+                                  icon: Icons.leaderboard_outlined,
+                                  iconColor: const Color(0xFFF59E0B),
+                                ),
+                                const SizedBox(width: 12),
+                                _MetricInfoCard(
+                                  title: 'Badges',
+                                  value: '${_badges ?? 0}',
+                                  subtitle: '',
+                                  icon: Icons.workspace_premium_outlined,
+                                  iconColor: const Color(0xFF39C65A),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                            _iconActionButton(
-                              icon: Icons.edit_outlined,
-                              color: Colors.black,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                          const SizedBox(height: 20),
+                          _CompetenciesCard(items: _competencies),
+                          const SizedBox(height: 16),
+                          _RequirementsCard(items: _requirements),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 22),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        _MetricInfoCard(
-                          title: 'Total de Pontos',
-                          value: _points?.toString() ?? '-',
-                          subtitle: '',
-                          icon: Icons.task_alt,
-                          iconColor: const Color(0xFF39D98A),
-                        ),
-                        const SizedBox(width: 14),
-                        _MetricInfoCard(
-                          title: 'Ranking',
-                          value: _ranking == null ? '-' : '#${_ranking!}',
-                          subtitle: '',
-                          icon: Icons.leaderboard_rounded,
-                          iconColor: const Color(0xFFF7B500),
-                        ),
-                        const SizedBox(width: 14),
-                        _MetricInfoCard(
-                          title: 'Badges',
-                          value: _badges?.toString() ?? '-',
-                          subtitle: '',
-                          icon: Icons.workspace_premium_outlined,
-                          iconColor: const Color(0xFF9B6CF2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _CompetenciesCard(items: _competencies),
-                  ),
-                  const SizedBox(height: 18),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _RequirementsCard(items: _requirements),
-                  ),
-                  const SizedBox(height: 22),
                 ],
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );

@@ -45,6 +45,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     }
   }
 
+  Future<void> _refreshAccountInfo() async {
+    await _loadAccountInfo();
+  }
+
   String _displayValue(String? value) {
     final cleaned = value?.trim() ?? '';
     return cleaned.isEmpty ? 'Sem informação' : cleaned;
@@ -79,118 +83,122 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 20),
+        child: RefreshIndicator(
+          onRefresh: _refreshAccountInfo,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
 
-                // HEADER COM BOTÃO VOLTAR
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, size: 28),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
+                  // HEADER COM BOTÃO VOLTAR
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, size: 28),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Informação da conta',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF243047),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Informação da conta',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF243047),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                // SUBTÍTULO
-                const Text(
-                  'Consulte os dados principais da sua conta.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
+                  // SUBTÍTULO
+                  const Text(
+                    'Consulte os dados principais da sua conta.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                // CARD NOME
-                _InfoCard(label: 'Nome', value: _name),
+                  // CARD NOME
+                  _InfoCard(label: 'Nome', value: _name),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // CARD EMAIL
-                _InfoCard(label: 'Email', value: _email),
+                  // CARD EMAIL
+                  _InfoCard(label: 'Email', value: _email),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // CARD PERFIL
-                _InfoCard(label: 'Perfil', value: _permissions),
+                  // CARD PERFIL
+                  _InfoCard(label: 'Perfil', value: _permissions),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                // BOTÃO IR PARA PERFIL
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: _goToProfile,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1F2937),
-                      side: const BorderSide(
-                        color: Color(0xFFD7DDE7),
-                        width: 1.5,
+                  // BOTÃO IR PARA PERFIL
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: _goToProfile,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1F2937),
+                        side: const BorderSide(
+                          color: Color(0xFFD7DDE7),
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Ir para perfil',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                      child: const Text(
+                        'Ir para perfil',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                // BOTÃO VOLTAR AO DASHBOARD
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _goToDashboard,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  // BOTÃO VOLTAR AO DASHBOARD
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _goToDashboard,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Voltar ao dashboard',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                      child: const Text(
+                        'Voltar ao dashboard',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),

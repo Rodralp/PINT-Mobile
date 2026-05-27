@@ -17,7 +17,7 @@ class LearningPathScreen extends StatefulWidget {
 }
 
 class _LearningPathScreenState extends State<LearningPathScreen> {
-  late final Future<void> _loadFuture;
+  late Future<void> _loadFuture;
   List<BackendLearningPath> _learningPaths = const [];
   String? _loadError;
   String? _selectedPathId;
@@ -63,6 +63,13 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
         _loadError = 'Nao foi possivel carregar a base de dados';
       });
     }
+  }
+
+  Future<void> _refreshLearningPaths() async {
+    setState(() {
+      _loadFuture = _loadLearningPaths();
+    });
+    await _loadFuture;
   }
 
   BackendLearningPath? get _selectedPath {
@@ -181,28 +188,37 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: FutureBuilder<void>(
-          future: _loadFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: Text('A carregar Service Lines...'),
-              );
-            }
+        child: RefreshIndicator(
+          onRefresh: _refreshLearningPaths,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: FutureBuilder<void>(
+                future: _loadFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Text('A carregar Service Lines...'),
+                    );
+                  }
 
-            if (_loadError != null) {
-              return Center(
-                child: Text(_loadError ?? ''),
-              );
-            }
+                  if (_loadError != null) {
+                    return Center(
+                      child: Text(_loadError ?? ''),
+                    );
+                  }
 
-            final selectedServiceLine = _selectedServiceLine;
-            if (selectedServiceLine != null) {
-              return _buildServiceLineDetail(context, selectedServiceLine);
-            }
+                  final selectedServiceLine = _selectedServiceLine;
+                  if (selectedServiceLine != null) {
+                    return _buildServiceLineDetail(context, selectedServiceLine);
+                  }
 
-            return _buildLearningPathList(context);
-          },
+                  return _buildLearningPathList(context);
+                },
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -456,133 +472,129 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
           ),
         ),
         const Divider(height: 1, color: Color(0xFFE3E7EC)),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  color: Colors.white,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 106,
-                        height: 106,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0B8EEA), Color(0xFF2A56D7)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 106,
+                    height: 106,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0B8EEA), Color(0xFF2A56D7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: imageAsset != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              imageAsset!,
+                              width: 88,
+                              height: 88,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Text(
+                            _buildInitials(line.name),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 24,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (line.description.isNotEmpty)
+                          Text(
+                            line.description,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[700],
+                              height: 1.45,
+                            ),
+                          ),
+                        const SizedBox(height: 14),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: LinearProgressIndicator(
+                            minHeight: 8,
+                            value: progress.percent,
+                            backgroundColor: const Color(0xFFE2E5EA),
+                            color: progress.percent >= 1
+                                ? const Color(0xFF39C65A)
+                                : const Color(0xFF1A90F0),
                           ),
                         ),
-                        alignment: Alignment.center,
-                        child: imageAsset != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  imageAsset,
-                                  width: 88,
-                                  height: 88,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Text(
-                                _buildInitials(line.name),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 24,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 10),
+                        Text(
+                          progress.label,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
                           children: [
-                            if (line.description.isNotEmpty)
-                              Text(
-                                line.description,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[700],
-                                  height: 1.45,
-                                ),
-                              ),
-                            const SizedBox(height: 14),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: LinearProgressIndicator(
-                                minHeight: 8,
-                                value: progress.percent,
-                                backgroundColor: const Color(0xFFE2E5EA),
-                                color: progress.percent >= 1
-                                    ? const Color(0xFF39C65A)
-                                    : const Color(0xFF1A90F0),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
+                            const Icon(Icons.workspace_premium_outlined, size: 28),
+                            const SizedBox(width: 8),
                             Text(
-                              progress.label,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                const Icon(Icons.workspace_premium_outlined, size: 28),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${progress.total} niveis',
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                              ],
+                              '${progress.total} niveis',
+                              style: const TextStyle(fontSize: 18),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: Text(
-                    'Areas',
-                    style: TextStyle(
-                      fontSize: 46 / 2,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.blueGrey[900],
+                      ],
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      for (final area in line.areas) ...[
-                        _AreaCard(
-                          area: area,
-                          isExpanded: _expandedAreaIds.contains(area.id),
-                          onToggle: () => _toggleArea(area.id),
-                          resolveBadgeAsset: _resolveBadgeAsset,
-                          statusLabelBuilder: _statusLabel,
-                        ),
-                        const SizedBox(height: 14),
-                      ],
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Text(
+                'Areas',
+                style: TextStyle(
+                  fontSize: 46 / 2,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.blueGrey[900],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  for (final area in line.areas) ...[
+                    _AreaCard(
+                      area: area,
+                      isExpanded: _expandedAreaIds.contains(area.id),
+                      onToggle: () => _toggleArea(area.id),
+                      resolveBadgeAsset: _resolveBadgeAsset,
+                      statusLabelBuilder: _statusLabel,
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -910,6 +922,21 @@ class _ServiceLineCard extends StatelessWidget {
                                 : FontWeight.w500,
                             color: Colors.black87,
                           ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: const [
+                            Icon(Icons.schedule_outlined, size: 30),
+                            SizedBox(width: 8),
+                            Text(
+                              '6 meses',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(width: 20),
+                            Icon(Icons.group_outlined, size: 30),
+                            SizedBox(width: 8),
+                            Text('123', style: TextStyle(fontSize: 18)),
+                          ],
                         ),
                       ],
                     ),

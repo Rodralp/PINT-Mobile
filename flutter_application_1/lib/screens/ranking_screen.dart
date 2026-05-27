@@ -142,6 +142,10 @@ class _RankingScreenState extends State<RankingScreen> {
     }
   }
 
+  Future<void> _refreshRanking() async {
+    await _loadRanking();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -351,144 +355,148 @@ class _RankingScreenState extends State<RankingScreen> {
           );
         },
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Ranking de Consultores',
-                    style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+      body: RefreshIndicator(
+        onRefresh: _refreshRanking,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ranking de Consultores',
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    activeFilterLabel,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF64748B),
+                    const SizedBox(height: 4),
+                    Text(
+                      activeFilterLabel,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 58,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFFE0E6F0),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 58,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE0E6F0),
+                              ),
+                              color: const Color(0xFFF8FAFC),
                             ),
-                            color: const Color(0xFFF8FAFC),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                color: Colors.grey[400],
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Pesquisar consultores',
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                  ),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _searchTerm = value;
-                                    });
-                                  },
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.search,
+                                  color: Colors.grey[400],
+                                  size: 24,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _searchController,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Pesquisar consultores',
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                    ),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _searchTerm = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      _toolButton(
-                        icon: Icons.filter_alt_outlined,
-                        onTap: _showFilterSheet,
-                      ),
-                      const SizedBox(width: 12),
-                      _toolButton(
-                        icon: Icons.tune_rounded,
-                        onTap: _showSortSheet,
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        _toolButton(
+                          icon: Icons.filter_alt_outlined,
+                          onTap: _showFilterSheet,
+                        ),
+                        const SizedBox(width: 12),
+                        _toolButton(
+                          icon: Icons.tune_rounded,
+                          onTap: _showSortSheet,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            if (_isLoading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else if (_errorMessage != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Color(0xFFEF4444)),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-          if (_isLoading)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            )
-          else if (_errorMessage != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Color(0xFFEF4444)),
+                ),
+              )
+            else if (filtered.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Text(
+                    'Nao ha consultores para os filtros escolhidos.',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final consultant = filtered[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == filtered.length - 1 ? 0 : 12,
+                        ),
+                        child: _RankingCard(
+                          rank: rankingById[consultant.id] ?? 0,
+                          name: consultant.name,
+                          email: consultant.email,
+                          points: consultant.points,
+                          badges: consultant.badges,
+                          avatarLetter: consultant.name.isNotEmpty
+                              ? consultant.name.characters.first
+                              : '?',
+                          avatarUrl: consultant.avatar,
+                        ),
+                      );
+                    },
+                    childCount: filtered.length,
+                  ),
                 ),
               ),
-            ),
-          if (filtered.isEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: Text(
-                  'Nao ha consultores para os filtros escolhidos.',
-                  style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final consultant = filtered[index];
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: index == filtered.length - 1 ? 0 : 12,
-                      ),
-                      child: _RankingCard(
-                        rank: rankingById[consultant.id] ?? 0,
-                        name: consultant.name,
-                        email: consultant.email,
-                        points: consultant.points,
-                        badges: consultant.badges,
-                        avatarLetter: consultant.name.isNotEmpty
-                            ? consultant.name.characters.first
-                            : '?',
-                        avatarUrl: consultant.avatar,
-                      ),
-                    );
-                  },
-                  childCount: filtered.length,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
     );

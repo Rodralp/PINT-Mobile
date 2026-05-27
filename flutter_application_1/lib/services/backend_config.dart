@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'local_storage.dart';
 
 class BackendConfig {
   BackendConfig._();
@@ -34,8 +35,7 @@ class BackendConfig {
       return defaultBaseUrl;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final storedValue = prefs.getString(baseUrlKey)?.trim();
+    final storedValue = (await localStorage.getString(baseUrlKey))?.trim();
     if (storedValue != null && storedValue.isNotEmpty) {
       return storedValue;
     }
@@ -44,19 +44,17 @@ class BackendConfig {
   }
 
   static Future<void> setBaseUrl(String value) async {
-    final prefs = await SharedPreferences.getInstance();
     final normalizedValue = value.trim();
 
     if (normalizedValue.isEmpty) {
-      await prefs.remove(baseUrlKey);
+      await localStorage.remove(baseUrlKey);
       return;
     }
 
-    await prefs.setString(baseUrlKey, normalizedValue);
+    await localStorage.setString(baseUrlKey, normalizedValue);
   }
 
   static Future<void> clearBaseUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(baseUrlKey);
+    await localStorage.remove(baseUrlKey);
   }
 }

@@ -1,12 +1,100 @@
 import 'package:flutter/material.dart';
 import '../services/auth_session.dart';
+import '../services/backend_config.dart';
 import 'account_info_screen.dart';
 import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
 import 'change_password_screen.dart';
 
-class SettingsMenuScreen extends StatelessWidget {
+class SettingsMenuScreen extends StatefulWidget {
   const SettingsMenuScreen({super.key});
+
+  @override
+  State<SettingsMenuScreen> createState() => _SettingsMenuScreenState();
+}
+
+class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
+  final TextEditingController _backendUrlController = TextEditingController();
+
+  @override
+  void dispose() {
+    _backendUrlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showBackendConfigDialog() async {
+    final currentBaseUrl = await BackendConfig.getBaseUrl();
+    if (!mounted) {
+      return;
+    }
+
+    _backendUrlController.text = currentBaseUrl;
+    final savedUrl = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Configurar servidor'),
+        content: TextField(
+          controller: _backendUrlController,
+          decoration: const InputDecoration(
+            labelText: 'API base URL',
+            hintText: 'http://10.65.8.74:4000/api',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              var input = _backendUrlController.text.trim();
+              if (input.isEmpty) {
+                Navigator.pop(dialogContext);
+                return;
+              }
+
+              if (!input.startsWith('http://') && !input.startsWith('https://')) {
+                input = 'http://$input';
+              }
+
+              while (input.endsWith('/')) {
+                input = input.substring(0, input.length - 1);
+              }
+
+              if (!input.contains('/api')) {
+                input = '$input/api';
+              }
+
+              final uri = Uri.tryParse(input);
+              if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || (uri.host.isEmpty)) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(content: Text('URL inválida. Introduza uma URL válida, e.g. http://10.65.8.74:4000/api')),
+                );
+                return;
+              }
+
+              Navigator.pop(dialogContext, input);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || savedUrl == null) {
+      return;
+    }
+
+    await BackendConfig.setBaseUrl(savedUrl);
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Servidor guardado.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,28 +127,34 @@ class SettingsMenuScreen extends StatelessWidget {
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
-                children: const [
-                  _SettingsOptionTile(
+                children: [
+                  const _SettingsOptionTile(
                     icon: Icons.person_outline,
                     title: 'Conta',
                     subtitle: 'Dados da conta e atalhos',
                   ),
-                  _SettingsOptionTile(
+                  const _SettingsOptionTile(
                     icon: Icons.lock_outline,
                     title: 'Segurança',
                     subtitle: 'Alterar senha de acesso',
                   ),
-                  _SettingsOptionTile(
+                  const _SettingsOptionTile(
                     icon: Icons.tune_rounded,
                     title: 'Preferências',
                     subtitle: 'Áreas de interesse e recomendações',
                   ),
-                  _SettingsOptionTile(
+                  const _SettingsOptionTile(
                     icon: Icons.notifications_outlined,
                     title: 'Notificações',
                     subtitle: 'Alertas e comunicações',
                   ),
                   _SettingsOptionTile(
+                    icon: Icons.dns_outlined,
+                    title: 'Servidor',
+                    subtitle: 'Configurar API base URL',
+                    onTap: _showBackendConfigDialog,
+                  ),
+                  const _SettingsOptionTile(
                     icon: Icons.logout,
                     title: 'Terminar Sessão',
                     subtitle: 'Terminar sessão e navegação',
@@ -80,11 +174,13 @@ class _SettingsOptionTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   void _showLogoutDialog(BuildContext parentContext) {
     showDialog(
@@ -210,6 +306,10 @@ class _SettingsOptionTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            if (onTap != null) {
+              onTap!();
+              return;
+            }
             if (title == 'Conta') {
               Navigator.push(
                 context,

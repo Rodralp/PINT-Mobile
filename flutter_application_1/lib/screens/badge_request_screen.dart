@@ -74,7 +74,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
   );
 
   final List<_RequestData> _allRequests = [];
-  late final Future<void> _loadFuture;
+  late Future<void> _loadFuture;
   String? _loadError;
 
   @override
@@ -125,6 +125,13 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
     }
   }
 
+  Future<void> _refreshRequests() async {
+    setState(() {
+      _loadFuture = _loadRequests();
+    });
+    await _loadFuture;
+  }
+
   _RequestStatus _requestStatusFromApi(String status) {
     final normalized = status.trim().toLowerCase().replaceAll(' ', '_');
     switch (normalized) {
@@ -158,156 +165,163 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: FutureBuilder<void>(
-          future: _loadFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                _allRequests.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        child: RefreshIndicator(
+          onRefresh: _refreshRequests,
+          child: FutureBuilder<void>(
+            future: _loadFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  _allRequests.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (_loadError != null) {
-              return Center(
-                child: Text(
-                  _loadError!,
-                  style: const TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-                ),
-              );
-            }
+              if (_loadError != null) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    const SizedBox(height: 120),
+                    Center(
+                      child: Text(
+                        _loadError!,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-            return Column(
-              children: [
-                AppTopBar(
-                  onSettingsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsMenuScreen(),
-                      ),
-                    );
-                  },
-                  onNotificationsTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsFullScreen(),
-                      ),
-                    );
-                  },
-                  onProfileTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
-                  },
-                  onMessagesTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MessagesScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 6),
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(20, 18, 20, 10),
-                        child: Text(
-                          'Lista de pedidos',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w500,
-                          ),
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                children: [
+                  AppTopBar(
+                    onSettingsTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsMenuScreen(),
                         ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(20, 14, 20, 14),
-                        child: Text(
-                          'Pedidos de Badges',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF243047),
-                          ),
+                      );
+                    },
+                    onNotificationsTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationsFullScreen(),
                         ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Filtrar por:',
-                              style: TextStyle(
-                                fontSize: 17,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: _RequestStatus.values
-                                  .map(
-                                    (status) => _FilterChipPill(
-                                      label: status.label,
-                                      backgroundColor: status.backgroundColor,
-                                      textColor: status.textColor,
-                                      selected: _activeStatuses.contains(status),
-                                      onTap: () {
-                                        setState(() {
-                                          if (_activeStatuses.contains(status)) {
-                                            _activeStatuses.remove(status);
-                                          } else {
-                                            _activeStatuses.add(status);
-                                          }
-                                        });
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ],
+                      );
+                    },
+                    onProfileTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
                         ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                      const SizedBox(height: 10),
-                      if (_filteredRequests.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Text(
-                            'Sem pedidos para os filtros escolhidos.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
+                      );
+                    },
+                    onMessagesTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MessagesScreen(),
                         ),
-                      ..._filteredRequests.asMap().entries.map(
-                        (entry) => Padding(
-                          padding: EdgeInsets.only(
-                            bottom: entry.key == _filteredRequests.length - 1
-                                ? 0
-                                : 10,
-                          ),
-                          child: _RequestCard(request: entry.value),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
+                      );
+                    },
                   ),
-                ),
-              ],
-            );
-          },
+                  const SizedBox(height: 6),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 18, 20, 10),
+                    child: Text(
+                      'Lista de pedidos',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 14, 20, 14),
+                    child: Text(
+                      'Pedidos de Badges',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF243047),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Filtrar por:',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: _RequestStatus.values
+                              .map(
+                                (status) => _FilterChipPill(
+                                  label: status.label,
+                                  backgroundColor: status.backgroundColor,
+                                  textColor: status.textColor,
+                                  selected: _activeStatuses.contains(status),
+                                  onTap: () {
+                                    setState(() {
+                                      if (_activeStatuses.contains(status)) {
+                                        _activeStatuses.remove(status);
+                                      } else {
+                                        _activeStatuses.add(status);
+                                      }
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  const SizedBox(height: 10),
+                  if (_filteredRequests.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Sem pedidos para os filtros escolhidos.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ..._filteredRequests.asMap().entries.map(
+                    (entry) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: entry.key == _filteredRequests.length - 1
+                            ? 0
+                            : 10,
+                      ),
+                      child: _RequestCard(request: entry.value),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

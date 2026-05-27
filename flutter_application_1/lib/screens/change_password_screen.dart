@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
+import '../services/local_storage.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -92,9 +92,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         newPassword: newPassword,
       );
 
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.containsKey(_rememberedPasswordKey)) {
-        await prefs.setString(_rememberedPasswordKey, newPassword);
+      final hasRememberedPassword =
+          await localStorage.containsKey(_rememberedPasswordKey);
+      if (hasRememberedPassword) {
+        await localStorage.setString(_rememberedPasswordKey, newPassword);
       }
 
       _currentPasswordController.clear();

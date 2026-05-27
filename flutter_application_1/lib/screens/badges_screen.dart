@@ -294,8 +294,8 @@ class BadgesScreen extends StatefulWidget {
 }
 
 class _BadgesScreenState extends State<BadgesScreen> {
-  late final Future<List<_BadgeData>> _catalogFuture;
-  late final Future<List<_BadgeData>> _myBadgesFuture;
+  late Future<List<_BadgeData>> _catalogFuture;
+  late Future<List<_BadgeData>> _myBadgesFuture;
   final TextEditingController _myBadgesSearchController =
       TextEditingController();
   String _myBadgesSearchTerm = '';
@@ -329,6 +329,17 @@ class _BadgesScreenState extends State<BadgesScreen> {
   void dispose() {
     _myBadgesSearchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshBadges() async {
+    setState(() {
+      _catalogFuture = _loadCatalogBadges();
+      _myBadgesFuture = _loadMyBadges();
+    });
+    await Future.wait([
+      _catalogFuture,
+      _myBadgesFuture,
+    ]);
   }
 
   List<_BadgeData> _applyMyBadgesFilters(List<_BadgeData> badges) {
@@ -456,173 +467,179 @@ class _BadgesScreenState extends State<BadgesScreen> {
           );
         },
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        BadgeCatalogScreen(catalogFuture: _catalogFuture),
+      body: RefreshIndicator(
+        onRefresh: _refreshBadges,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          BadgeCatalogScreen(catalogFuture: _catalogFuture),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFFDDE5EF),
-                    width: 1.2,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFDDE5EF),
+                      width: 1.2,
+                    ),
+                    color: const Color(0xFFFAFCFF),
                   ),
-                  color: const Color(0xFFFAFCFF),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.verified_outlined, size: 24),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'Catálogo de Badges Completo',
-                        style: TextStyle(
-                          fontSize: 28 / 2,
-                          fontWeight: FontWeight.w500,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_outlined, size: 24),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Catálogo de Badges Completo',
+                          style: TextStyle(
+                            fontSize: 28 / 2,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey[500],
-                      size: 22,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 64,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE0E6F0)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, color: Colors.grey[500], size: 24),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _myBadgesSearchController,
-                            decoration: const InputDecoration(
-                              hintText: 'Pesquisar badges',
-                              border: InputBorder.none,
-                              isDense: true,
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _myBadgesSearchTerm = value;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey[500],
+                        size: 22,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                _toolButton(
-                  Icons.filter_alt_outlined,
-                  onTap: _showMyBadgesFilterSheet,
-                ),
-                const SizedBox(width: 10),
-                _toolButton(Icons.tune_rounded, onTap: _showMyBadgesSortSheet),
-              ],
-            ),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const gap = 16.0;
-                final itemWidth = (constraints.maxWidth - gap) / 2;
-                return FutureBuilder<List<_BadgeData>>(
-                  future: _myBadgesFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState != ConnectionState.done) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            'Nao foi possivel carregar a base de dados.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF6B7280),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 64,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE0E6F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, color: Colors.grey[500], size: 24),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _myBadgesSearchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Pesquisar badges',
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _myBadgesSearchTerm = value;
+                                });
+                              },
                             ),
                           ),
-                        ),
-                      );
-                    }
-                    final ownedBadges = snapshot.data ?? const <_BadgeData>[];
-                    if (ownedBadges.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            'Ainda nao tem badges.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF6B7280),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _toolButton(
+                    Icons.filter_alt_outlined,
+                    onTap: _showMyBadgesFilterSheet,
+                  ),
+                  const SizedBox(width: 10),
+                  _toolButton(Icons.tune_rounded, onTap: _showMyBadgesSortSheet),
+                ],
+              ),
+              const SizedBox(height: 14),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 16.0;
+                  final itemWidth = (constraints.maxWidth - gap) / 2;
+                  return FutureBuilder<List<_BadgeData>>(
+                    future: _myBadgesFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'Nao foi possivel carregar a base de dados.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF6B7280),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }
-                    final visibleBadges = _applyMyBadgesFilters(ownedBadges);
-                    if (visibleBadges.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            'Nenhum badge encontrado com os filtros escolhidos.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF6B7280),
+                        );
+                      }
+                      final ownedBadges = snapshot.data ?? const <_BadgeData>[];
+                      if (ownedBadges.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'Ainda nao tem badges.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF6B7280),
+                              ),
                             ),
                           ),
-                        ),
+                        );
+                      }
+                      final visibleBadges = _applyMyBadgesFilters(ownedBadges);
+                      if (visibleBadges.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'Nenhum badge encontrado com os filtros escolhidos.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: visibleBadges
+                            .map(
+                              (badge) => _OwnedBadgeCard(
+                                width: itemWidth,
+                                badge: badge,
+                              ),
+                            )
+                            .toList(),
                       );
-                    }
-                    return Wrap(
-                      spacing: gap,
-                      runSpacing: gap,
-                      children: visibleBadges
-                          .map(
-                            (badge) =>
-                                _OwnedBadgeCard(width: itemWidth, badge: badge),
-                          )
-                          .toList(),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

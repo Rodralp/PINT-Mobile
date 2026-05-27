@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/auth_api.dart';
 import '../services/backend_config.dart';
 import '../services/auth_session.dart';
+import '../services/local_storage.dart';
 import 'preferences_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,9 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadRememberedEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rememberedEmail = prefs.getString(_rememberedEmailKey);
-    final rememberedPassword = prefs.getString(_rememberedPasswordKey);
+    final rememberedEmail = await localStorage.getString(_rememberedEmailKey);
+    final rememberedPassword = await localStorage.getString(_rememberedPasswordKey);
     final rememberLogin = await AuthSession.shouldRememberLogin();
 
     if (!mounted) {
@@ -76,9 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
     final hasPreferences = (await AuthSession.hasPreferences()) ||
-        (prefs.getBool(PreferencesScreen.firstLoginPreferencesDoneKey) ?? false);
+        ((await localStorage.getBool(PreferencesScreen.firstLoginPreferencesDoneKey)) ?? false);
 
     if (!mounted) {
       return;
@@ -147,21 +145,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await AuthSession.saveAccount(account);
 
-      final prefs = await SharedPreferences.getInstance();
       if (rememberMe) {
-        await prefs.setString(_rememberedEmailKey, email);
-        await prefs.setString(_rememberedPasswordKey, senha);
+        await localStorage.setString(_rememberedEmailKey, email);
+        await localStorage.setString(_rememberedPasswordKey, senha);
       } else {
-        await prefs.remove(_rememberedEmailKey);
-        await prefs.remove(_rememberedPasswordKey);
+        await localStorage.remove(_rememberedEmailKey);
+        await localStorage.remove(_rememberedPasswordKey);
       }
       await AuthSession.setRememberLogin(rememberMe);
 
       final hasPreferences =
           account.hasPreferences ||
           (await AuthSession.hasPreferences()) ||
-          (prefs.getBool(PreferencesScreen.firstLoginPreferencesDoneKey) ??
-              false);
+          ((await localStorage.getBool(PreferencesScreen.firstLoginPreferencesDoneKey)) ?? false);
 
       if (!mounted) {
         return;

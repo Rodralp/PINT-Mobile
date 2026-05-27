@@ -122,6 +122,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _refreshDashboard() async {
+    await Future.wait([
+      _loadDashboardMetrics(),
+      _loadDashboardReminders(),
+    ]);
+  }
+
   Color _colorStringToColor(String colorStr) {
     switch (colorStr) {
       case 'green':
@@ -292,204 +299,208 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // METRIC CARDS
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: _dashboardMetrics.isEmpty && _isMetricsLoading
-                      ? [
-                          _buildMetricCard(
-                            title: 'A carregar...',
-                            value: '—',
-                            subtitle: 'A obter dados do dashboard',
-                            icon: Icons.sync,
-                            iconColor: Colors.grey,
+      body: RefreshIndicator(
+        onRefresh: _refreshDashboard,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // METRIC CARDS
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: _dashboardMetrics.isEmpty && _isMetricsLoading
+                        ? [
+                            _buildMetricCard(
+                              title: 'A carregar...',
+                              value: '—',
+                              subtitle: 'A obter dados do dashboard',
+                              icon: Icons.sync,
+                              iconColor: Colors.grey,
+                            ),
+                          ]
+                        : List.generate(_dashboardMetrics.length, (index) {
+                            final metric = _dashboardMetrics[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                right: index == _dashboardMetrics.length - 1
+                                    ? 0
+                                    : 16,
+                              ),
+                              child: _buildMetricCard(
+                                title: metric.title,
+                                value: metric.value,
+                                subtitle: metric.subtitle,
+                                icon: metric.icon,
+                                iconColor: metric.iconColor,
+                              ),
+                            );
+                          }),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // LEMBRETES (Reminders)
+                _buildSection(
+                  title: "Lembretes",
+                  onViewAll: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RemindersScreen(),
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      if (_isRemindersLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
                           ),
-                        ]
-                      : List.generate(_dashboardMetrics.length, (index) {
-                          final metric = _dashboardMetrics[index];
+                        )
+                      else if (_dashboardReminders.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            "Sem lembretes para mostrar.",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        )
+                      else
+                        ...List.generate(_dashboardReminders.length, (index) {
+                          final reminder = _dashboardReminders[index];
                           return Padding(
                             padding: EdgeInsets.only(
-                              right: index == _dashboardMetrics.length - 1
+                              bottom: index == _dashboardReminders.length - 1
                                   ? 0
-                                  : 16,
+                                  : 12,
                             ),
-                            child: _buildMetricCard(
-                              title: metric.title,
-                              value: metric.value,
-                              subtitle: metric.subtitle,
-                              icon: metric.icon,
-                              iconColor: metric.iconColor,
+                            child: _buildReminderItem(
+                              message: reminder.title,
+                              date: _formatReminderDate(reminder.date),
+                              barColor: _colorStringToColor(reminder.color),
                             ),
                           );
                         }),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // LEMBRETES (Reminders)
-              _buildSection(
-                title: "Lembretes",
-                onViewAll: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RemindersScreen(),
-                    ),
-                  );
-                },
-                child: Column(
-                  children: [
-                    if (_isRemindersLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        ),
-                      )
-                    else if (_dashboardReminders.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          "Sem lembretes para mostrar.",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      )
-                    else
-                      ...List.generate(_dashboardReminders.length, (index) {
-                        final reminder = _dashboardReminders[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == _dashboardReminders.length - 1
-                                ? 0
-                                : 12,
-                          ),
-                          child: _buildReminderItem(
-                            message: reminder.title,
-                            date: _formatReminderDate(reminder.date),
-                            barColor: _colorStringToColor(reminder.color),
-                          ),
-                        );
-                      }),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // EM PROGRESSO
-              _buildSection(
-                title: "Em Progresso",
-                onViewAll: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProgressFullScreen(),
-                    ),
-                  );
-                },
-                child: Column(
-                  children: [
-                    _buildProgressCard(
-                      title: "LowCode (Outsystems)",
-                      subtitle: "Especialista",
-                      status: "reprovado",
-                    ),
-                    const SizedBox(height: 12),
-                    _buildProgressCard(
-                      title: "LowCode (Outsystems)",
-                      subtitle: "Sénior",
-                      status: "em_validacao",
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // SUGESTÕES
-              _buildSection(
-                title: "Sugestões",
-                onViewAll: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SuggestionsFullScreen(
-                        suggestions: _dashboardSuggestions,
-                        isLoading: _isMetricsLoading,
+                // EM PROGRESSO
+                _buildSection(
+                  title: "Em Progresso",
+                  onViewAll: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProgressFullScreen(),
                       ),
-                    ),
-                  );
-                },
-                child: Column(
-                  children: _isMetricsLoading && _dashboardSuggestions.isEmpty
-                      ? [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                              ),
-                            ),
-                          ),
-                        ]
-                      : _dashboardSuggestions.isEmpty
-                      ? [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'Defina as suas preferências para ver sugestões de badges.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ),
-                        ]
-                      : List.generate(
-                          _dashboardSuggestions.length > 2
-                              ? 2
-                              : _dashboardSuggestions.length,
-                          (index) {
-                            final suggestion = _dashboardSuggestions[index];
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                bottom:
-                                    index ==
-                                        (_dashboardSuggestions.length > 2
-                                            ? 1
-                                            : _dashboardSuggestions.length - 1)
-                                    ? 0
-                                    : 12,
-                              ),
-                              child: _buildBadgeCard(
-                                title: suggestion.title,
-                                subtitleKey: suggestion.subtitleKey,
-                                accent: suggestion.accent,
-                              ),
-                            );
-                          },
-                        ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      _buildProgressCard(
+                        title: "LowCode (Outsystems)",
+                        subtitle: "Especialista",
+                        status: "reprovado",
+                      ),
+                      const SizedBox(height: 12),
+                      _buildProgressCard(
+                        title: "LowCode (Outsystems)",
+                        subtitle: "Sénior",
+                        status: "em_validacao",
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 24),
+
+                // SUGESTÕES
+                _buildSection(
+                  title: "Sugestões",
+                  onViewAll: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SuggestionsFullScreen(
+                          suggestions: _dashboardSuggestions,
+                          isLoading: _isMetricsLoading,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: _isMetricsLoading && _dashboardSuggestions.isEmpty
+                        ? [
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                            ),
+                          ]
+                        : _dashboardSuggestions.isEmpty
+                        ? [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Defina as suas preferências para ver sugestões de badges.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ),
+                          ]
+                        : List.generate(
+                            _dashboardSuggestions.length > 2
+                                ? 2
+                                : _dashboardSuggestions.length,
+                            (index) {
+                              final suggestion = _dashboardSuggestions[index];
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom:
+                                      index ==
+                                          (_dashboardSuggestions.length > 2
+                                              ? 1
+                                              : _dashboardSuggestions.length - 1)
+                                      ? 0
+                                      : 12,
+                                ),
+                                child: _buildBadgeCard(
+                                  title: suggestion.title,
+                                  subtitleKey: suggestion.subtitleKey,
+                                  accent: suggestion.accent,
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),

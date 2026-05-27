@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'local_storage.dart';
 
 import 'backend_config.dart';
 
@@ -220,13 +220,11 @@ class BadgesApi {
   }
 
   Future<void> _writeCache(String key, Object data) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode(data));
+    await localStorage.setString(key, jsonEncode(data));
   }
 
   Future<List<dynamic>?> _readCacheList(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(key);
+    final raw = await localStorage.getString(key);
     if (raw == null || raw.isEmpty) {
       return null;
     }

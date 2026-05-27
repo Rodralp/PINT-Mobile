@@ -79,6 +79,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
     }
   }
 
+  Future<void> _refreshReminders() async {
+    await _loadReminders();
+  }
+
   Color _colorStringToColor(String colorStr) {
     switch (colorStr) {
       case 'green':
@@ -288,109 +292,15 @@ class _RemindersScreenState extends State<RemindersScreen> {
           );
         },
       ),
-      body: _isLoading && _reminders.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.maybePop(context),
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Color(0xFF243047),
-                          ),
-                          tooltip: 'Voltar',
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Lembretes',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF243047),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                    const SizedBox(height: 24),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => _openReminderForm(),
-                      child: Container(
-                        width: double.infinity,
-                        height: 92,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFFC6D2E1),
-                            width: 1.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.add_rounded,
-                              size: 32,
-                              color: Color(0xFF64748B),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Novo Lembrete',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.blueGrey[600],
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (_reminders.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40),
-                          child: Text(
-                            'Sem lembretes para mostrar.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF94A3B8),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      ...List.generate(_reminders.length, (index) {
-                        final reminder = _reminders[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _ReminderCard(
-                            color: _colorStringToColor(reminder.color),
-                            title: reminder.title,
-                            subtitle: reminder.description,
-                            date: reminder.date,
-                            onEdit: () => _openReminderForm(existing: reminder),
-                            onDelete: () => _deleteReminder(reminder),
-                          ),
-                        );
-                      }),
-                  ],
-                ),
-              ),
-            ),
-      bottomNavigationBar: _buildBottomNavigationBar(context),
+      body: RefreshIndicator(
+        onRefresh: _refreshReminders,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ...existing code...
+          ],
+        ),
+      ),
     );
   }
 

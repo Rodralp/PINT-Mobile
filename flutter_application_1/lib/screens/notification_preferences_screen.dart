@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/auth_session.dart';
+import '../services/local_storage.dart';
 import '../theme/softinsa_theme.dart';
 
 class NotificationPreferencesScreen extends StatefulWidget {
@@ -31,16 +31,25 @@ class _NotificationPreferencesScreenState
     _loadPreferences();
   }
 
-  String _storageKey(String name) {
-    final suffix = _accountId != null && _accountId! > 0
-        ? _accountId.toString()
+  String _storageKey(String name, [int? accountId]) {
+    final resolvedAccountId = accountId ?? _accountId;
+    final suffix = resolvedAccountId != null && resolvedAccountId > 0
+        ? resolvedAccountId.toString()
         : 'default';
     return 'notification_preferences:$suffix:$name';
   }
 
   Future<void> _loadPreferences() async {
     final accountId = await AuthSession.getAccountId();
-    final prefs = await SharedPreferences.getInstance();
+    final emailUpdates =
+        await localStorage.getBool(_storageKey('email_updates', accountId)) ??
+            _defaultEmailUpdates;
+    final inAppAlerts =
+        await localStorage.getBool(_storageKey('in_app_alerts', accountId)) ??
+            _defaultInAppAlerts;
+    final weeklySummary =
+        await localStorage.getBool(_storageKey('weekly_summary', accountId)) ??
+            _defaultWeeklySummary;
 
     if (!mounted) {
       return;
@@ -48,12 +57,9 @@ class _NotificationPreferencesScreenState
 
     setState(() {
       _accountId = accountId;
-      _emailUpdates =
-          prefs.getBool(_storageKey('email_updates')) ?? _defaultEmailUpdates;
-      _inAppAlerts =
-          prefs.getBool(_storageKey('in_app_alerts')) ?? _defaultInAppAlerts;
-      _weeklySummary =
-          prefs.getBool(_storageKey('weekly_summary')) ?? _defaultWeeklySummary;
+      _emailUpdates = emailUpdates;
+      _inAppAlerts = inAppAlerts;
+      _weeklySummary = weeklySummary;
       _isLoading = false;
     });
   }
@@ -64,10 +70,9 @@ class _NotificationPreferencesScreenState
     });
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_storageKey('email_updates'), _emailUpdates);
-      await prefs.setBool(_storageKey('in_app_alerts'), _inAppAlerts);
-      await prefs.setBool(_storageKey('weekly_summary'), _weeklySummary);
+      await localStorage.setBool(_storageKey('email_updates'), _emailUpdates);
+      await localStorage.setBool(_storageKey('in_app_alerts'), _inAppAlerts);
+      await localStorage.setBool(_storageKey('weekly_summary'), _weeklySummary);
 
       if (!mounted) {
         return;
@@ -107,7 +112,12 @@ class _NotificationPreferencesScreenState
     });
   }
 
-
+  Future<void> _refreshPreferences() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _loadPreferences();
+  }
 
   void _toggleEmailUpdates(bool value) {
     setState(() {
@@ -132,120 +142,124 @@ class _NotificationPreferencesScreenState
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, size: 28),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
+        child: RefreshIndicator(
+          onRefresh: _refreshPreferences,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, size: 28),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Notificações',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF243047),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Notificações',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF243047),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Configure as suas preferências de notificação.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 26),
-                _SettingCard(
-                  label: 'Receber atualizações por email',
-                  value: _emailUpdates,
-                  onChanged: _isLoading || _isSaving ? null : _toggleEmailUpdates,
-                ),
-                const SizedBox(height: 14),
-                _SettingCard(
-                  label: 'Receber alertas dentro da plataforma',
-                  value: _inAppAlerts,
-                  onChanged: _isLoading || _isSaving ? null : _toggleInAppAlerts,
-                ),
-                const SizedBox(height: 14),
-                _SettingCard(
-                  label: 'Receber resumo semanal',
-                  value: _weeklySummary,
-                  onChanged: _isLoading || _isSaving ? null : _toggleWeeklySummary,
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : _savePreferences,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Configure as suas preferências de notificação.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 26),
+                  _SettingCard(
+                    label: 'Receber atualizações por email',
+                    value: _emailUpdates,
+                    onChanged: _isLoading || _isSaving ? null : _toggleEmailUpdates,
+                  ),
+                  const SizedBox(height: 14),
+                  _SettingCard(
+                    label: 'Receber alertas dentro da plataforma',
+                    value: _inAppAlerts,
+                    onChanged: _isLoading || _isSaving ? null : _toggleInAppAlerts,
+                  ),
+                  const SizedBox(height: 14),
+                  _SettingCard(
+                    label: 'Receber resumo semanal',
+                    value: _weeklySummary,
+                    onChanged: _isLoading || _isSaving ? null : _toggleWeeklySummary,
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _savePreferences,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                    ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Text(
+                              'Guardar alterações',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                             ),
-                          )
-                        : const Text(
-                            'Guardar alterações',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: _isLoading || _isSaving ? null : _resetDefaults,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1F2937),
-                      side: const BorderSide(
-                        color: Color(0xFFD7DDE7),
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
                     ),
-                    child: const Text(
-                      'Repor padrão',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: _isLoading || _isSaving ? null : _resetDefaults,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1F2937),
+                        side: const BorderSide(
+                          color: Color(0xFFD7DDE7),
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Repor padrão',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
@@ -301,7 +315,6 @@ class _SettingCard extends StatelessWidget {
     );
   }
 }
-
 
 class _InfoCard extends StatelessWidget {
   const _InfoCard({

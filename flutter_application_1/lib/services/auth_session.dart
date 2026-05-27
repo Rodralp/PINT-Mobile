@@ -1,4 +1,4 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'local_storage.dart';
 
 import 'auth_api.dart';
 
@@ -15,78 +15,65 @@ class AuthSession {
   static const String _skipAutoLoginOnceKey = 'skip_auto_login_once';
 
   static Future<void> saveAccount(AuthAccount account) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_accountIdKey, account.id);
-    await prefs.setString(_accountNameKey, account.name);
-    await prefs.setString(_accountEmailKey, account.email);
-    await prefs.setString(_accountRoleKey, account.role);
+    await localStorage.setInt(_accountIdKey, account.id);
+    await localStorage.setString(_accountNameKey, account.name);
+    await localStorage.setString(_accountEmailKey, account.email);
+    await localStorage.setString(_accountRoleKey, account.role);
     final permissions = account.roles.isNotEmpty ? account.roles.join(';') : account.role;
-    await prefs.setString(_accountPermissionsKey, permissions);
-    await prefs.setBool(_accountHasPreferencesKey, account.hasPreferences);
+    await localStorage.setString(_accountPermissionsKey, permissions);
+    await localStorage.setBool(_accountHasPreferencesKey, account.hasPreferences);
   }
 
   static Future<void> setRememberLogin(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_rememberLoginKey, value);
+    await localStorage.setBool(_rememberLoginKey, value);
   }
 
   static Future<bool> shouldRememberLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_rememberLoginKey) ?? false;
+    return await localStorage.getBool(_rememberLoginKey) ?? false;
   }
 
   static Future<void> setSkipAutoLoginOnce(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_skipAutoLoginOnceKey, value);
+    await localStorage.setBool(_skipAutoLoginOnceKey, value);
   }
 
   static Future<bool> shouldSkipAutoLoginOnce() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_skipAutoLoginOnceKey) ?? false;
+    return await localStorage.getBool(_skipAutoLoginOnceKey) ?? false;
   }
 
   static Future<int?> getAccountId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_accountIdKey);
+    return localStorage.getInt(_accountIdKey);
   }
 
   static Future<String?> getAccountName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accountNameKey);
+    return localStorage.getString(_accountNameKey);
   }
 
   static Future<String?> getAccountEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accountEmailKey);
+    return localStorage.getString(_accountEmailKey);
   }
 
   static Future<String?> getAccountRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accountRoleKey);
+    return localStorage.getString(_accountRoleKey);
   }
 
   static Future<String?> getAccountPermissions() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accountPermissionsKey);
+    return localStorage.getString(_accountPermissionsKey);
   }
 
   static Future<bool> hasPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_accountHasPreferencesKey) ?? false;
+    return await localStorage.getBool(_accountHasPreferencesKey) ?? false;
   }
 
   static Future<void> setHasPreferences(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_accountHasPreferencesKey, value);
+    await localStorage.setBool(_accountHasPreferencesKey, value);
   }
 
   static Future<void> clearSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_accountIdKey);
-    await prefs.remove(_accountNameKey);
-    await prefs.remove(_accountEmailKey);
-    await prefs.remove(_accountRoleKey);
-    await prefs.remove(_accountPermissionsKey);
-    await prefs.remove(_accountHasPreferencesKey);
+    await localStorage.remove(_accountIdKey);
+    await localStorage.remove(_accountNameKey);
+    await localStorage.remove(_accountEmailKey);
+    await localStorage.remove(_accountRoleKey);
+    await localStorage.remove(_accountPermissionsKey);
+    await localStorage.remove(_accountHasPreferencesKey);
   }
 }
