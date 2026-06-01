@@ -180,6 +180,21 @@ class ReminderApi {
     }
   }
 
+  List<dynamic> _extractList(dynamic decoded) {
+    if (decoded is List) {
+      return decoded;
+    }
+    if (decoded is Map<String, dynamic>) {
+      for (final key in ['data', 'lembretes', 'reminders', 'items', 'results']) {
+        final value = decoded[key];
+        if (value is List) {
+          return value;
+        }
+      }
+    }
+    return const [];
+  }
+
   Future<List<Reminder>> fetchReminders({required int accountId}) async {
     final uri = await _uri('/consultor/lembretes?accountId=$accountId');
     final response = await _getJson(uri);
@@ -190,11 +205,8 @@ class ReminderApi {
 
     try {
       final decoded = jsonDecode(response.body);
-      if (decoded is! List) {
-        return <Reminder>[];
-      }
-
-      return decoded
+      final list = _extractList(decoded);
+      return list
           .whereType<Map<String, dynamic>>()
           .map(Reminder.fromJson)
           .toList();

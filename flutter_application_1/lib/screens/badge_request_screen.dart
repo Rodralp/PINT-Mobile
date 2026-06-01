@@ -160,6 +160,141 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
         .toList();
   }
 
+  void _showRequestDetails(_RequestData request) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          builder: (context, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.workspace_premium_outlined,
+                        size: 28,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            request.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            request.level.isEmpty ? 'Sem nivel' : request.level,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _detailChip('Estado', request.status.label,
+                        color: request.status.textColor),
+                    _detailChip(
+                      'Data',
+                      request.date.isEmpty ? '-' : request.date,
+                    ),
+                    _detailChip('Pedido', '#${request.id}'),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Detalhes do pedido',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Badge: ${request.title}',
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Nivel: ${request.level.isEmpty ? '-' : request.level}',
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Estado: ${request.status.label}',
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _detailChip(String label, String value, {Color? color}) {
+    final chipColor = color ?? const Color(0xFF1A90F0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: chipColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: chipColor),
+      ),
+      child: Text(
+        '$label: $value',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: chipColor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -314,7 +449,10 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                             ? 0
                             : 10,
                       ),
-                      child: _RequestCard(request: entry.value),
+                      child: _RequestCard(
+                        request: entry.value,
+                        onView: () => _showRequestDetails(entry.value),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -371,9 +509,10 @@ class _FilterChipPill extends StatelessWidget {
 }
 
 class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.request});
+  const _RequestCard({required this.request, required this.onView});
 
   final _RequestData request;
+  final VoidCallback onView;
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +586,7 @@ class _RequestCard extends StatelessWidget {
               ),
               const Spacer(),
               OutlinedButton(
-                onPressed: () {},
+                onPressed: onView,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(82, 44),
                   side: const BorderSide(color: Color(0xFF1F2937), width: 2),

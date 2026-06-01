@@ -568,7 +568,10 @@ class _BadgesScreenState extends State<BadgesScreen> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   const gap = 16.0;
-                  final itemWidth = (constraints.maxWidth - gap) / 2;
+                  final maxWidth = constraints.hasBoundedWidth
+                      ? constraints.maxWidth
+                      : MediaQuery.of(context).size.width - 40;
+                  final itemWidth = (maxWidth - gap) / 2;
                   return FutureBuilder<List<_BadgeData>>(
                     future: _myBadgesFuture,
                     builder: (context, snapshot) {
@@ -847,7 +850,10 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
             LayoutBuilder(
               builder: (context, constraints) {
                 const gap = 16.0;
-                final itemWidth = (constraints.maxWidth - gap) / 2;
+                final maxWidth = constraints.hasBoundedWidth
+                    ? constraints.maxWidth
+                    : MediaQuery.of(context).size.width - 40;
+                final itemWidth = (maxWidth - gap) / 2;
                 return FutureBuilder<List<_BadgeData>>(
                   future: widget.catalogFuture,
                   builder: (context, snapshot) {
@@ -1404,8 +1410,9 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
                         children: [
                           _metaItem(Icons.schedule, 'Expira ${badge.date}'),
                           _metaItem(

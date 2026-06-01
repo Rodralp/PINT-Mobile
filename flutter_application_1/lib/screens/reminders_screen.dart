@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../services/auth_session.dart';
 import '../services/reminder_api.dart';
@@ -25,16 +26,19 @@ class _RemindersScreenState extends State<RemindersScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[Reminders] initState');
     _loadReminders();
   }
 
   Future<void> _loadReminders() async {
+    debugPrint('[Reminders] load start');
     try {
       final accountId = await AuthSession.getAccountId();
 
       if (!mounted) return;
 
       if (accountId == null || accountId <= 0) {
+        debugPrint('[Reminders] invalid accountId: $accountId');
         setState(() {
           _isLoading = false;
         });
@@ -51,10 +55,13 @@ class _RemindersScreenState extends State<RemindersScreen> {
       setState(() {
         _accountId = accountId;
       });
+      debugPrint('[Reminders] accountId: $accountId');
 
       final reminders = await ReminderRepository.instance.loadReminders(
         accountId: accountId,
+        forceRefresh: true,
       );
+      debugPrint('[Reminders] load complete: ${reminders.length} items');
 
       if (mounted) {
         setState(() {
@@ -63,6 +70,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
         });
       }
     } catch (e) {
+      debugPrint('[Reminders] load error: $e');
       if (!mounted) return;
 
       setState(() {
@@ -256,6 +264,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('[Reminders] build');
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppTopBar(
@@ -297,10 +306,94 @@ class _RemindersScreenState extends State<RemindersScreen> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // ...existing code...
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Lembretes',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF243047),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _isLoading ? null : () => _openReminderForm(),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size.zero,
+                        backgroundColor: const Color(0xFF1A90F0),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text(
+                        'Novo',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_isLoading && _reminders.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 64),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else if (_reminders.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 64),
+                  child: Center(
+                    child: Text(
+                      'Sem lembretes ainda.',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final reminder = _reminders[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == _reminders.length - 1 ? 0 : 14,
+                        ),
+                        child: _ReminderCard(
+                          color: _colorStringToColor(reminder.color),
+                          title: reminder.title,
+                          subtitle: reminder.description,
+                          date: reminder.date,
+                          onEdit: () => _openReminderForm(existing: reminder),
+                          onDelete: () => _deleteReminder(reminder),
+                        ),
+                      );
+                    },
+                    childCount: _reminders.length,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
 
@@ -439,104 +532,111 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.existing == null ? 'Novo Lembrete' : 'Editar Lembrete',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF243047),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _fieldLabel('Título'),
-              const SizedBox(height: 8),
-              _formField(
-                controller: _titleController,
-                hintText: 'Digite o título',
-              ),
-              const SizedBox(height: 20),
-              _fieldLabel('Descrição'),
-              const SizedBox(height: 8),
-              _formField(
-                controller: _descriptionController,
-                hintText: 'Digite a descrição',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-              _fieldLabel('Data'),
-              const SizedBox(height: 8),
-              _formField(
-                controller: _dateController,
-                hintText: 'YYYY-MM-DD',
-                readOnly: true,
-                onTap: _pickDate,
-              ),
-              const SizedBox(height: 20),
-              _fieldLabel('Cor'),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: _colorOptions.map((option) {
-                  return _colorOption(
-                    option['id'] as String,
-                    option['color'] as Color,
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 32),
-              Row(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancelar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  Text(
+                    widget.existing == null ? 'Novo Lembrete' : 'Editar Lembrete',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF243047),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A90F0),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 24),
+                  _fieldLabel('Título'),
+                  const SizedBox(height: 8),
+                  _formField(
+                    controller: _titleController,
+                    hintText: 'Digite o título',
+                  ),
+                  const SizedBox(height: 20),
+                  _fieldLabel('Descrição'),
+                  const SizedBox(height: 8),
+                  _formField(
+                    controller: _descriptionController,
+                    hintText: 'Digite a descrição',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _fieldLabel('Data'),
+                  const SizedBox(height: 8),
+                  _formField(
+                    controller: _dateController,
+                    hintText: 'YYYY-MM-DD',
+                    readOnly: true,
+                    onTap: _pickDate,
+                  ),
+                  const SizedBox(height: 20),
+                  _fieldLabel('Cor'),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: _colorOptions.map((option) {
+                      return _colorOption(
+                        option['id'] as String,
+                        option['color'] as Color,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        widget.existing == null ? 'Criar' : 'Guardar',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A90F0),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: Text(
+                            widget.existing == null ? 'Criar' : 'Guardar',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

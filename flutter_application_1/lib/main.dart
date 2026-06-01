@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -8,6 +11,19 @@ import 'screens/preferences_screen.dart';
 import 'screens/register_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('FlutterError: ${details.exceptionAsString()}');
+    if (details.stack != null) {
+      debugPrint(details.stack.toString());
+    }
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Uncaught error: $error');
+    debugPrint(stack.toString());
+    return true;
+  };
   runApp(const MyApp());
 }
 
@@ -59,7 +75,7 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
+            minimumSize: const Size(64, 52),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),

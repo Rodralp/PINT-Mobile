@@ -57,4 +57,47 @@ class BackendConfig {
   static Future<void> clearBaseUrl() async {
     await localStorage.remove(baseUrlKey);
   }
+
+  static String? normalizeBaseUrlInput(String raw, {int defaultPort = 4000}) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    var candidate = trimmed;
+    if (!candidate.contains('://')) {
+      candidate = 'http://$candidate';
+    }
+
+    final uri = Uri.tryParse(candidate);
+    if (uri == null || uri.host.isEmpty) {
+      return null;
+    }
+
+    final port = uri.hasPort ? uri.port : defaultPort;
+    var path = uri.path;
+    if (path.isEmpty || path == '/') {
+      path = '/api';
+    } else if (!path.contains('/api')) {
+      path = path.endsWith('/') ? '${path}api' : '$path/api';
+    }
+
+    return Uri(
+      scheme: uri.scheme,
+      host: uri.host,
+      port: port,
+      path: path,
+    ).toString();
+  }
+
+  static String formatServerInput(String baseUrl, {int defaultPort = 4000}) {
+    final uri = Uri.tryParse(baseUrl);
+    if (uri == null || uri.host.isEmpty) {
+      return baseUrl;
+    }
+    final portSuffix = uri.hasPort && uri.port != defaultPort
+        ? ':${uri.port}'
+        : '';
+    return '${uri.host}$portSuffix';
+  }
 }

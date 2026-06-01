@@ -548,14 +548,17 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            const Icon(Icons.workspace_premium_outlined, size: 28),
-                            const SizedBox(width: 8),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: const [
+                            Icon(Icons.schedule_outlined, size: 30),
                             Text(
-                              '${progress.total} niveis',
-                              style: const TextStyle(fontSize: 18),
+                              '6 meses',
+                              style: TextStyle(fontSize: 18),
                             ),
+                            Icon(Icons.group_outlined, size: 30),
+                            Text('123', style: TextStyle(fontSize: 18)),
                           ],
                         ),
                       ],
@@ -587,6 +590,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
                       onToggle: () => _toggleArea(area.id),
                       resolveBadgeAsset: _resolveBadgeAsset,
                       statusLabelBuilder: _statusLabel,
+                      onLevelTap: (level) => _openLevelDetails(context, level),
                     ),
                     const SizedBox(height: 14),
                   ],
@@ -597,6 +601,176 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  void _openLevelDetails(BuildContext context, BackendLevel level) {
+    final status = _statusLabel(level.status);
+    final badgeAsset = _resolveBadgeAsset(level);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          builder: (context, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      alignment: Alignment.center,
+                      child: badgeAsset != null
+                          ? Image.asset(
+                              badgeAsset,
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.contain,
+                            )
+                          : const Icon(Icons.workspace_premium_outlined, size: 28),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            level.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          if (level.subtitle.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                level.subtitle,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _detailChip('Pontos', level.points.toString()),
+                    _detailChip('Estado', status.text, color: status.color),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Requisitos',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 10),
+                if (level.requirements.isEmpty)
+                  const Text(
+                    'Sem requisitos associados.',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                  )
+                else
+                  ...level.requirements.map(
+                    (requirement) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              requirement.title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                            if (requirement.description.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                requirement.description,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _detailChip(String label, String value, {Color? color}) {
+    final chipColor = color ?? const Color(0xFF1A90F0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: chipColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: chipColor),
+      ),
+      child: Text(
+        '$label: $value',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: chipColor,
+        ),
+      ),
     );
   }
 
@@ -649,6 +823,7 @@ class _AreaCard extends StatelessWidget {
     required this.onToggle,
     required this.resolveBadgeAsset,
     required this.statusLabelBuilder,
+    required this.onLevelTap,
   });
 
   final BackendArea area;
@@ -656,6 +831,7 @@ class _AreaCard extends StatelessWidget {
   final VoidCallback onToggle;
   final String? Function(BackendLevel) resolveBadgeAsset;
   final _StatusLabel Function(String) statusLabelBuilder;
+  final ValueChanged<BackendLevel> onLevelTap;
 
   @override
   Widget build(BuildContext context) {
@@ -719,6 +895,7 @@ class _AreaCard extends StatelessWidget {
                       level: level,
                       badgeAsset: resolveBadgeAsset(level),
                       statusLabel: statusLabelBuilder(level.status),
+                      onTap: () => onLevelTap(level),
                     ),
                     const SizedBox(height: 10),
                   ],
@@ -736,61 +913,70 @@ class _LevelRow extends StatelessWidget {
     required this.level,
     required this.badgeAsset,
     required this.statusLabel,
+    required this.onTap,
   });
 
   final BackendLevel level;
   final String? badgeAsset;
   final _StatusLabel statusLabel;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.center,
-          child: badgeAsset != null
-              ? Image.asset(badgeAsset!, width: 36, height: 36, fit: BoxFit.contain)
-              : const Icon(Icons.workspace_premium_outlined, size: 28),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                level.title,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(12),
               ),
-              if (level.subtitle.isNotEmpty)
-                Text(
-                  level.subtitle,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              const SizedBox(height: 6),
-              Row(
+              alignment: Alignment.center,
+              child: badgeAsset != null
+                  ? Image.asset(badgeAsset!, width: 36, height: 36, fit: BoxFit.contain)
+                  : const Icon(Icons.workspace_premium_outlined, size: 28),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (statusLabel.icon != null)
-                    Icon(statusLabel.icon, size: 18, color: statusLabel.color),
-                  if (statusLabel.icon != null) const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      statusLabel.text,
-                      style: TextStyle(fontSize: 14, color: statusLabel.color),
+                  Text(
+                    level.title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  if (level.subtitle.isNotEmpty)
+                    Text(
+                      level.subtitle,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      if (statusLabel.icon != null)
+                        Icon(statusLabel.icon, size: 18, color: statusLabel.color),
+                      if (statusLabel.icon != null) const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          statusLabel.text,
+                          style: TextStyle(fontSize: 14, color: statusLabel.color),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -924,17 +1110,16 @@ class _ServiceLineCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Row(
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
                           children: const [
                             Icon(Icons.schedule_outlined, size: 30),
-                            SizedBox(width: 8),
                             Text(
                               '6 meses',
                               style: TextStyle(fontSize: 18),
                             ),
-                            SizedBox(width: 20),
                             Icon(Icons.group_outlined, size: 30),
-                            SizedBox(width: 8),
                             Text('123', style: TextStyle(fontSize: 18)),
                           ],
                         ),
@@ -1078,20 +1263,19 @@ class HybridCloudPathScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                Row(
-                                  children: const [
-                                    Icon(Icons.schedule_outlined, size: 30),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '6 meses',
-                                      style: TextStyle(fontSize: 18),
-                                    ),
-                                    SizedBox(width: 20),
-                                    Icon(Icons.group_outlined, size: 30),
-                                    SizedBox(width: 8),
-                                    Text('123', style: TextStyle(fontSize: 18)),
-                                  ],
-                                ),
+                                        Wrap(
+                                          spacing: 12,
+                                          runSpacing: 8,
+                                          children: const [
+                                            Icon(Icons.schedule_outlined, size: 30),
+                                            Text(
+                                              '6 meses',
+                                              style: TextStyle(fontSize: 18),
+                                            ),
+                                            Icon(Icons.group_outlined, size: 30),
+                                            Text('123', style: TextStyle(fontSize: 18)),
+                                          ],
+                                        ),
                               ],
                             ),
                           ),

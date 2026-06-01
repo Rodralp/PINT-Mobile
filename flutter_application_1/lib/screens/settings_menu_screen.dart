@@ -28,7 +28,8 @@ class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
       return;
     }
 
-    _backendUrlController.text = currentBaseUrl;
+    _backendUrlController.text =
+        BackendConfig.formatServerInput(currentBaseUrl);
     final savedUrl = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -36,8 +37,9 @@ class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
         content: TextField(
           controller: _backendUrlController,
           decoration: const InputDecoration(
-            labelText: 'API base URL',
-            hintText: 'http://10.65.8.74:4000/api',
+            labelText: 'IP do servidor',
+            hintText: '10.65.8.74',
+            helperText: 'A porta 4000 e /api sao adicionados automaticamente.',
           ),
         ),
         actions: [
@@ -47,33 +49,25 @@ class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
           ),
           TextButton(
             onPressed: () {
-              var input = _backendUrlController.text.trim();
+              final input = _backendUrlController.text.trim();
               if (input.isEmpty) {
                 Navigator.pop(dialogContext);
                 return;
               }
 
-              if (!input.startsWith('http://') && !input.startsWith('https://')) {
-                input = 'http://$input';
-              }
-
-              while (input.endsWith('/')) {
-                input = input.substring(0, input.length - 1);
-              }
-
-              if (!input.contains('/api')) {
-                input = '$input/api';
-              }
-
-              final uri = Uri.tryParse(input);
-              if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || (uri.host.isEmpty)) {
+              final normalized = BackendConfig.normalizeBaseUrlInput(input);
+              if (normalized == null) {
                 ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(content: Text('URL inválida. Introduza uma URL válida, e.g. http://10.65.8.74:4000/api')),
+                  const SnackBar(
+                    content: Text(
+                      'Servidor invalido. Introduza um IP valido, e.g. 10.65.8.74',
+                    ),
+                  ),
                 );
                 return;
               }
 
-              Navigator.pop(dialogContext, input);
+              Navigator.pop(dialogContext, normalized);
             },
             child: const Text('Guardar'),
           ),
