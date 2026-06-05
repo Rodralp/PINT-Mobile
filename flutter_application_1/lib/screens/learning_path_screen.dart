@@ -607,6 +607,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   void _openLevelDetails(BuildContext context, BackendLevel level) {
     final status = _statusLabel(level.status);
     final badgeAsset = _resolveBadgeAsset(level);
+    final canRequest = level.status == 'visualizar' && level.badgeDbId != null;
 
     showModalBottomSheet<void>(
       context: context,
@@ -616,137 +617,287 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.75,
-          maxChildSize: 0.9,
-          minChildSize: 0.4,
-          builder: (context, scrollController) {
-            return ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            bool isRequesting = false;
+            String? resultMessage;
+            bool requestSuccess = false;
+
+            Future<void> requestBadge() async {
+              if (isRequesting || level.badgeDbId == null) return;
+
+              final accountId = await AuthSession.getAccountId();
+              if (accountId == null) {
+                setSheetState(() {
+                  resultMessage = 'Sessao expirada.';
+                  requestSuccess = false;
+                });
+                return;
+              }
+
+              setSheetState(() {
+                isRequesting = true;
+                resultMessage = null;
+              });
+
+              try {
+                final result = await ConsultorApi.instance.requestBadgeAcquisition(
+                  accountId: accountId,
+                  badgeId: level.badgeDbId!,
+                );
+
+                final statusKey = result['status']?.toString() ?? '';
+                String message;
+                bool success;
+
+                switch (statusKey) {
+                  case 'obtido':
+                    message = 'Ja possui esta badge!';
+                    success = true;
+                    break;
+                  case 'pendente-tm':
+                    message = 'Pedido enviado! Em validacao pelo Talent Manager.';
+                    success = true;
+                    break;
+                  case 'candidatura_em_progresso':
+                    message = 'Candidatura criada. Submeta evidencias para continuar.';
+                    success = true;
+                    break;
+                  default:
+                    message = 'Pedido processado.';
+                    success = true;
+                }
+
+                setSheetState(() {
+                  isRequesting = false;
+                  resultMessage = message;
+                  requestSuccess = success;
+                });
+              } catch (e) {
+                setSheetState(() {
+                  isRequesting = false;
+                  resultMessage = 'Erro ao submeter pedido.';
+                  requestSuccess = false;
+                });
+              }
+            }
+
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.75,
+              maxChildSize: 0.9,
+              minChildSize: 0.4,
+              builder: (context, scrollController) {
+                return ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                   children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(14),
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5E7EB),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
                       ),
-                      alignment: Alignment.center,
-                      child: badgeAsset != null
-                          ? Image.asset(
-                              badgeAsset,
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.contain,
-                            )
-                          : const Icon(Icons.workspace_premium_outlined, size: 28),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            level.title,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
-                            ),
+                    const SizedBox(height: 16),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          if (level.subtitle.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                level.subtitle,
+                          alignment: Alignment.center,
+                          child: badgeAsset != null
+                              ? Image.asset(
+                                  badgeAsset,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.contain,
+                                )
+                              : const Icon(Icons.workspace_premium_outlined, size: 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                level.title,
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF64748B),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF111827),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
+                              if (level.subtitle.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    level.subtitle,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _detailChip('Pontos', level.points.toString()),
-                    _detailChip('Estado', status.text, color: status.color),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Requisitos',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 10),
-                if (level.requirements.isEmpty)
-                  const Text(
-                    'Sem requisitos associados.',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-                  )
-                else
-                  ...level.requirements.map(
-                    (requirement) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Container(
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        _detailChip('Pontos', level.points.toString()),
+                        _detailChip('Estado', status.text, color: status.color),
+                      ],
+                    ),
+                    if (resultMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
-                          vertical: 14,
+                          vertical: 12,
                         ),
                         decoration: BoxDecoration(
+                          color: requestSuccess
+                              ? const Color(0xFFE6F9ED)
+                              : const Color(0xFFFEE8E8),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(
+                            color: requestSuccess
+                                ? const Color(0xFF16C524)
+                                : const Color(0xFFFF3B30),
+                            width: 1.4,
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Text(
-                              requirement.title,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF111827),
-                              ),
+                            Icon(
+                              requestSuccess
+                                  ? Icons.check_circle_outline
+                                  : Icons.error_outline,
+                              color: requestSuccess
+                                  ? const Color(0xFF16C524)
+                                  : const Color(0xFFFF3B30),
+                              size: 22,
                             ),
-                            if (requirement.description.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                requirement.description,
-                                style: const TextStyle(
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                resultMessage!,
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF6B7280),
+                                  fontWeight: FontWeight.w500,
+                                  color: requestSuccess
+                                      ? const Color(0xFF05603A)
+                                      : const Color(0xFFA32424),
                                 ),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
+                    ],
+                    if (canRequest) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: isRequesting ? null : requestBadge,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A90F0),
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: const Color(0xFF93C5FD),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: isRequesting
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Pedir Badge',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Requisitos',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                     ),
-                  ),
-              ],
+                    const SizedBox(height: 10),
+                    if (level.requirements.isEmpty)
+                      const Text(
+                        'Sem requisitos associados.',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                      )
+                    else
+                      ...level.requirements.map(
+                        (requirement) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  requirement.title,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF111827),
+                                  ),
+                                ),
+                                if (requirement.description.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    requirement.description,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         );

@@ -20,6 +20,7 @@ class BackendBadge {
     required this.levelKey,
     required this.stateId,
     required this.badgeImage,
+    this.requestId,
   });
 
   factory BackendBadge.fromJson(Map<String, dynamic> json) {
@@ -62,6 +63,7 @@ class BackendBadge {
       levelKey: levelKey,
       stateId: stateId,
       badgeImage: _readString(json, ['badgeImage', 'image', 'imagem']),
+      requestId: _readInt(json, ['requestId', 'pedidoId', 'npedido']),
     );
   }
 
@@ -76,6 +78,7 @@ class BackendBadge {
   final String? levelKey;
   final String? stateId;
   final String? badgeImage;
+  final int? requestId;
 
   static String _normalizeLevel(String? level, String? levelKey) {
     final cleanedLevel = level?.trim();

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'local_storage.dart';
+import 'auth_session.dart';
 
 import 'backend_config.dart';
 
@@ -25,6 +26,7 @@ class BackendRequest {
     required this.level,
     required this.date,
     required this.status,
+    this.badgeDbId,
   });
 
   factory BackendRequest.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class BackendRequest {
       level: _readString(json, ['level', 'nivel', 'badgeLevel']) ?? '',
       date: _readString(json, ['date', 'data', 'createdAt', 'submittedAt']),
       status: _readString(json, ['status', 'state', 'estado']) ?? '',
+      badgeDbId: _readInt(json, ['badgeDbId', 'nbadge', 'badgeId']),
     );
   }
 
@@ -42,6 +45,7 @@ class BackendRequest {
   final String level;
   final String? date;
   final String status;
+  final int? badgeDbId;
 }
 
 class ProfileSkillItem {
@@ -657,6 +661,40 @@ class ConsultorApi {
     }
   }
 
+  Future<Map<String, dynamic>> requestBadgeAcquisition({
+    required int accountId,
+    required int badgeId,
+  }) async {
+    try {
+      final uri = await _uri('/consultor/badges/$badgeId/adquirir');
+      final response = await http
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({'accountId': accountId}),
+          )
+          .timeout(_requestTimeout);
+
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return <String, dynamic>{'data': decoded};
+    } on SocketException {
+      throw ConsultorApiException(
+        'Nao foi possivel ligar ao servidor. Verifique a rede.',
+      );
+    } on HttpException {
+      throw ConsultorApiException('Falha de comunicacao com o servidor.');
+    } on TimeoutException {
+      throw ConsultorApiException('O servidor demorou demasiado tempo a responder.');
+    }
+  }
+
   Future<List<BackendLearningPath>> fetchLearningPaths({
     required int accountId,
   }) async {
@@ -691,6 +729,90 @@ class ConsultorApi {
       }
       rethrow;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchBadgeRequirements({
+    required int badgeId,
+  }) async {
+    final uri = await _uri('/consultor/badge/$badgeId/requirements');
+    final response = await _getJson(uri);
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
+
+    final decoded = jsonDecode(response.body);
+    final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+    if (data is! List) {
+      return const [];
+    }
+
+    return data.whereType<Map<String, dynamic>>().toList(growable: false);
+  }
+
+  Future<Map<String, dynamic>> uploadEvidence({
+    required int pedidoId,
+    required int nreq,
+    required List<File> files,
+  }) async {
+    final accountId = await _getAccountId();
+    if (accountId == null) {
+      throw const ConsultorApiException('Missing account id.');
+    }
+
+    final uri = await _uri('/consultor/pedidos/$pedidoId/evidencias');
+    final request = http.MultipartRequest('POST', uri);
+    request.fields['accountId'] = accountId.toString();
+    request.fields['nreq'] = nreq.toString();
+
+    for (final file in files) {
+      final stream = http.ByteStream(file.openRead());
+      final length = await file.length();
+      final fileName = file.path.split(Platform.pathSeparator).last;
+      request.files.add(
+        http.MultipartFile('files', stream, length, filename: fileName),
+      );
+    }
+
+    final streamedResponse = await request.send().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw const ConsultorApiException(
+          'O servidor demorou demasiado tempo a responder.',
+        );
+      },
+    );
+
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      throw ConsultorApiException(
+        body?['message'] as String? ?? 'Falha ao submeter evidencias.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<int?> _getAccountId() async {
+    return AuthSession.getAccountId();
+  }
+
+  Future<BackendRequest?> fetchMyRequestDetail({required int pedidoId}) async {
+    final accountId = await _getAccountId();
+    if (accountId == null) {
+      return null;
+    }
+
+    final data = await fetchMyRequests(accountId: accountId);
+    for (final request in data) {
+      if (request.id == pedidoId) {
+        return request;
+      }
+    }
+    return null;
   }
 
 }

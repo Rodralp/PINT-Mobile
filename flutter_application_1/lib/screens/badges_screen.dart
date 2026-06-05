@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'app_shell_screen.dart';
 import 'notifications_full_screen.dart';
+import 'order_detail_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import '../services/auth_session.dart';
 import '../services/badges_api.dart';
+import '../services/consultor_api.dart';
 import 'messages_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
 
-enum BadgeState { approved, warning, review }
+enum BadgeState { approved, warning, review, inProgress }
 
 class _BadgeData {
   const _BadgeData({
@@ -27,6 +29,7 @@ class _BadgeData {
     this.levelKey,
     this.stateId,
     this.state,
+    this.requestId,
   });
 
   final int id;
@@ -43,6 +46,7 @@ class _BadgeData {
   final String? levelKey;
   final String? stateId;
   final BadgeState? state;
+  final int? requestId;
 }
 
 class _BadgePalette {
@@ -115,14 +119,17 @@ BadgeState? _badgeStateFromStatus(String? status) {
     case 'recusado':
     case 'rejeitado':
       return BadgeState.warning;
+    case 'candidatura_em_progresso':
+    case 'candidatura em progresso':
+      return BadgeState.inProgress;
     case 'review':
     case 'pendente':
     case 'em_analise':
     case 'em análise':
     case 'em_validacao':
     case 'em validacao':
-    case 'candidatura_em_progresso':
-    case 'candidatura em progresso':
+    case 'pendente-tm':
+    case 'pendente-sll':
       return BadgeState.review;
   }
   return null;
@@ -180,6 +187,7 @@ _BadgeData _badgeDataFromBackend(BackendBadge badge, {bool? isOwnedOverride}) {
     levelKey: levelKey,
     stateId: stateId,
     state: _badgeStateFromStatus(stateId),
+    requestId: badge.requestId,
   );
 }
 
@@ -256,6 +264,8 @@ String _stateIdForBadge(_BadgeData badge) {
       return 'rejeitado';
     case BadgeState.review:
       return 'em_validacao';
+    case BadgeState.inProgress:
+      return 'candidatura_em_progresso';
     case null:
       return '';
   }
@@ -1088,6 +1098,8 @@ class _CatalogBadgeCard extends StatelessWidget {
         return Icons.warning_amber_rounded;
       case BadgeState.review:
         return Icons.manage_search_outlined;
+      case BadgeState.inProgress:
+        return Icons.timer_outlined;
       case null:
         return Icons.radio_button_unchecked;
     }
@@ -1101,6 +1113,8 @@ class _CatalogBadgeCard extends StatelessWidget {
         return const Color(0xFFFF3B30);
       case BadgeState.review:
         return const Color(0xFFF7B500);
+      case BadgeState.inProgress:
+        return const Color(0xFF1A90F0);
       case null:
         return const Color(0xFFC7CFD8);
     }
@@ -1114,6 +1128,8 @@ class _CatalogBadgeCard extends StatelessWidget {
         return const Color(0xFFFCF4F1);
       case BadgeState.review:
         return const Color(0xFFFFFAF0);
+      case BadgeState.inProgress:
+        return const Color(0xFFEFF6FF);
       case null:
         return const Color(0xFFF9FBFD);
     }
@@ -1258,6 +1274,8 @@ class _OwnedBadgeCard extends StatelessWidget {
         return Icons.warning_amber_rounded;
       case BadgeState.review:
         return Icons.manage_search_outlined;
+      case BadgeState.inProgress:
+        return Icons.timer_outlined;
       case null:
         return Icons.radio_button_unchecked;
     }
@@ -1271,6 +1289,8 @@ class _OwnedBadgeCard extends StatelessWidget {
         return const Color(0xFFFF3B30);
       case BadgeState.review:
         return const Color(0xFFF7B500);
+      case BadgeState.inProgress:
+        return const Color(0xFF1A90F0);
       case null:
         return const Color(0xFFC7CFD8);
     }
@@ -1284,6 +1304,8 @@ class _OwnedBadgeCard extends StatelessWidget {
         return const Color(0xFFFCF4F1);
       case BadgeState.review:
         return const Color(0xFFFFFAF0);
+      case BadgeState.inProgress:
+        return const Color(0xFFEFF6FF);
       case null:
         return const Color(0xFFF9FBFD);
     }
@@ -1306,6 +1328,9 @@ class BadgeLiveDetailScreen extends StatefulWidget {
 
 class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   late final Future<List<BackendBadgeRequirement>> _requirementsFuture;
+  bool _isRequesting = false;
+  String? _requestResultMessage;
+  bool _requestSuccess = false;
 
   @override
   void initState() {
@@ -1316,6 +1341,100 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
       );
     } else {
       _requirementsFuture = Future.value(const <BackendBadgeRequirement>[]);
+    }
+  }
+
+  bool get _canRequest {
+    final state = widget.badge.state;
+    return !widget.badge.isOwned && state == null;
+  }
+
+  bool get _hasActiveRequest {
+    final state = widget.badge.state;
+    return !widget.badge.isOwned &&
+        (state == BadgeState.inProgress || state == BadgeState.review);
+  }
+
+  Future<void> _requestBadge() async {
+    if (_isRequesting) return;
+
+    final accountId = await AuthSession.getAccountId();
+    if (accountId == null) {
+      setState(() {
+        _requestResultMessage = 'Sessao expirada. Faca login novamente.';
+        _requestSuccess = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isRequesting = true;
+      _requestResultMessage = null;
+    });
+
+    try {
+      final result = await ConsultorApi.instance.requestBadgeAcquisition(
+        accountId: accountId,
+        badgeId: widget.badge.id,
+      );
+
+      if (!mounted) return;
+
+      final status = result['status']?.toString() ?? '';
+      String message;
+      bool success;
+
+      switch (status) {
+        case 'obtido':
+          message = 'Ja possui esta badge!';
+          success = true;
+          break;
+        case 'pendente-tm':
+          message = 'Pedido enviado com sucesso! Em validacao pelo Talent Manager.';
+          success = true;
+          break;
+        case 'candidatura_em_progresso':
+          message = 'Candidatura criada. Submeta evidencias para continuar.';
+          success = true;
+          break;
+        default:
+          message = 'Pedido processado.';
+          success = true;
+      }
+
+      setState(() {
+        _isRequesting = false;
+        _requestResultMessage = message;
+        _requestSuccess = success;
+      });
+    } on ConsultorApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isRequesting = false;
+        _requestResultMessage = e.message;
+        _requestSuccess = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isRequesting = false;
+        _requestResultMessage = 'Erro ao submeter pedido. Tente novamente.';
+        _requestSuccess = false;
+      });
+    }
+  }
+
+  OrderStatus _orderStatusFromBadge(BadgeState? state) {
+    switch (state) {
+      case BadgeState.approved:
+        return OrderStatus.approved;
+      case BadgeState.warning:
+        return OrderStatus.rejected;
+      case BadgeState.review:
+      case BadgeState.inProgress:
+        return OrderStatus.pending;
+      case null:
+        return OrderStatus.pending;
     }
   }
 
@@ -1454,6 +1573,129 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                           ],
                         ),
                       ),
+                      if (_requestResultMessage != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _requestSuccess
+                                ? const Color(0xFFE6F9ED)
+                                : const Color(0xFFFEE8E8),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: _requestSuccess
+                                  ? const Color(0xFF16C524)
+                                  : const Color(0xFFFF3B30),
+                              width: 1.4,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _requestSuccess
+                                    ? Icons.check_circle_outline
+                                    : Icons.error_outline,
+                                color: _requestSuccess
+                                    ? const Color(0xFF16C524)
+                                    : const Color(0xFFFF3B30),
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _requestResultMessage!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: _requestSuccess
+                                        ? const Color(0xFF05603A)
+                                        : const Color(0xFFA32424),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (_canRequest) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _isRequesting ? null : _requestBadge,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1A90F0),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFF93C5FD),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isRequesting
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Pedir Badge',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                      if (_hasActiveRequest) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OrderDetailScreen(
+                                    order: OrderDetailData(
+                                      id: widget.badge.requestId ?? widget.badge.id,
+                                      badge: widget.badge.title,
+                                      level: widget.badge.level,
+                                      date: widget.badge.date,
+                                      status: _orderStatusFromBadge(widget.badge.state),
+                                      badgeDbId: widget.badge.id,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF1A90F0), width: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              'Ver Pedido',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A90F0),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1590,6 +1832,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         return 'Rejeitado';
       case BadgeState.review:
         return 'Em validacao';
+      case BadgeState.inProgress:
+        return 'Candidatura em Progresso';
       case null:
         return 'Sem estado';
     }
@@ -1603,6 +1847,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         return const Color(0xFFFF3B30);
       case BadgeState.review:
         return const Color(0xFFF7B500);
+      case BadgeState.inProgress:
+        return const Color(0xFF1A90F0);
       case null:
         return const Color(0xFFC7CFD8);
     }
