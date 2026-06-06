@@ -796,6 +796,32 @@ class ConsultorApi {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  // =========================================================
+  // ==================TRYOUT PRA REQUISITOS FICH=============
+  // =========================================================
+  Future<Map<String, dynamic>> submitRequest({
+    required int pedidoId,
+  }) async {
+    final accountId = await _getAccountId();
+    if (accountId == null) {
+      throw const ConsultorApiException('Missing account id.');
+    }
+
+    final uri = await _uri('/consultor/pedidos/$pedidoId/submeter');
+    final response = await http.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'accountId': accountId}),
+    ).timeout(_requestTimeout);
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
+
+    final decoded = jsonDecode(response.body);
+    return decoded is Map<String, dynamic> ? decoded : {'data': decoded};
+  }
+
   Future<int?> _getAccountId() async {
     return AuthSession.getAccountId();
   }

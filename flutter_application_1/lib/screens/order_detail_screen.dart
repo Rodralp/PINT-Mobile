@@ -1,62 +1,18 @@
 import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
-import '../services/auth_session.dart';
+import 'package:file_picker/file_picker.dart';
 import '../services/consultor_api.dart';
-import '../widgets/badge_artwork.dart';
+import '../services/auth_session.dart';
 
 enum OrderStatus { approved, pending, rejected }
-
-class OrderDetailData {
-  const OrderDetailData({
-    required this.id,
-    required this.badge,
-    required this.level,
-    required this.date,
-    required this.status,
-    this.badgeImage,
-    this.badgeDbId,
-    this.points = 0,
-    this.expiresAt = '',
-    this.area = '',
-    this.path = '',
-    this.submittedBy = '',
-    this.submissionDate = '',
-    this.reviewerName,
-    this.reviewerDate,
-    this.reviewerNote,
-    this.requirements = const [],
-  });
-
-  final int id;
-  final String badge;
-  final String level;
-  final String date;
-  final OrderStatus status;
-  final String? badgeImage;
-  final int? badgeDbId;
-  final int points;
-  final String expiresAt;
-  final String area;
-  final String path;
-  final String submittedBy;
-  final String submissionDate;
-  final String? reviewerName;
-  final String? reviewerDate;
-  final String? reviewerNote;
-  final List<OrderRequirement> requirements;
-}
 
 class OrderRequirement {
   const OrderRequirement({
     required this.id,
     required this.title,
     required this.description,
-    this.files = 0,
-    this.attachments = const [],
+    required this.files,
+    required this.attachments,
   });
 
   final String id;
@@ -64,6 +20,30 @@ class OrderRequirement {
   final String description;
   final int files;
   final List<String> attachments;
+}
+
+class OrderDetailData {
+  OrderDetailData({
+    required this.id,
+    required this.badge,
+    required this.level,
+    required this.status,
+    required this.date,
+    this.badgeDbId,
+    this.submittedBy = '',
+    this.serviceLine = '',
+    this.area = '',
+  });
+
+  final int id;
+  final String badge;
+  final String level;
+  OrderStatus status;
+  final String date;
+  final int? badgeDbId;
+  final String submittedBy;
+  final String serviceLine;
+  final String area;
 }
 
 class OrderDetailScreen extends StatefulWidget {
@@ -76,12 +56,13 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  List<OrderRequirement> _requirements = [];
+  final List<OrderRequirement> _requirements = [];
   bool _isLoadingRequirements = false;
   String? _requirementsError;
 
   final Map<String, List<File>> _filesByRequirement = {};
   final Map<String, bool> _uploadingByRequirement = {};
+
   bool _submittingAll = false;
   bool _submitted = false;
 
@@ -92,15 +73,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _requirements = List.from(widget.order.requirements);
-    if (_requirements.isEmpty && widget.order.badgeDbId != null) {
-      _loadRequirements();
-    }
+    _loadRequirements();
   }
 
   Future<void> _loadRequirements() async {
-    final badgeDbId = widget.order.badgeDbId;
-    if (badgeDbId == null) return;
+    if (widget.order.badgeDbId == null) return;
 
     setState(() {
       _isLoadingRequirements = true;
@@ -109,80 +86,68 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     try {
       final data = await ConsultorApi.instance.fetchBadgeRequirements(
-        badgeId: badgeDbId,
+        badgeId: widget.order.badgeDbId!,
       );
 
       if (!mounted) return;
 
       setState(() {
-        _requirements = data
-            .map((r) => OrderRequirement(
-                  id: r['id']?.toString() ?? '',
-                  title: r['title']?.toString() ?? 'Requisito',
-                  description: r['description']?.toString() ?? '',
-                  files: r['files'] is int ? r['files'] as int : 0,
-                  attachments: (r['attachments'] as List<dynamic>?)
-                          ?.map((a) => a.toString())
-                          .toList() ??
-                      [],
-                ))
-            .toList();
+        _requirements.clear();
+        for (final item in data) {
+          final title = item['titulo']?.toString() ?? item['name']?.toString() ?? 'Sem título';
+          final desc = item['descricao']?.toString() ?? item['description']?.toString() ?? '';
+          final nreq = item['nreq']?.toString() ?? '';
+          
+          final List<String> attachments = [];
+          if (item['evidencias'] is List) {
+            for (final ev in item['evidencias']) {
+              if (ev is Map && ev['ficheiro'] != null) {
+                attachments.add(ev['ficheiro'].toString());
+              }
+            }
+          }
+
+          _requirements.add(OrderRequirement(
+            id: nreq,
+            title: title,
+            description: desc,
+            files: attachments.length,
+            attachments: attachments,
+          ));
+        }
         _isLoadingRequirements = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _isLoadingRequirements = false;
-        _requirementsError = 'Nao foi possivel carregar os requisitos.';
+        _requirementsError = 'Erro ao carregar requisitos: $e';
       });
     }
   }
 
-  int _extractNreq(String requirementId) {
-    final match = RegExp(r'(\d+)').firstMatch(requirementId);
-    return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+  int _extractNreq(String id) {
+    return int.tryParse(id) ?? 0;
   }
 
   Future<void> _pickFiles(String requirementId) async {
-    if (!_canUpload) return;
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
 
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-      );
-
-      if (result == null || result.files.isEmpty) return;
-
-      final files = result.files
-          .where((f) => f.path != null)
-          .map((f) => File(f.path!))
-          .toList();
-
-      if (!mounted) return;
-
+    if (result != null && result.files.isNotEmpty) {
       setState(() {
-        _filesByRequirement.putIfAbsent(requirementId, () => []);
-        _filesByRequirement[requirementId]!.addAll(files);
+        final current = _filesByRequirement[requirementId] ?? [];
+        current.addAll(result.paths.whereType<String>().map((p) => File(p)));
+        _filesByRequirement[requirementId] = current;
       });
-    } on PlatformException catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nao foi possivel selecionar ficheiros.'),
-        ),
-      );
     }
   }
 
-  void _removeFile(String requirementId, int fileIndex) {
+  void _removeFile(String requirementId, int index) {
     setState(() {
-      final files = _filesByRequirement[requirementId];
-      if (files != null && fileIndex < files.length) {
-        files.removeAt(fileIndex);
-        if (files.isEmpty) {
-          _filesByRequirement.remove(requirementId);
-        }
-      }
+      _filesByRequirement[requirementId]?.removeAt(index);
     });
   }
 
@@ -193,9 +158,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final nreq = _extractNreq(requirementId);
     if (nreq <= 0) return;
 
-    setState(() {
-      _uploadingByRequirement[requirementId] = true;
-    });
+    setState(() => _uploadingByRequirement[requirementId] = true);
 
     try {
       await ConsultorApi.instance.uploadEvidence(
@@ -207,26 +170,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
 
       setState(() {
-        _filesByRequirement.remove(requirementId);
         _uploadingByRequirement[requirementId] = false;
+        _filesByRequirement[requirementId] = [];
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Evidencias submetidas com sucesso.'),
-          backgroundColor: Color(0xFF05603A),
-        ),
+        const SnackBar(content: Text('Evidências enviadas com sucesso.')),
       );
+      
+      _loadRequirements();
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _uploadingByRequirement[requirementId] = false;
-      });
+      setState(() => _uploadingByRequirement[requirementId] = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Falha ao submeter evidencias: $e'),
-          backgroundColor: const Color(0xFFA32424),
-        ),
+        SnackBar(content: Text('Falha ao submeter evidencias: $e')),
       );
     }
   }
@@ -238,18 +195,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       (files) => files.isNotEmpty,
     );
 
-    if (!hasAnyFiles && _requirements.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Adicione pelo menos um ficheiro antes de submeter.'),
-        ),
-      );
-      return;
-    }
-
     setState(() => _submittingAll = true);
 
     try {
+      // 1. Upload de ficheiros pendentes
       for (final entry in _filesByRequirement.entries) {
         if (entry.value.isEmpty) continue;
         final nreq = _extractNreq(entry.key);
@@ -262,14 +211,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         );
       }
 
-      final accountId = await AuthSession.getAccountId();
-      if (accountId == null) {
-        throw const ConsultorApiException('Missing account id.');
-      }
-
-      await ConsultorApi.instance.requestBadgeAcquisition(
-        accountId: accountId,
-        badgeId: widget.order.badgeDbId!,
+      // 2. Mudar estado da candidatura para "Em Validação"
+      await ConsultorApi.instance.submitRequest(
+        pedidoId: widget.order.id,
       );
 
       if (!mounted) return;
@@ -282,7 +226,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Candidatura submetida com sucesso.'),
+          content: Text('Candidatura submetida com sucesso para avaliação.'),
           backgroundColor: Color(0xFF05603A),
         ),
       );
@@ -304,139 +248,100 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final statusMeta = _statusMeta(order.status);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  _buildHeroCard(order, statusMeta),
-                  _buildBreadcrumb(order),
-                  _buildRequirementsSection(order),
-                  if (_canUpload && _requirements.isNotEmpty) ...[
-                    _buildSubmitButton(),
-                  ],
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Detalhes da Candidatura'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildHeroCard(order, statusMeta),
+            _buildBreadcrumb(order),
+            _buildRequirementsSection(order),
+            if (_canUpload)
+              _buildSubmitButton(),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-            color: const Color(0xFF243047),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Candidatura',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF243047),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHeroCard(OrderDetailData order, _StatusMeta statusMeta) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
-          SizedBox(
-            width: 140,
-            height: 140,
-            child: BadgeArtwork(
-              size: 140,
-              frameColor: statusMeta.frameColor,
-              backgroundColor: statusMeta.frameColor.withOpacity(0.15),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: statusMeta.backgroundColor,
               shape: BoxShape.circle,
-              borderWidth: 8,
-              iconSize: 72,
-              badgeImage: order.badgeImage,
-              levelKey: null,
-              title: order.badge,
-              subtitle: order.level,
+              border: Border.all(color: statusMeta.frameColor, width: 2),
             ),
+            child: Icon(statusMeta.icon, color: statusMeta.textColor, size: 32),
           ),
           const SizedBox(height: 16),
           Text(
             order.badge,
-            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF243047),
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1E293B),
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
-            'Nivel ${order.level}',
+            order.level,
             style: const TextStyle(
-              fontSize: 18,
-              color: Color(0xFF243047),
+              fontSize: 16,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              if (order.expiresAt.isNotEmpty)
-                _metaItem(Icons.schedule, 'Expira ${order.expiresAt}'),
-              if (order.points > 0)
-                _metaItem(Icons.emoji_events_outlined, '${order.points} pontos'),
-              _metaItem(
-                Icons.description_outlined,
-                '${_requirements.length} requisitos',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: statusMeta.backgroundColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: statusMeta.textColor, width: 1.6),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(statusMeta.icon, color: statusMeta.textColor, size: 24),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    statusMeta.label,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: statusMeta.textColor,
-                    ),
+                const SizedBox(width: 8),
+                Text(
+                  statusMeta.label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: statusMeta.textColor,
                   ),
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _metaItem(Icons.calendar_today_outlined, order.date),
+              if (order.submittedBy.isNotEmpty) ...[
+                const SizedBox(width: 24),
+                _metaItem(Icons.person_outline, order.submittedBy),
+              ],
+            ],
           ),
         ],
       ),
@@ -444,19 +349,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildBreadcrumb(OrderDetailData order) {
-    if (order.area.isEmpty && order.path.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    final parts = [order.serviceLine, order.area].where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty) return const SizedBox.shrink();
 
-    final parts = <String>[
-      if (order.area.isNotEmpty) order.area,
-      if (order.path.isNotEmpty) order.path,
-      order.badge,
-      order.level,
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Text(
         parts.join(' > '),
         style: const TextStyle(
@@ -502,7 +400,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           if (_requirementsError != null)
             Text(
               _requirementsError!,
-              style: const TextStyle(fontSize: 14, color: Color(0xFFA32424)),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
             )
           else if (_requirements.isEmpty && !_isLoadingRequirements)
             const Text(
@@ -596,13 +494,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           frameColor: const Color(0xFFFF3B30),
         );
       case OrderStatus.pending:
-        return _StatusMeta(
-          label: 'Candidatura em Progresso',
-          icon: Icons.timelapse,
-          textColor: const Color(0xFF1565C0),
-          backgroundColor: const Color(0xFFE3F2FD),
-          frameColor: const Color(0xFF2196F3),
-        );
+        return _submitted
+            ? const _StatusMeta(
+                label: 'Em Validação',
+                icon: Icons.hourglass_empty,
+                textColor: Color(0xFF92400E),
+                backgroundColor: Color(0xFFFEF3C7),
+                frameColor: Color(0xFFF59E0B),
+              )
+            : const _StatusMeta(
+                label: 'Candidatura em Progresso',
+                icon: Icons.timelapse,
+                textColor: Color(0xFF1565C0),
+                backgroundColor: Color(0xFFE3F2FD),
+                frameColor: Color(0xFF2196F3),
+              );
     }
   }
 }
