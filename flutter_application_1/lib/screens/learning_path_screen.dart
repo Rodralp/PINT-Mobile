@@ -1,13 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'app_shell_screen.dart';
-import 'badges_screen.dart';
+import '../services/consultor_api.dart';
+import '../services/auth_session.dart';
+import '../widgets/app_top_bar.dart';
+import 'order_detail_screen.dart';
+import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
-import 'settings_menu_screen.dart';
 import 'messages_screen.dart';
-import '../widgets/app_top_bar.dart';
-import '../services/auth_session.dart';
-import '../services/consultor_api.dart';
 
 class LearningPathScreen extends StatefulWidget {
   const LearningPathScreen({super.key});
@@ -17,169 +17,82 @@ class LearningPathScreen extends StatefulWidget {
 }
 
 class _LearningPathScreenState extends State<LearningPathScreen> {
-  late Future<void> _loadFuture;
-  List<BackendLearningPath> _learningPaths = const [];
-  String? _loadError;
+  late Future<List<BackendLearningPath>> _loadPathsFuture;
+  List<BackendLearningPath> _learningPaths = [];
   String? _selectedPathId;
   String? _selectedServiceLineId;
-  final Set<String> _expandedPathIds = <String>{};
-  final Set<String> _expandedAreaIds = <String>{};
+  final Set<String> _expandedPathIds = {};
+  final Set<String> _expandedAreaIds = {};
 
   @override
   void initState() {
     super.initState();
-    _loadFuture = _loadLearningPaths();
+    _loadPathsFuture = _loadInitialData();
   }
 
-  Future<void> _loadLearningPaths() async {
-    try {
-      final accountId = await AuthSession.getAccountId();
-      if (accountId == null || accountId <= 0) {
-        throw Exception('Missing account id');
-      }
-
-      final data = await ConsultorApi.instance.fetchLearningPaths(
-        accountId: accountId,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
+  Future<List<BackendLearningPath>> _loadInitialData() async {
+    final accountId = await AuthSession.getAccountId();
+    if (accountId == null) return [];
+    
+    final paths = await ConsultorApi.instance.fetchLearningPaths(accountId: accountId);
+    if (paths.isNotEmpty) {
       setState(() {
-        _learningPaths = data;
-        _selectedPathId = data.isNotEmpty ? data.first.id : null;
-        _selectedServiceLineId = null;
-        _expandedPathIds.clear(); // Starts closed to show the dropdown effect
-        _expandedAreaIds.clear();
-        _loadError = null;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _learningPaths = const [];
-        _loadError = 'Nao foi possivel carregar a base de dados';
+        _learningPaths = paths;
+        _selectedPathId = paths.first.id;
+        for (var p in paths) {
+          _expandedPathIds.add(p.id);
+        }
       });
     }
+    return paths;
   }
 
-  Future<void> _refreshLearningPaths() async {
+  void _togglePath(String id) {
     setState(() {
-      _loadFuture = _loadLearningPaths();
-    });
-    await _loadFuture;
-  }
-
-  BackendLearningPath? get _selectedPath {
-    if (_learningPaths.isEmpty) {
-      return null;
-    }
-    return _learningPaths.firstWhere(
-      (path) => path.id == _selectedPathId,
-      orElse: () => _learningPaths.first,
-    );
-  }
-
-  BackendServiceLine? get _selectedServiceLine {
-    final path = _selectedPath;
-    if (path == null || _selectedServiceLineId == null) {
-      return null;
-    }
-    for (final line in path.serviceLines) {
-      if (line.id == _selectedServiceLineId) {
-        return line;
-      }
-    }
-    return null;
-  }
-
-  void _selectServiceLine(BackendLearningPath path, BackendServiceLine line) {
-    setState(() {
-      _selectedPathId = path.id;
-      _selectedServiceLineId = line.id;
-      _expandedAreaIds.clear();
-    });
-  }
-
-  void _togglePath(String pathId) {
-    setState(() {
-      if (_expandedPathIds.contains(pathId)) {
-        _expandedPathIds.remove(pathId);
+      if (_expandedPathIds.contains(id)) {
+        _expandedPathIds.remove(id);
       } else {
-        _expandedPathIds.add(pathId);
+        _expandedPathIds.add(id);
       }
     });
   }
 
-  void _toggleArea(String areaId) {
+  void _toggleArea(String id) {
     setState(() {
-      if (_expandedAreaIds.contains(areaId)) {
-        _expandedAreaIds.remove(areaId);
+      if (_expandedAreaIds.contains(id)) {
+        _expandedAreaIds.remove(id);
       } else {
-        _expandedAreaIds.add(areaId);
+        _expandedAreaIds.add(id);
       }
     });
   }
 
   _ProgressInfo _calculateProgress(List<BackendLevel> levels) {
-    if (levels.isEmpty) {
-      return const _ProgressInfo(total: 0, obtained: 0, percent: 0, label: '0 badges');
-    }
+    if (levels.isEmpty) return const _ProgressInfo(total: 0, obtained: 0, percent: 0, label: '0 badges');
     final obtained = levels.where((level) => level.status == 'obtido').length;
     final total = levels.length;
-    final isComplete = total > 0 && obtained == total;
     final percent = total > 0 ? obtained / total : 0.0;
-    final label = isComplete
-        ? 'Service Line Completada'
-        : '$obtained de $total badges obtidas';
     return _ProgressInfo(
       total: total,
       obtained: obtained,
       percent: percent,
-      label: label,
+      label: '$obtained de $total badges obtidas',
     );
   }
 
-  String? _resolveServiceLineImage(String? imagePath) {
-    final normalized = (imagePath ?? '').toLowerCase();
-    if (normalized.contains('lp_bg')) {
-      return 'assets/images/lp_bg.png';
-    }
+  String? _resolveServiceLineImage(String? path) {
+    if (path == null) return null;
+    if (path.toLowerCase().contains('lp_bg')) return 'assets/images/lp_bg.png';
     return null;
   }
 
   String? _resolveBadgeAsset(BackendLevel level) {
     final raw = (level.badgeImage ?? '').toLowerCase();
-    if (raw.contains('junior') || raw.contains('j%c3%ba')) {
-      return 'assets/badges/junior.png';
-    }
-    if (raw.contains('intermedio') || raw.contains('interm') || raw.contains('interm%c3%a9dio')) {
-      return 'assets/badges/intermedio.png';
-    }
-    if (raw.contains('senior') || raw.contains('s%c3%a9nior')) {
-      return 'assets/badges/senior.png';
-    }
-    if (raw.contains('especialista')) {
-      return 'assets/badges/especialista.png';
-    }
-    if (raw.contains('lider') || raw.contains('l%c3%adder') || raw.contains('conhecimento')) {
-      return 'assets/badges/lider_conhecimento.png';
-    }
-
-    switch (level.levelKey) {
-      case 'badge_level_junior':
-        return 'assets/badges/junior.png';
-      case 'badge_level_intermediate':
-        return 'assets/badges/intermedio.png';
-      case 'badge_level_senior':
-        return 'assets/badges/senior.png';
-      case 'badge_level_specialist':
-        return 'assets/badges/especialista.png';
-      case 'badge_level_knowledge_lead':
-        return 'assets/badges/lider_conhecimento.png';
-    }
+    if (raw.contains('junior')) return 'assets/badges/junior.png';
+    if (raw.contains('intermedio')) return 'assets/badges/intermedio.png';
+    if (raw.contains('senior')) return 'assets/badges/senior.png';
+    if (raw.contains('especialista')) return 'assets/badges/especialista.png';
+    if (raw.contains('lider')) return 'assets/badges/lider_conhecimento.png';
     return null;
   }
 
@@ -188,1098 +101,250 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshLearningPaths,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: FutureBuilder<void>(
-                future: _loadFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: Text('A carregar Service Lines...'),
-                    );
-                  }
+        child: FutureBuilder<List<BackendLearningPath>>(
+          future: _loadPathsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Erro: ${snapshot.error}'));
+            }
 
-                  if (_loadError != null) {
-                    return Center(
-                      child: Text(_loadError ?? ''),
-                    );
-                  }
+            final selectedLine = _getSelectedServiceLine();
+            if (selectedLine != null) {
+              return _buildServiceLineDetail(context, selectedLine);
+            }
 
-                  final selectedServiceLine = _selectedServiceLine;
-                  if (selectedServiceLine != null) {
-                    return _buildServiceLineDetail(context, selectedServiceLine);
-                  }
-
-                  return _buildLearningPathList(context);
-                },
-              ),
-            ),
-          ),
+            return _buildLearningPathList(context);
+          },
         ),
       ),
     );
   }
 
-  Widget _buildLearningPathList(BuildContext context) {
-    if (_learningPaths.isEmpty) {
-      return const Center(
-        child: Text('Nao existem Learning Paths disponiveis.'),
-      );
-    }
+  BackendServiceLine? _getSelectedServiceLine() {
+    if (_selectedPathId == null || _selectedServiceLineId == null) return null;
+    final path = _learningPaths.firstWhere((p) => p.id == _selectedPathId);
+    return path.serviceLines.firstWhere((l) => l.id == _selectedServiceLineId);
+  }
 
+  Widget _buildLearningPathList(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppTopBar(
-            onSettingsTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsMenuScreen(),
-                ),
-              );
-            },
-            onNotificationsTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsFullScreen(),
-                ),
-              );
-            },
-            onProfileTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
-              );
-            },
-            onMessagesTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MessagesScreen(),
-                ),
-              );
-            },
+            onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
+            onNotificationsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const NotificationsFullScreen())),
+            onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
+            onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
           ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              'Learning Paths',
-              style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF263238),
-              ),
-            ),
-          ),
+          const SizedBox(height: 16),
           for (final path in _learningPaths) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF00A8),
-                      Color(0xFFFF0075),
-                      Color(0xFFFF2A00),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _togglePath(path.id),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 28,
-                      ),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Jornada Técnica',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 23,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            _expandedPathIds.contains(path.id)
-                                ? Icons.expand_less
-                                : Icons.expand_more,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (_expandedPathIds.contains(path.id)) ...[
-              if (path.description.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: Text(
-                    path.description,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              for (final line in path.serviceLines) ...[
-                Builder(
-                  builder: (context) {
-                    final levels = _flattenLevels(line);
-                    final progress = _calculateProgress(levels);
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: _ServiceLineCard(
-                        title: line.name,
-                        subtitle: line.description,
-                        progress: progress.percent,
-                        footerText: progress.label,
-                        progressColor: progress.percent >= 1
-                            ? const Color(0xFF39C65A)
-                            : const Color(0xFF1A90F0),
-                        imageLabel: _buildInitials(line.name),
-                        imageAsset: _resolveServiceLineImage(line.image),
-                        onTap: () => _selectServiceLine(path, line),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
-            ],
+            _buildPathHeader(path),
+            if (_expandedPathIds.contains(path.id))
+              for (final line in path.serviceLines)
+                _buildServiceLineCard(path, line),
           ],
-          const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  List<BackendLevel> _flattenLevels(BackendServiceLine line) {
-    return line.areas.expand((area) => area.levels).toList(growable: false);
+  Widget _buildPathHeader(BackendLearningPath path) {
+    return InkWell(
+      onTap: () => _togglePath(path.id),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(path.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+            Icon(_expandedPathIds.contains(path.id) ? Icons.expand_less : Icons.expand_more),
+          ],
+        ),
+      ),
+    );
   }
 
-  String _buildInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty) {
-      return '';
-    }
-    if (parts.length == 1) {
-      return _takeInitials(parts.first, 2);
-    }
-    return (_takeInitials(parts.first, 1) + _takeInitials(parts.last, 1))
-        .toUpperCase();
-  }
-
-  String _takeInitials(String value, int length) {
-    if (value.isEmpty || length <= 0) {
-      return '';
-    }
-    final runes = value.runes.toList();
-    final slice = runes.take(length).toList();
-    return String.fromCharCodes(slice);
-  }
-
-  Widget _buildServiceLineDetail(
-    BuildContext context,
-    BackendServiceLine line,
-  ) {
-    final levels = _flattenLevels(line);
+  Widget _buildServiceLineCard(BackendLearningPath path, BackendServiceLine line) {
+    final levels = line.areas.expand((a) => a.levels).toList();
     final progress = _calculateProgress(levels);
-    final imageAsset = _resolveServiceLineImage(line.image);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: _ServiceLineCard(
+        title: line.name,
+        subtitle: line.description,
+        progress: progress.percent,
+        footerText: progress.label,
+        progressColor: progress.percent >= 1 ? Colors.green : Colors.blue,
+        imageLabel: line.name.substring(0, 1),
+        imageAsset: _resolveServiceLineImage(line.image),
+        onTap: () => setState(() => _selectedServiceLineId = line.id),
+      ),
+    );
+  }
 
+  Widget _buildServiceLineDetail(BuildContext context, BackendServiceLine line) {
     return Column(
       children: [
-        AppTopBar(
-          onSettingsTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SettingsMenuScreen(),
-              ),
-            );
-          },
-          onNotificationsTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationsFullScreen(),
-              ),
-            );
-          },
-          onProfileTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ProfileScreen(),
-              ),
-            );
-          },
-          onMessagesTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MessagesScreen(),
-              ),
-            );
-          },
+        AppBar(
+          leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _selectedServiceLineId = null)),
+          title: Text(line.name),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
-          child: Row(
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedServiceLineId = null;
-                    _expandedAreaIds.clear();
-                  });
-                },
-                icon: const Icon(Icons.arrow_back_ios_new, size: 30),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  line.name,
-                  style: const TextStyle(
-                    fontSize: 42 / 2,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              for (final area in line.areas)
+                _AreaCard(
+                  area: area,
+                  isExpanded: _expandedAreaIds.contains(area.id),
+                  onToggle: () => _toggleArea(area.id),
+                  resolveBadgeAsset: _resolveBadgeAsset,
+                  statusLabelBuilder: _statusLabel,
+                  onLevelTap: (level) => _openLevelDetails(context, level, line.name, area.name),
                 ),
-              ),
             ],
           ),
-        ),
-        const Divider(height: 1, color: Color(0xFFE3E7EC)),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 106,
-                    height: 106,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0B8EEA), Color(0xFF2A56D7)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: imageAsset != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              imageAsset!,
-                              width: 88,
-                              height: 88,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Text(
-                            _buildInitials(line.name),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 24,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (line.description.isNotEmpty)
-                          Text(
-                            line.description,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[700],
-                              height: 1.45,
-                            ),
-                          ),
-                        const SizedBox(height: 14),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: LinearProgressIndicator(
-                            minHeight: 8,
-                            value: progress.percent,
-                            backgroundColor: const Color(0xFFE2E5EA),
-                            color: progress.percent >= 1
-                                ? const Color(0xFF39C65A)
-                                : const Color(0xFF1A90F0),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          progress.label,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          children: const [
-                            Icon(Icons.schedule_outlined, size: 30),
-                            Text(
-                              '6 meses',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            Icon(Icons.group_outlined, size: 30),
-                            Text('123', style: TextStyle(fontSize: 18)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-              child: Text(
-                'Areas',
-                style: TextStyle(
-                  fontSize: 46 / 2,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.blueGrey[900],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  for (final area in line.areas) ...[
-                    _AreaCard(
-                      area: area,
-                      isExpanded: _expandedAreaIds.contains(area.id),
-                      onToggle: () => _toggleArea(area.id),
-                      resolveBadgeAsset: _resolveBadgeAsset,
-                      statusLabelBuilder: _statusLabel,
-                      onLevelTap: (level) => _openLevelDetails(context, level),
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ],
         ),
       ],
     );
   }
 
-  void _openLevelDetails(BuildContext context, BackendLevel level) {
+  void _openLevelDetails(BuildContext context, BackendLevel level, String serviceLine, String area) {
     final status = _statusLabel(level.status);
-    final badgeAsset = _resolveBadgeAsset(level);
     final canRequest = level.status == 'visualizar' && level.badgeDbId != null;
+    final canContinue = level.status == 'candidatura_em_progresso' && level.requestId != null;
 
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            bool isRequesting = false;
-            String? resultMessage;
-            bool requestSuccess = false;
-
-            Future<void> requestBadge() async {
-              if (isRequesting || level.badgeDbId == null) return;
-
-              final accountId = await AuthSession.getAccountId();
-              if (accountId == null) {
-                setSheetState(() {
-                  resultMessage = 'Sessao expirada.';
-                  requestSuccess = false;
-                });
-                return;
-              }
-
-              setSheetState(() {
-                isRequesting = true;
-                resultMessage = null;
-              });
-
-              try {
-                final result = await ConsultorApi.instance.requestBadgeAcquisition(
-                  accountId: accountId,
-                  badgeId: level.badgeDbId!,
-                );
-
-                final statusKey = result['status']?.toString() ?? '';
-                String message;
-                bool success;
-
-                switch (statusKey) {
-                  case 'obtido':
-                    message = 'Ja possui esta badge!';
-                    success = true;
-                    break;
-                  case 'pendente-tm':
-                    message = 'Pedido enviado! Em validacao pelo Talent Manager.';
-                    success = true;
-                    break;
-                  case 'candidatura_em_progresso':
-                    message = 'Candidatura criada. Submeta evidencias para continuar.';
-                    success = true;
-                    break;
-                  default:
-                    message = 'Pedido processado.';
-                    success = true;
-                }
-
-                setSheetState(() {
-                  isRequesting = false;
-                  resultMessage = message;
-                  requestSuccess = success;
-                });
-              } catch (e) {
-                setSheetState(() {
-                  isRequesting = false;
-                  resultMessage = 'Erro ao submeter pedido.';
-                  requestSuccess = false;
-                });
-              }
-            }
-
-            return DraggableScrollableSheet(
-              expand: false,
-              initialChildSize: 0.75,
-              maxChildSize: 0.9,
-              minChildSize: 0.4,
-              builder: (context, scrollController) {
-                return ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          bool isRequesting = false;
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(level.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
                   children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE5E7EB),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          alignment: Alignment.center,
-                          child: badgeAsset != null
-                              ? Image.asset(
-                                  badgeAsset,
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.contain,
-                                )
-                              : const Icon(Icons.workspace_premium_outlined, size: 28),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                level.title,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                              if (level.subtitle.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    level.subtitle,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      children: [
-                        _detailChip('Pontos', level.points.toString()),
-                        _detailChip('Estado', status.text, color: status.color),
-                      ],
-                    ),
-                    if (resultMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: requestSuccess
-                              ? const Color(0xFFE6F9ED)
-                              : const Color(0xFFFEE8E8),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: requestSuccess
-                                ? const Color(0xFF16C524)
-                                : const Color(0xFFFF3B30),
-                            width: 1.4,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              requestSuccess
-                                  ? Icons.check_circle_outline
-                                  : Icons.error_outline,
-                              color: requestSuccess
-                                  ? const Color(0xFF16C524)
-                                  : const Color(0xFFFF3B30),
-                              size: 22,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                resultMessage!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: requestSuccess
-                                      ? const Color(0xFF05603A)
-                                      : const Color(0xFFA32424),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (canRequest) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: isRequesting ? null : requestBadge,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1A90F0),
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: const Color(0xFF93C5FD),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: isRequesting
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'Pedir Badge',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Requisitos',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 10),
-                    if (level.requirements.isEmpty)
-                      const Text(
-                        'Sem requisitos associados.',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-                      )
-                    else
-                      ...level.requirements.map(
-                        (requirement) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  requirement.title,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF111827),
-                                  ),
-                                ),
-                                if (requirement.description.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    requirement.description,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF6B7280),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                    Icon(status.icon ?? Icons.info_outline, color: status.color, size: 20),
+                    const SizedBox(width: 8),
+                    Text(status.text, style: TextStyle(color: status.color, fontWeight: FontWeight.bold)),
                   ],
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _detailChip(String label, String value, {Color? color}) {
-    final chipColor = color ?? const Color(0xFF1A90F0);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: chipColor),
-      ),
-      child: Text(
-        '$label: $value',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: chipColor,
-        ),
+                ),
+                const SizedBox(height: 16),
+                if (canRequest)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isRequesting ? null : () async {
+                        setSheetState(() => isRequesting = true);
+                        final accountId = await AuthSession.getAccountId();
+                        if (accountId != null) {
+                          await ConsultorApi.instance.requestBadgeAcquisition(accountId: accountId, badgeId: level.badgeDbId!);
+                          Navigator.pop(context);
+                          _loadPathsFuture = _loadInitialData();
+                        }
+                      },
+                      child: isRequesting ? const CircularProgressIndicator() : const Text('Pedir Badge'),
+                    ),
+                  ),
+                if (canContinue)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A90F0)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderDetailScreen(
+                              order: OrderDetailData(
+                                id: level.requestId!,
+                                badge: level.title,
+                                level: level.subtitle,
+                                status: OrderStatus.pending,
+                                date: '',
+                                badgeDbId: level.badgeDbId,
+                                serviceLine: serviceLine,
+                                area: area,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Continuar Candidatura', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                const Text('Requisitos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ...level.requirements.map((r) => ListTile(title: Text(r.title), subtitle: Text(r.description))),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   _StatusLabel _statusLabel(String status) {
     switch (status) {
-      case 'obtido':
-        return const _StatusLabel('Badge obtido', Color(0xFF39C65A), Icons.check_circle);
-      case 'candidatura_em_progresso':
-        return const _StatusLabel('Candidatura em progresso', Color(0xFF1A90F0), Icons.timer_outlined);
-      case 'em_validacao':
-      case 'pendente-tm':
-      case 'pendente-sll':
-        return const _StatusLabel('Em validacao', Color(0xFFF59E0B), Icons.search);
-      case 'evidencias_insuficientes':
-        return const _StatusLabel('Evidencias insuficientes', Color(0xFFEF4444), Icons.warning_amber);
-      case 'rejeitado':
-        return const _StatusLabel('Rejeitado', Color(0xFFEF4444), Icons.cancel);
-      default:
-        return const _StatusLabel('Visualizar', Color(0xFF6B7280), null);
+      case 'obtido': return const _StatusLabel('Badge obtido', Colors.green, Icons.check_circle);
+      case 'candidatura_em_progresso': return const _StatusLabel('Candidatura em progresso', Colors.blue, Icons.timer_outlined);
+      case 'em_validacao': return const _StatusLabel('Em validação', Colors.orange, Icons.search);
+      default: return const _StatusLabel('Visualizar', Colors.grey, null);
     }
   }
 }
 
 class _ProgressInfo {
-  const _ProgressInfo({
-    required this.total,
-    required this.obtained,
-    required this.percent,
-    required this.label,
-  });
-
-  final int total;
-  final int obtained;
+  const _ProgressInfo({required this.total, required this.obtained, required this.percent, required this.label});
+  final int total, obtained;
   final double percent;
   final String label;
 }
 
 class _StatusLabel {
   const _StatusLabel(this.text, this.color, this.icon);
-
   final String text;
   final Color color;
   final IconData? icon;
 }
 
-class _AreaCard extends StatelessWidget {
-  const _AreaCard({
-    required this.area,
-    required this.isExpanded,
-    required this.onToggle,
-    required this.resolveBadgeAsset,
-    required this.statusLabelBuilder,
-    required this.onLevelTap,
-  });
-
-  final BackendArea area;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-  final String? Function(BackendLevel) resolveBadgeAsset;
-  final _StatusLabel Function(String) statusLabelBuilder;
-  final ValueChanged<BackendLevel> onLevelTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE3E7EC), width: 1.5),
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(18),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      area.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: const Color(0xFF1A90F0),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Divider(height: 1, color: Color(0xFFE9EDF2)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Niveis',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      Text(
-                        '${area.levels.length} niveis',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  for (final level in area.levels) ...[
-                    _LevelRow(
-                      level: level,
-                      badgeAsset: resolveBadgeAsset(level),
-                      statusLabel: statusLabelBuilder(level.status),
-                      onTap: () => onLevelTap(level),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LevelRow extends StatelessWidget {
-  const _LevelRow({
-    required this.level,
-    required this.badgeAsset,
-    required this.statusLabel,
-    required this.onTap,
-  });
-
-  final BackendLevel level;
-  final String? badgeAsset;
-  final _StatusLabel statusLabel;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: badgeAsset != null
-                  ? Image.asset(badgeAsset!, width: 36, height: 36, fit: BoxFit.contain)
-                  : const Icon(Icons.workspace_premium_outlined, size: 28),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    level.title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  if (level.subtitle.isNotEmpty)
-                    Text(
-                      level.subtitle,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      if (statusLabel.icon != null)
-                        Icon(statusLabel.icon, size: 18, color: statusLabel.color),
-                      if (statusLabel.icon != null) const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          statusLabel.text,
-                          style: TextStyle(fontSize: 14, color: statusLabel.color),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ServiceLineCard extends StatelessWidget {
-  const _ServiceLineCard({
-    required this.title,
-    required this.subtitle,
-    required this.progress,
-    required this.footerText,
-    required this.progressColor,
-    required this.imageLabel,
-    this.imageAsset,
-    this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
+  const _ServiceLineCard({required this.title, required this.subtitle, required this.progress, required this.footerText, required this.progressColor, required this.imageLabel, this.imageAsset, this.onTap});
+  final String title, subtitle, footerText, imageLabel;
   final double progress;
-  final String footerText;
   final Color progressColor;
-  final String imageLabel;
   final String? imageAsset;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE3E7EC)),
-        ),
-        child: Column(
+    return Card(
+      child: ListTile(
+        onTap: onTap,
+        title: Text(title),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0xFF1A90F0),
-                    size: 38,
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFE9EDF2)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1A90F0), Color(0xFF4059D5)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: imageAsset != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              imageAsset!,
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Text(
-                            imageLabel,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 22,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          subtitle,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: LinearProgressIndicator(
-                            minHeight: 8,
-                            value: progress,
-                            backgroundColor: const Color(0xFFE2E5EA),
-                            color: progressColor,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          footerText,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: progress >= 1
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          children: const [
-                            Icon(Icons.schedule_outlined, size: 30),
-                            Text(
-                              '6 meses',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            Icon(Icons.group_outlined, size: 30),
-                            Text('123', style: TextStyle(fontSize: 18)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Text(subtitle),
+            LinearProgressIndicator(value: progress, color: progressColor),
+            Text(footerText),
           ],
         ),
       ),
@@ -1287,437 +352,28 @@ class _ServiceLineCard extends StatelessWidget {
   }
 }
 
-class HybridCloudPathScreen extends StatelessWidget {
-  const HybridCloudPathScreen({super.key});
+class _AreaCard extends StatelessWidget {
+  const _AreaCard({required this.area, required this.isExpanded, required this.onToggle, required this.resolveBadgeAsset, required this.statusLabelBuilder, required this.onLevelTap});
+  final BackendArea area;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final String? Function(BackendLevel) resolveBadgeAsset;
+  final _StatusLabel Function(String) statusLabelBuilder;
+  final Function(BackendLevel) onLevelTap;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F3F5),
-      body: SafeArea(
-        child: Column(
-          children: [
-            AppTopBar(
-              onSettingsTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsMenuScreen(),
-                  ),
-                );
-              },
-              onNotificationsTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsFullScreen(),
-                  ),
-                );
-              },
-              onProfileTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              },
-              onMessagesTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MessagesScreen(),
-                  ),
-                );
-              },
+    return Column(
+      children: [
+        ListTile(title: Text(area.name), onTap: onToggle, trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more)),
+        if (isExpanded)
+          for (final level in area.levels)
+            ListTile(
+              title: Text(level.title),
+              subtitle: Text(statusLabelBuilder(level.status).text),
+              onTap: () => onLevelTap(level),
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 30),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Hybrid Cloud',
-                    style: TextStyle(
-                      fontSize: 42 / 2,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFE3E7EC)),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 106,
-                            height: 106,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF0B8EEA), Color(0xFF2A56D7)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.cloud_queue,
-                              color: Colors.white,
-                              size: 56,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Aprender Hybrid Cloud envolve bases de arquitetura, segurança e gestão, e uso de ferramentas como GKE, Anthos ou NetApp.',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[700],
-                                    height: 1.45,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(100),
-                                  child: const LinearProgressIndicator(
-                                    minHeight: 8,
-                                    value: 0.4,
-                                    backgroundColor: Color(0xFFE2E5EA),
-                                    color: Color(0xFF1A90F0),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                const Text(
-                                  '2 de 5 badges obtidas',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                        Wrap(
-                                          spacing: 12,
-                                          runSpacing: 8,
-                                          children: const [
-                                            Icon(Icons.schedule_outlined, size: 30),
-                                            Text(
-                                              '6 meses',
-                                              style: TextStyle(fontSize: 18),
-                                            ),
-                                            Icon(Icons.group_outlined, size: 30),
-                                            Text('123', style: TextStyle(fontSize: 18)),
-                                          ],
-                                        ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Container(
-                      width: double.infinity,
-                      color: const Color(0xFF4CAF50),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      child: const Text(
-                        'LowCode (Outsystems)',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 40 / 2,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-                      child: Text(
-                        'Níveis',
-                        style: TextStyle(
-                          fontSize: 46 / 2,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.blueGrey[900],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          _HybridLevelTile(
-                            title: 'Nível Júnior',
-                            subtitle: 'Nível A',
-                            statusLabel: 'Concluído',
-                            statusColor: const Color(0xFF1A90F0),
-                            actionLabel: 'Ver badge',
-                            actionIcon: Icons.visibility_outlined,
-                            actionColor: const Color(0xFF1A90F0),
-                            onActionTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const BadgesScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          _HybridLevelTile(
-                            title: 'Nível Intermédio',
-                            subtitle: 'Nível B',
-                            statusLabel: 'Concluído',
-                            statusColor: const Color(0xFF1A90F0),
-                            actionLabel: 'Ver badge',
-                            actionIcon: Icons.visibility_outlined,
-                            actionColor: const Color(0xFF1A90F0),
-                            onActionTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const BadgesScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          _HybridLevelTile(
-                            title: 'Nível Sénior',
-                            subtitle: 'Nível C',
-                            statusLabel: 'Progresso: 0%',
-                            statusColor: Color(0xFF7C7C7C),
-                            actionLabel: 'Continuar',
-                            actionColor: Color(0xFF111111),
-                            onActionTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const BadgesScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          const _HybridLevelTile(
-                            title: 'Nível Especialista',
-                            subtitle: 'Nível D',
-                            statusLabel: '',
-                            statusColor: Color(0xFFB4B4B4),
-                            actionLabel: 'Bloqueado',
-                            actionColor: Color(0xFFBAC0CB),
-                            isDisabled: true,
-                          ),
-                          const SizedBox(height: 14),
-                          const _HybridLevelTile(
-                            title: 'Líder de Conhecimento',
-                            subtitle: 'Nível E',
-                            statusLabel: '',
-                            statusColor: Color(0xFFB4B4B4),
-                            actionLabel: 'Bloqueado',
-                            actionColor: Color(0xFFBAC0CB),
-                            isDisabled: true,
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: NavigationBar(
-          selectedIndex: 2,
-          onDestinationSelected: (index) {
-            if (index == 2) {
-              return;
-            }
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AppShellScreen(initialIndex: index),
-              ),
-            );
-          },
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFEAF2FF),
-          height: 74,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_rounded),
-              label: 'Dashboard',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.workspace_premium_outlined),
-              label: 'Badges',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              label: 'Jornada',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              label: 'Pedidos',
-            ),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HybridLevelTile extends StatelessWidget {
-  const _HybridLevelTile({
-    required this.title,
-    required this.subtitle,
-    required this.statusLabel,
-    required this.statusColor,
-    required this.actionLabel,
-    required this.actionColor,
-    this.actionIcon,
-    this.onActionTap,
-    this.isDisabled = false,
-  });
-
-  final String title;
-  final String subtitle;
-  final String statusLabel;
-  final Color statusColor;
-  final String actionLabel;
-  final Color actionColor;
-  final IconData? actionIcon;
-  final VoidCallback? onActionTap;
-  final bool isDisabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final double buttonWidth = MediaQuery.of(context).size.width < 390
-        ? 146
-        : 168;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE3E7EC), width: 1.8),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 6,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          if (statusLabel.isNotEmpty)
-            Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8, right: 10),
-                child: Text(
-                  statusLabel,
-                  style: TextStyle(fontSize: 18, color: statusColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          SizedBox(
-            width: buttonWidth,
-            height: 60,
-            child: actionIcon == null
-                ? OutlinedButton(
-                    onPressed: isDisabled ? null : onActionTap,
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: isDisabled
-                            ? const Color(0xFFCAD0DA)
-                            : actionColor,
-                        width: 2.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      foregroundColor: actionColor,
-                    ),
-                    child: Text(
-                      actionLabel,
-                      style: TextStyle(fontSize: 18, color: actionColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  )
-                : OutlinedButton.icon(
-                    onPressed: isDisabled ? null : onActionTap,
-                    icon: Icon(actionIcon, size: 24, color: actionColor),
-                    label: Text(
-                      actionLabel,
-                      style: TextStyle(fontSize: 18, color: actionColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: isDisabled
-                            ? const Color(0xFFCAD0DA)
-                            : actionColor,
-                        width: 2.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      foregroundColor: actionColor,
-                    ),
-                  ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
