@@ -132,6 +132,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   Widget _buildLearningPathList(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppTopBar(
             onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
@@ -143,8 +144,26 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
           for (final path in _learningPaths) ...[
             _buildPathHeader(path),
             if (_expandedPathIds.contains(path.id))
-              for (final line in path.serviceLines)
-                _buildServiceLineCard(path, line),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC), // Fundo levemente cinzento
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      for (final line in path.serviceLines)
+                        _buildServiceLineCard(path, line),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
           ],
         ],
       ),
@@ -152,17 +171,60 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   }
 
   Widget _buildPathHeader(BackendLearningPath path) {
-    return InkWell(
-      onTap: () => _togglePath(path.id),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(path.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+    final isExpanded = _expandedPathIds.contains(path.id);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        onTap: () => _togglePath(path.id),
+        borderRadius: isExpanded 
+            ? const BorderRadius.vertical(top: Radius.circular(16))
+            : BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 20,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: isExpanded 
+                ? const BorderRadius.vertical(top: Radius.circular(16))
+                : BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFFF9800), // Laranja
+                Color(0xFFF06292), // Rosa
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            Icon(_expandedPathIds.contains(path.id) ? Icons.expand_less : Icons.expand_more),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  path.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
+                color: Colors.white,
+                size: 26,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -172,7 +234,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     final levels = line.areas.expand((a) => a.levels).toList();
     final progress = _calculateProgress(levels);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: _ServiceLineCard(
         title: line.name,
         subtitle: line.description,
@@ -336,17 +398,46 @@ class _ServiceLineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
       child: ListTile(
         onTap: onTap,
-        title: Text(title),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(subtitle),
-            LinearProgressIndicator(value: progress, color: progressColor),
-            Text(footerText),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                color: progressColor,
+                backgroundColor: const Color(0xFFE2E8F0),
+                minHeight: 6,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              footerText,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
+        trailing: const Icon(Icons.chevron_right, size: 20),
       ),
     );
   }
