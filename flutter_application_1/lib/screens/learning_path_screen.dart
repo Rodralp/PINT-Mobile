@@ -234,7 +234,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     final levels = line.areas.expand((a) => a.levels).toList();
     final progress = _calculateProgress(levels);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: _ServiceLineCard(
         title: line.name,
         subtitle: line.description,
