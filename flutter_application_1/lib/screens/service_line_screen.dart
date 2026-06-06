@@ -302,12 +302,6 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
       ),
       body: Column(
         children: [
-          AppTopBar(
-            onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
-            onNotificationsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const NotificationsFullScreen())),
-            onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
-            onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
-          ),
           Expanded(
             child: ListView(
               children: [
