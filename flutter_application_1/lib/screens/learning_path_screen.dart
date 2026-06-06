@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
 import '../services/auth_session.dart';
 import '../widgets/app_top_bar.dart';
-import 'order_detail_screen.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'messages_screen.dart';
+import 'service_line_screen.dart';
 
 class LearningPathScreen extends StatefulWidget {
   const LearningPathScreen({super.key});
@@ -20,9 +20,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   late Future<List<BackendLearningPath>> _loadPathsFuture;
   List<BackendLearningPath> _learningPaths = [];
   String? _selectedPathId;
-  String? _selectedServiceLineId;
   final Set<String> _expandedPathIds = {};
-  final Set<String> _expandedAreaIds = {};
 
   @override
   void initState() {
@@ -57,16 +55,6 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     });
   }
 
-  void _toggleArea(String id) {
-    setState(() {
-      if (_expandedAreaIds.contains(id)) {
-        _expandedAreaIds.remove(id);
-      } else {
-        _expandedAreaIds.add(id);
-      }
-    });
-  }
-
   _ProgressInfo _calculateProgress(List<BackendLevel> levels) {
     if (levels.isEmpty) return const _ProgressInfo(total: 0, obtained: 0, percent: 0, label: '0 badges');
     final obtained = levels.where((level) => level.status == 'obtido').length;
@@ -86,16 +74,6 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     return null;
   }
 
-  String? _resolveBadgeAsset(BackendLevel level) {
-    final raw = (level.badgeImage ?? '').toLowerCase();
-    if (raw.contains('junior')) return 'assets/badges/junior.png';
-    if (raw.contains('intermedio')) return 'assets/badges/intermedio.png';
-    if (raw.contains('senior')) return 'assets/badges/senior.png';
-    if (raw.contains('especialista')) return 'assets/badges/especialista.png';
-    if (raw.contains('lider')) return 'assets/badges/lider_conhecimento.png';
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,22 +89,11 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
               return Center(child: Text('Erro: ${snapshot.error}'));
             }
 
-            final selectedLine = _getSelectedServiceLine();
-            if (selectedLine != null) {
-              return _buildServiceLineDetail(context, selectedLine);
-            }
-
             return _buildLearningPathList(context);
           },
         ),
       ),
     );
-  }
-
-  BackendServiceLine? _getSelectedServiceLine() {
-    if (_selectedPathId == null || _selectedServiceLineId == null) return null;
-    final path = _learningPaths.firstWhere((p) => p.id == _selectedPathId);
-    return path.serviceLines.firstWhere((l) => l.id == _selectedServiceLineId);
   }
 
   Widget _buildLearningPathList(BuildContext context) {
@@ -149,7 +116,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC), // Fundo levemente cinzento
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
@@ -191,8 +158,8 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
                 : BorderRadius.circular(16),
             gradient: const LinearGradient(
               colors: [
-                Color(0xFFFF9800), // Laranja
-                Color(0xFFF06292), // Rosa
+                Color(0xFFFF9800),
+                Color(0xFFF06292),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -243,133 +210,16 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
         progressColor: progress.percent >= 1 ? Colors.green : Colors.blue,
         imageLabel: line.name.substring(0, 1),
         imageAsset: _resolveServiceLineImage(line.image),
-        onTap: () => setState(() => _selectedServiceLineId = line.id),
-      ),
-    );
-  }
-
-  Widget _buildServiceLineDetail(BuildContext context, BackendServiceLine line) {
-    return Column(
-      children: [
-        AppBar(
-          leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _selectedServiceLineId = null)),
-          title: Text(line.name),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-        ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              for (final area in line.areas)
-                _AreaCard(
-                  area: area,
-                  isExpanded: _expandedAreaIds.contains(area.id),
-                  onToggle: () => _toggleArea(area.id),
-                  resolveBadgeAsset: _resolveBadgeAsset,
-                  statusLabelBuilder: _statusLabel,
-                  onLevelTap: (level) => _openLevelDetails(context, level, line.name, area.name),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _openLevelDetails(BuildContext context, BackendLevel level, String serviceLine, String area) {
-    final status = _statusLabel(level.status);
-    final canRequest = level.status == 'visualizar' && level.badgeDbId != null;
-    final canContinue = level.status == 'candidatura_em_progresso' && level.requestId != null;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) {
-          bool isRequesting = false;
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(level.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(status.icon ?? Icons.info_outline, color: status.color, size: 20),
-                    const SizedBox(width: 8),
-                    Text(status.text, style: TextStyle(color: status.color, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (canRequest)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: isRequesting ? null : () async {
-                        setSheetState(() => isRequesting = true);
-                        final accountId = await AuthSession.getAccountId();
-                        if (accountId != null) {
-                          await ConsultorApi.instance.requestBadgeAcquisition(accountId: accountId, badgeId: level.badgeDbId!);
-                          Navigator.pop(context);
-                          _loadPathsFuture = _loadInitialData();
-                        }
-                      },
-                      child: isRequesting ? const CircularProgressIndicator() : const Text('Pedir Badge'),
-                    ),
-                  ),
-                if (canContinue)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A90F0)),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OrderDetailScreen(
-                              order: OrderDetailData(
-                                id: level.requestId!,
-                                badge: level.title,
-                                level: level.subtitle,
-                                status: OrderStatus.pending,
-                                date: '',
-                                badgeDbId: level.badgeDbId,
-                                serviceLine: serviceLine,
-                                area: area,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Continuar Candidatura', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                const SizedBox(height: 24),
-                const Text('Requisitos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ...level.requirements.map((r) => ListTile(title: Text(r.title), subtitle: Text(r.description))),
-              ],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ServiceLineScreen(line: line),
             ),
           );
         },
       ),
     );
-  }
-
-  _StatusLabel _statusLabel(String status) {
-    switch (status) {
-      case 'obtido': return const _StatusLabel('Badge obtido', Colors.green, Icons.check_circle);
-      case 'candidatura_em_progresso': return const _StatusLabel('Candidatura em progresso', Colors.blue, Icons.timer_outlined);
-      case 'em_validacao': return const _StatusLabel('Em validação', Colors.orange, Icons.search);
-      default: return const _StatusLabel('Visualizar', Colors.grey, null);
-    }
   }
 }
 
@@ -378,13 +228,6 @@ class _ProgressInfo {
   final int total, obtained;
   final double percent;
   final String label;
-}
-
-class _StatusLabel {
-  const _StatusLabel(this.text, this.color, this.icon);
-  final String text;
-  final Color color;
-  final IconData? icon;
 }
 
 class _ServiceLineCard extends StatelessWidget {
@@ -426,7 +269,7 @@ class _ServiceLineCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 color: progressColor,
-                backgroundColor: const Color(0xFFE2E8F0),
+                backgroundColor: const Color(0xFFE2E5EA),
                 minHeight: 6,
               ),
             ),
@@ -439,32 +282,6 @@ class _ServiceLineCard extends StatelessWidget {
         ),
         trailing: const Icon(Icons.chevron_right, size: 20),
       ),
-    );
-  }
-}
-
-class _AreaCard extends StatelessWidget {
-  const _AreaCard({required this.area, required this.isExpanded, required this.onToggle, required this.resolveBadgeAsset, required this.statusLabelBuilder, required this.onLevelTap});
-  final BackendArea area;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-  final String? Function(BackendLevel) resolveBadgeAsset;
-  final _StatusLabel Function(String) statusLabelBuilder;
-  final Function(BackendLevel) onLevelTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(title: Text(area.name), onTap: onToggle, trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more)),
-        if (isExpanded)
-          for (final level in area.levels)
-            ListTile(
-              title: Text(level.title),
-              subtitle: Text(statusLabelBuilder(level.status).text),
-              onTap: () => onLevelTap(level),
-            ),
-      ],
     );
   }
 }
