@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'app_shell_screen.dart';
-import 'notifications_full_screen.dart';
-import 'order_detail_screen.dart';
-import 'profile_screen.dart';
-import 'settings_menu_screen.dart';
+import '../screens/app_shell_screen.dart';
+import '../screens/notifications_full_screen.dart';
+import '../screens/order_detail_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/settings_menu_screen.dart';
 import '../services/auth_session.dart';
 import '../services/badges_api.dart';
 import '../services/consultor_api.dart';
-import 'messages_screen.dart';
+import '../screens/messages_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
 

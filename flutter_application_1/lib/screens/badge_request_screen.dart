@@ -4,7 +4,7 @@ import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import 'messages_screen.dart';
-import 'order_detail_screen.dart';
+import 'badges_screen.dart';
 import '../widgets/app_top_bar.dart';
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
@@ -79,7 +79,7 @@ class BadgeRequestScreen extends StatefulWidget {
 
 class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
   final Set<_RequestStatus> _activeStatuses = Set<_RequestStatus>.from(
-    _RequestStatus.values,
+    _RequestStatus.values.where((s) => s != _RequestStatus.inProgress),
   );
 
   final List<_RequestData> _allRequests = [];
@@ -103,6 +103,11 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
         accountId: accountId,
       );
       final mapped = data
+          .where((request) {
+            final normalized = request.status.trim().toLowerCase().replaceAll(' ', '_');
+            if (normalized == 'candidatura_em_progresso') return false;
+            return true;
+          })
           .map(
             (request) => _RequestData(
               id: request.id,
@@ -153,7 +158,6 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
       case 'rejected':
       case 'evidencias_insuficientes':
         return _RequestStatus.rejected;
-      case 'candidatura_em_progresso':
       case 'pendente-tm':
       case 'pendente-sll':
       case 'pendente':
@@ -166,7 +170,8 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
       case 'em_validacao_sll':
       case 'em_analise':
       case 'em_analise_talento':
-        return _RequestStatus.inProgress;
+      case 'candidatura_em_progresso':
+        return _RequestStatus.pending;
       default:
         return _RequestStatus.pending;
     }
@@ -179,33 +184,48 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
   }
 
   void _showRequestDetails(_RequestData request) {
+    BadgeState? badgeState;
+    switch (request.status) {
+      case _RequestStatus.approved:
+        badgeState = BadgeState.approved;
+        break;
+      case _RequestStatus.pending:
+        badgeState = BadgeState.review;
+        break;
+      case _RequestStatus.rejected:
+        badgeState = BadgeState.warning;
+        break;
+      case _RequestStatus.inProgress:
+        badgeState = BadgeState.inProgress;
+        break;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OrderDetailScreen(
-          order: OrderDetailData(
-            id: request.id,
-            badge: request.title,
+        builder: (context) => BadgeLiveDetailScreen(
+          badge: BadgeData(
+            id: request.badgeDbId ?? 0,
+            title: request.title,
             level: request.level,
+            points: 0,
             date: request.date,
-            status: _orderStatusFromRequest(request.status),
-            badgeDbId: request.badgeDbId,
+            badgeImage: null,
+            frameColor: const Color(0xFFBFC4CD),
+            iconBackground: const Color(0xFFF0F0F0),
+            shape: BoxShape.rectangle,
+            isOwned: request.status == _RequestStatus.approved,
+            isSpecial: false,
+            levelKey: null,
+            stateId: null,
+            state: badgeState,
+            requestId: request.id,
           ),
         ),
       ),
-    );
-  }
-
-  OrderStatus _orderStatusFromRequest(_RequestStatus status) {
-    switch (status) {
-      case _RequestStatus.approved:
-        return OrderStatus.approved;
-      case _RequestStatus.rejected:
-        return OrderStatus.rejected;
-      case _RequestStatus.pending:
-      case _RequestStatus.inProgress:
-        return OrderStatus.pending;
-    }
+    ).then((_) {
+      if (mounted) _refreshRequests();
+    });
   }
 
   @override
@@ -278,31 +298,19 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
               children: [
-                const SizedBox(height: 6),
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 18, 20, 10),
+                  padding: EdgeInsets.fromLTRB(20, 14, 20, 14),
                   child: Text(
-                    'Lista de pedidos',
+                    'Pedidos de Badges',
                     style: TextStyle(
-                      fontSize: 21,
+                      fontSize: 20,
                       fontWeight: FontWeight.w500,
+                      color: Color(0xFF243047),
                     ),
                   ),
                 ),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 14, 20, 14),
-                    child: Text(
-                      'Pedidos de Badges',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF243047),
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                  Padding(
+                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,6 +327,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                           spacing: 10,
                           runSpacing: 10,
                           children: _RequestStatus.values
+                              .where((s) => s != _RequestStatus.inProgress)
                               .map(
                                 (status) => _FilterChipPill(
                                   label: status.label,

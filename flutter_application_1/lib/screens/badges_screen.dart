@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -445,37 +446,50 @@ class _BadgesScreenState extends State<BadgesScreen> {
       context: context,
       showDragHandle: true,
       backgroundColor: Colors.white,
+      isScrollControlled: true,
       builder: (context) {
         return SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                ...options.map(
-                      (option) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(option.label),
-                    trailing: selectedId == option.id
-                        ? const Icon(Icons.check, color: Color(0xFF1A90F0))
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelected(option.id);
-                    },
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(option.label),
+                          trailing: selectedId == option.id
+                              ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            onSelected(option.id);
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -683,6 +697,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                               (badge) => _OwnedBadgeCard(
                             width: itemWidth,
                             badge: badge,
+                            onRefresh: _refreshBadges,
                           ),
                         )
                             .toList(),
@@ -790,37 +805,50 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
       context: context,
       showDragHandle: true,
       backgroundColor: Colors.white,
+      isScrollControlled: true,
       builder: (context) {
         return SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                ...options.map(
-                      (option) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(option.label),
-                    trailing: selectedId == option.id
-                        ? const Icon(Icons.check, color: Color(0xFF1A90F0))
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelected(option.id);
-                    },
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(option.label),
+                          trailing: selectedId == option.id
+                              ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            onSelected(option.id);
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -1180,10 +1208,11 @@ class _CatalogBadgeCard extends StatelessWidget {
 }
 
 class _OwnedBadgeCard extends StatelessWidget {
-  const _OwnedBadgeCard({required this.width, required this.badge});
+  const _OwnedBadgeCard({required this.width, required this.badge, this.onRefresh});
 
   final double width;
   final BadgeData badge;
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -1195,7 +1224,9 @@ class _OwnedBadgeCard extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => BadgeLiveDetailScreen(badge: badge),
           ),
-        );
+        ).then((_) {
+          onRefresh?.call();
+        });
       },
       child: Container(
         width: width,
@@ -1374,7 +1405,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   late BadgeData _badge;
   BadgeState? _previousBadgeState;
   int? _currentRequestId;
-  late final Future<List<Map<String, dynamic>>> _requirementsFuture;
+  late Future<List<Map<String, dynamic>>> _requirementsFuture;
   bool _isRequesting = false;
   String? _requestResultMessage;
   bool _requestSuccess = false;
@@ -1382,6 +1413,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   bool _submittingAll = false;
   bool _submitted = false;
   final Set<int> _expandedRequirements = {};
+  String? _reviewerNote;
+  String? _reviewerName;
 
   @override
   void initState() {
@@ -1389,14 +1422,117 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     _badge = widget.badge;
     _previousBadgeState = _badge.state;
     _currentRequestId = _badge.requestId;
-    if (_badge.id > 0) {
-      _requirementsFuture = ConsultorApi.instance.fetchBadgeRequirements(
-        badgeId: _badge.id,
-      );
-      _loadUserSpecificState();
+    if (_badge.id > 0 || _currentRequestId != null) {
+      _requirementsFuture = Future.value(const <Map<String, dynamic>>[]);
+      _loadAll();
     } else {
       _requirementsFuture = Future.value(const <Map<String, dynamic>>[]);
     }
+  }
+
+  Future<void> _loadAll() async {
+    await _loadUserSpecificState();
+    if (!mounted) return;
+    setState(() {
+      _requirementsFuture = _loadRequirementsWithEvidences();
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _loadRequirementsWithEvidences() async {
+    List<Map<String, dynamic>> badgeReqs = [];
+    int badgeId = _badge.id;
+    Map<String, dynamic>? detail;
+
+    if (_currentRequestId != null) {
+      try {
+        detail = await ConsultorApi.instance.fetchPedidoDetail(
+          pedidoId: _currentRequestId!,
+        );
+        if (detail != null) {
+          _reviewerNote = detail['reviewerNote']?.toString() ??
+              detail['comentario']?.toString() ??
+              detail['nota']?.toString();
+          _reviewerName = detail['reviewerName']?.toString() ??
+              detail['avaliador']?.toString();
+
+          if (badgeId <= 0) {
+            badgeId = int.tryParse(detail['badgeDbId']?.toString() ??
+                    detail['badgeId']?.toString() ??
+                    detail['nbadge']?.toString() ??
+                    '0') ??
+                0;
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (badgeId > 0) {
+      try {
+        badgeReqs = await ConsultorApi.instance.fetchBadgeRequirements(
+          badgeId: badgeId,
+        );
+
+        for (final badgeReq in badgeReqs) {
+          if (badgeReq['attachments'] is List &&
+              (badgeReq['attachments'] as List).isNotEmpty) {
+            badgeReq['evidencias'] = (badgeReq['attachments'] as List).map((att) {
+              if (att is Map) return att;
+              return {'ficheiro': att.toString()};
+            }).toList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (detail != null) {
+      final reqData = detail['requirements'] ??
+          detail['requisitos'] ??
+          detail['items'] ??
+          detail['itens'] ??
+          detail['badgeRequirements'];
+      if (reqData is List && reqData.isNotEmpty) {
+        final pedidoReqs = reqData.whereType<Map<String, dynamic>>().toList();
+
+        if (badgeReqs.isEmpty) {
+          badgeReqs = pedidoReqs;
+        } else {
+          for (final badgeReq in badgeReqs) {
+            final nreq =
+                badgeReq['nreq']?.toString() ?? badgeReq['id']?.toString();
+            if (nreq == null) continue;
+            for (final pedidoReq in pedidoReqs) {
+              final pNreq = pedidoReq['nreq']?.toString() ??
+                  pedidoReq['id']?.toString() ??
+                  pedidoReq['requirementId']?.toString();
+              if (pNreq == nreq) {
+                final pedidoEvidencias = pedidoReq['evidencias'] ??
+                    pedidoReq['evidences'] ??
+                    pedidoReq['anexos'] ??
+                    pedidoReq['attachments'] ??
+                    pedidoReq['files'] ??
+                    pedidoReq['documentos'];
+
+                if (pedidoEvidencias is List && pedidoEvidencias.isNotEmpty) {
+                  badgeReq['evidencias'] = pedidoEvidencias;
+                } else if (pedidoReq['files'] != null) {
+                  final fileCount =
+                      int.tryParse(pedidoReq['files'].toString()) ?? 0;
+                  if (fileCount > 0 &&
+                      !(badgeReq['evidencias'] is List &&
+                          (badgeReq['evidencias'] as List).isNotEmpty)) {
+                    badgeReq['evidencias'] = List.generate(
+                        fileCount, (i) => {'ficheiro': 'Documento ${i + 1}'});
+                  }
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return badgeReqs;
   }
 
   Future<void> _loadUserSpecificState() async {
@@ -1532,6 +1668,12 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         _currentRequestId = requestId ?? _currentRequestId;
         _previousBadgeState = newState;
       });
+
+      if (mounted) {
+        setState(() {
+          _requirementsFuture = _loadRequirementsWithEvidences();
+        });
+      }
     } on ConsultorApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1567,6 +1709,14 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   void _removeFile(int requirementIndex, int fileIndex) {
     setState(() {
       _filesByRequirement[requirementIndex]?.removeAt(fileIndex);
+    });
+  }
+
+  Future<void> _refreshBadge() async {
+    await _loadUserSpecificState();
+    if (!mounted) return;
+    setState(() {
+      _requirementsFuture = _loadRequirementsWithEvidences();
     });
   }
 
@@ -1642,6 +1792,14 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
       });
 
       await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+
+      setState(() {
+        _requirementsFuture = _loadRequirementsWithEvidences();
+      });
+      _loadUserSpecificState();
+
+      await Future.delayed(const Duration(seconds: 1));
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -1682,13 +1840,16 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           child: Container(color: const Color(0xFFE5E7EB), height: 1),
         ),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: RefreshIndicator(
+        onRefresh: _refreshBadge,
+        child: FutureBuilder<List<Map<String, dynamic>>>(
         future: _requirementsFuture,
         builder: (context, snapshot) {
           final requirements = snapshot.data ?? const <Map<String, dynamic>>[];
           final hasError = snapshot.hasError;
 
           return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1880,8 +2041,16 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                           final title = req['titulo']?.toString() ?? req['requisito']?.toString() ?? req['title']?.toString() ?? req['name']?.toString() ?? req['text']?.toString() ?? 'Sem titulo';
                           final description = req['description']?.toString() ?? req['r_descricao']?.toString() ?? req['descricao']?.toString() ?? '';
                           final isExpanded = _expandedRequirements.contains(nreq);
-                          final evidencias = req['evidencias'] is List ? (req['evidencias'] as List) : [];
-                          final hasFiles = _filesByRequirement[nreq]?.isNotEmpty == true;
+                          final evidencias = req['evidencias'] ??
+                              req['evidences'] ??
+                              req['anexos'] ??
+                              req['attachments'] ??
+                              req['files'] ??
+                              req['documentos'];
+                          final List evidenciasList =
+                              evidencias is List ? evidencias : [];
+                          final hasFiles =
+                              _filesByRequirement[nreq]?.isNotEmpty == true;
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
@@ -1906,20 +2075,51 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                                       });
                                     },
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 16),
                                       child: Row(
                                         children: [
                                           Expanded(
-                                            child: Text(
-                                              title,
-                                              maxLines: isExpanded ? null : 2,
-                                              overflow: isExpanded ? null : TextOverflow.ellipsis,
-                                              style: const TextStyle(fontSize: 16, color: Color(0xFF111827)),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  title,
+                                                  maxLines: isExpanded ? null : 2,
+                                                  overflow: isExpanded
+                                                      ? null
+                                                      : TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      fontSize: 16,
+                                                      color: Color(0xFF111827)),
+                                                ),
+                                                if (evidenciasList.isNotEmpty) ...[
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    children: [
+                                                      const Icon(Icons.attach_file,
+                                                          size: 14,
+                                                          color: Color(0xFF1A90F0)),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '${evidenciasList.length} ficheiro${evidenciasList.length > 1 ? 's' : ''} submetido${evidenciasList.length > 1 ? 's' : ''}',
+                                                        style: const TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Color(0xFF1A90F0)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ],
                                             ),
                                           ),
                                           const SizedBox(width: 8),
                                           Icon(
-                                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                            isExpanded
+                                                ? Icons.keyboard_arrow_up
+                                                : Icons.keyboard_arrow_down,
                                             size: 24,
                                           ),
                                         ],
@@ -1929,30 +2129,65 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                                   AnimatedCrossFade(
                                     firstChild: const SizedBox.shrink(),
                                     secondChild: Padding(
-                                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                                      padding:
+                                          const EdgeInsets.fromLTRB(14, 0, 14, 14),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           if (description.isNotEmpty) ...[
                                             Text(
                                               description,
-                                              style: const TextStyle(fontSize: 14, color: Color(0xFF374151), height: 1.5),
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Color(0xFF374151),
+                                                  height: 1.5),
                                             ),
                                             const SizedBox(height: 8),
                                           ],
-                                          if (evidencias.isNotEmpty) ...[
+                                          if (evidenciasList.isNotEmpty) ...[
                                             const Text(
-                                              'Evidencias:',
-                                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF6B7280)),
+                                              'Documentos submetidos:',
+                                              style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF6B7280)),
                                             ),
                                             const SizedBox(height: 4),
-                                            ...evidencias.map((ev) {
-                                              final fileName = ev is Map ? (ev['ficheiro']?.toString() ?? ev['filename']?.toString() ?? '') : ev.toString();
+                                            ...evidenciasList.map((ev) {
+                                              String fileName;
+                                              if (ev is Map) {
+                                                fileName = ev['ficheiro']
+                                                        ?.toString() ??
+                                                    ev['filename']?.toString() ??
+                                                    ev['name']?.toString() ??
+                                                    ev['label']?.toString() ??
+                                                    ev['fileName']?.toString() ??
+                                                    ev['file']?.toString() ??
+                                                    '';
+                                              } else {
+                                                fileName = ev.toString();
+                                              }
                                               return Padding(
-                                                padding: const EdgeInsets.only(bottom: 2),
-                                                child: Text(
-                                                  '  - $fileName',
-                                                  style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                                                padding: const EdgeInsets.only(
+                                                    bottom: 4, left: 4),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.description,
+                                                        size: 14,
+                                                        color: Color(0xFF94A3B8)),
+                                                    const SizedBox(width: 6),
+                                                    Expanded(
+                                                      child: Text(
+                                                        fileName,
+                                                        style: const TextStyle(
+                                                            fontSize: 13,
+                                                            color: Color(0xFF6B7280)),
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               );
                                             }),
@@ -2033,11 +2268,75 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                     ),
                   ),
                 ],
+                if (_reviewerNote != null || _reviewerName != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Comentario do Avaliador',
+                          style: TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_reviewerName != null && _reviewerName!.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFE3F2FD),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  _reviewerName![0].toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1565C0),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                _reviewerName!,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        Text(
+                          _reviewerNote ?? 'A aguardar validacao.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _reviewerNote != null ? const Color(0xFF374151) : const Color(0xFF94A3B8),
+                            fontStyle: _reviewerNote == null ? FontStyle.italic : null,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
               ],
             ),
           );
         },
+      ),
       ),
       bottomNavigationBar: SafeArea(
         child: NavigationBar(

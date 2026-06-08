@@ -8,6 +8,7 @@ import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'messages_screen.dart';
 import 'service_line_screen.dart';
+import 'app_shell_screen.dart';
 
 class LearningPathScreen extends StatefulWidget {
   const LearningPathScreen({super.key});
@@ -26,6 +27,13 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   void initState() {
     super.initState();
     _loadPathsFuture = _loadInitialData();
+  }
+
+  Future<void> _refreshLearningPaths() async {
+    setState(() {
+      _loadPathsFuture = _loadInitialData();
+    });
+    await _loadPathsFuture;
   }
 
   Future<List<BackendLearningPath>> _loadInitialData() async {
@@ -84,24 +92,50 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
         onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
         onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
       ),
-      body: FutureBuilder<List<BackendLearningPath>>(
-        future: _loadPathsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Erro: ${snapshot.error}'));
-          }
+      body: RefreshIndicator(
+        onRefresh: _refreshLearningPaths,
+        child: FutureBuilder<List<BackendLearningPath>>(
+          future: _loadPathsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Erro: ${snapshot.error}'));
+            }
 
-          return _buildLearningPathList(context);
-        },
+            return _buildLearningPathList(context);
+          },
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: NavigationBar(
+          selectedIndex: 2,
+          onDestinationSelected: (index) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AppShellScreen(initialIndex: index)),
+            );
+          },
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFEAF2FF),
+          height: 74,
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
+            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
+            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
+            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
+            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildLearningPathList(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

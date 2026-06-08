@@ -34,42 +34,6 @@ Uint8List? _decodeDataUrl(String url) {
   }
 }
 
-String? resolveBadgeArtworkPath({
-  String? badgeImage,
-  String? levelKey,
-  String? title,
-  String? subtitle,
-}) {
-  final nLevel = _normalize(levelKey);
-  if (nLevel.isNotEmpty) {
-    if (nLevel.contains('junior')) return 'assets/badges/junior_frame.png';
-    if (nLevel.contains('intermediate') || nLevel.contains('intermedio') || nLevel.contains('interm')) {
-      return 'assets/badges/intermediate_frame.png';
-    }
-    if (nLevel.contains('senior')) return 'assets/badges/senior_frame.png';
-    if (nLevel.contains('especialista') || nLevel.contains('specialist')) {
-      return 'assets/badges/specialist_frame.png';
-    }
-    if (nLevel.contains('knowledge_lead') || nLevel.contains('lider') || nLevel.contains('lead')) {
-      return 'assets/badges/knowledge_lead_frame.png';
-    }
-    if (nLevel.contains('special')) return 'assets/badges/special_frame.png';
-  }
-
-  for (final candidate in [title, subtitle]) {
-    final n = _normalize(candidate);
-    if (n.isEmpty) continue;
-    if (n.contains('junior')) return 'assets/badges/junior_frame.png';
-    if (n.contains('intermedio') || n.contains('interm')) return 'assets/badges/intermediate_frame.png';
-    if (n.contains('senior')) return 'assets/badges/senior_frame.png';
-    if (n.contains('especialista') || n.contains('specialist')) return 'assets/badges/specialist_frame.png';
-    if (n.contains('lider') || n.contains('conhecimento')) return 'assets/badges/knowledge_lead_frame.png';
-    if (n.contains('especial') || n.contains('special')) return 'assets/badges/special_frame.png';
-  }
-
-  return null;
-}
-
 String? resolveBadgeFramePath({String? levelKey, String? title, String? subtitle}) {
   final nLevel = _normalize(levelKey);
   if (nLevel.isNotEmpty && nLevel != 'null') {
@@ -115,7 +79,7 @@ String? resolveBadgeMaskPath({String? levelKey, String? title, String? subtitle}
     if (nLevel.contains('knowledge_lead') || nLevel.contains('lider') || nLevel.contains('lead')) {
       return 'assets/badges/knowledge_lead_mask.png';
     }
-    if (nLevel.contains('special')) return 'assets/badges/special_mask.png';
+    if (nLevel.contains('special')) return 'assets/badges/junior_mask.png';
   }
 
   for (final candidate in [title, subtitle]) {
@@ -126,15 +90,10 @@ String? resolveBadgeMaskPath({String? levelKey, String? title, String? subtitle}
     if (n.contains('senior')) return 'assets/badges/senior_mask.png';
     if (n.contains('especialista') || n.contains('specialist')) return 'assets/badges/specialist_mask.png';
     if (n.contains('lider') || n.contains('conhecimento')) return 'assets/badges/knowledge_lead_mask.png';
-    if (n.contains('especial') || n.contains('special')) return 'assets/badges/special_mask.png';
+    if (n.contains('especial') || n.contains('special')) return 'assets/badges/junior_mask.png';
   }
 
-  return 'assets/badges/special_mask.png';
-}
-
-bool isSpecialBadge({String? levelKey}) {
-  final n = _normalize(levelKey);
-  return n.isEmpty || n == 'null' || n == 'special';
+  return 'assets/badges/junior_mask.png';
 }
 
 class BadgeArtwork extends StatelessWidget {
@@ -204,7 +163,6 @@ class BadgeArtwork extends StatelessWidget {
   }
 
   Widget _buildFrameOnlyBadge(double size, String maskPath) {
-    final maskProvider = AssetImage(maskPath);
     return Container(
       width: size,
       height: size,
@@ -219,8 +177,8 @@ class BadgeArtwork extends StatelessWidget {
           0, 0, 0, 0, 1,
           0, 0, 0, 0.9, 0,
         ]),
-        child: Image(
-          image: maskProvider,
+        child: Image.asset(
+          maskPath,
           width: size,
           height: size,
           fit: BoxFit.contain,

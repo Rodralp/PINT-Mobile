@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
 import '../widgets/badge_artwork.dart';
 import 'badges_screen.dart';
+import 'app_shell_screen.dart';
 
 class ServiceLineScreen extends StatefulWidget {
   final BackendServiceLine line;
@@ -23,14 +24,6 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
         _expandedAreaIds.add(id);
       }
     });
-  }
-
-  String? _resolveBadgeAsset(BackendLevel level) {
-    return resolveBadgeArtworkPath(
-      badgeImage: level.badgeImage,
-      levelKey: level.badgeImage,
-      title: level.title,
-    );
   }
 
   String? _resolveServiceLineImage(String? path) {
@@ -168,8 +161,8 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
 
     final badgeData = BadgeData(
       id: level.badgeDbId ?? 0,
-      title: level.title,
-      level: level.subtitle,
+      title: area,
+      level: level.title,
       points: level.points,
       date: '',
       badgeImage: level.badgeImage,
@@ -189,14 +182,21 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
       MaterialPageRoute(
         builder: (context) => BadgeLiveDetailScreen(badge: badgeData),
       ),
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   _StatusLabel _statusLabel(String status) {
     switch (status) {
-      case 'obtido': return const _StatusLabel('Badge obtido', Color(0xFF39C65A), Icons.check_circle);
-      case 'candidatura_em_progresso': return const _StatusLabel('Candidatura em progresso', Color(0xFF1A90F0), Icons.timer_outlined);
-      case 'em_validacao': return const _StatusLabel('Em validação', Color(0xFFF59E0B), Icons.search);
+      case 'obtido': return const _StatusLabel('Aprovado', Color(0xFF39C65A), Icons.check_circle);
+      case 'candidatura_em_progresso': return const _StatusLabel('Candidatura em Progresso', Color(0xFF1A90F0), Icons.timer_outlined);
+      case 'pendente-tm':
+      case 'pendente-sll':
+      case 'em_validacao': return const _StatusLabel('Pendente', Color(0xFFF59E0B), Icons.search);
+      case 'rejeitado':
+      case 'evidencias_insuficientes': return const _StatusLabel('Rejeitado', Color(0xFFEF4444), Icons.cancel_outlined);
+      case 'sem_badge': return const _StatusLabel('Sem badge', Color(0xFF64748B), Icons.warning_amber_outlined);
       default: return const _StatusLabel('Visualizar', Color(0xFF64748B), null);
     }
   }
@@ -226,47 +226,74 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              children: [
-                _buildHeader(line, percent, progressLabel),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A90F0),
-                          borderRadius: BorderRadius.circular(2),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                setState(() {});
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  _buildHeader(line, percent, progressLabel),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A90F0),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Áreas de Conhecimento',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Areas de Conhecimento',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                for (final area in line.areas)
-                  _AreaCard(
-                    area: area,
-                    isExpanded: _expandedAreaIds.contains(area.id),
-                    onToggle: () => _toggleArea(area.id),
-                    resolveBadgeAsset: _resolveBadgeAsset,
-                    statusLabelBuilder: _statusLabel,
-                    onLevelTap: (level) => _openLevelDetails(context, level, line.name, area.name),
-                  ),
-                const SizedBox(height: 32),
-              ],
+                  for (final area in line.areas)
+                    _AreaCard(
+                      area: area,
+                      isExpanded: _expandedAreaIds.contains(area.id),
+                      onToggle: () => _toggleArea(area.id),
+                      statusLabelBuilder: _statusLabel,
+                      onLevelTap: (level) => _openLevelDetails(context, level, line.name, area.name),
+                    ),
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: NavigationBar(
+          selectedIndex: 2,
+          onDestinationSelected: (index) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AppShellScreen(initialIndex: index)),
+            );
+          },
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFEAF2FF),
+          height: 74,
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
+            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
+            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
+            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
+            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
+          ],
+        ),
       ),
     );
   }
@@ -280,11 +307,10 @@ class _StatusLabel {
 }
 
 class _AreaCard extends StatelessWidget {
-  const _AreaCard({required this.area, required this.isExpanded, required this.onToggle, required this.resolveBadgeAsset, required this.statusLabelBuilder, required this.onLevelTap});
+  const _AreaCard({required this.area, required this.isExpanded, required this.onToggle, required this.statusLabelBuilder, required this.onLevelTap});
   final BackendArea area;
   final bool isExpanded;
   final VoidCallback onToggle;
-  final String? Function(BackendLevel) resolveBadgeAsset;
   final _StatusLabel Function(String) statusLabelBuilder;
   final Function(BackendLevel) onLevelTap;
 
@@ -314,17 +340,16 @@ class _AreaCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: resolveBadgeAsset(level) != null
-                            ? Image.asset(resolveBadgeAsset(level)!, width: 28, height: 28)
-                            : const Icon(Icons.workspace_premium_outlined, color: Color(0xFF64748B), size: 24),
+                      BadgeArtwork(
+                        size: 44,
+                        frameColor: const Color(0xFF1A90F0),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        shape: BoxShape.rectangle,
+                        iconSize: 24,
+                        badgeImage: level.badgeImage,
+                        levelKey: level.levelKey,
+                        title: level.title,
+                        subtitle: level.title,
                       ),
                       const SizedBox(width: 16),
                       Expanded(

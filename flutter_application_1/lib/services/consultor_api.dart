@@ -27,6 +27,9 @@ class BackendRequest {
     required this.date,
     required this.status,
     this.badgeDbId,
+    this.reviewerNote,
+    this.reviewerName,
+    this.requirements,
   });
 
   factory BackendRequest.fromJson(Map<String, dynamic> json) {
@@ -36,7 +39,12 @@ class BackendRequest {
       level: _readString(json, ['level', 'nivel', 'badgeLevel']) ?? '',
       date: _readString(json, ['date', 'data', 'createdAt', 'submittedAt']),
       status: _readString(json, ['status', 'state', 'estado']) ?? '',
-      badgeDbId: _readInt(json, ['badgeDbId', 'nbadge', 'badgeId']),
+      badgeDbId: _readInt(json, ['badgeDbId', 'nbadge', 'badgeId', 'badge_id', 'badge_db_id']),
+      reviewerNote: _readString(json, ['reviewerNote', 'comentario', 'nota', 'comment']),
+      reviewerName: _readString(json, ['reviewerName', 'avaliador', 'reviewer']),
+      requirements: json['requirements'] is List
+          ? (json['requirements'] as List).whereType<Map<String, dynamic>>().toList()
+          : null,
     );
   }
 
@@ -46,6 +54,9 @@ class BackendRequest {
   final String? date;
   final String status;
   final int? badgeDbId;
+  final String? reviewerNote;
+  final String? reviewerName;
+  final List<Map<String, dynamic>>? requirements;
 }
 
 class ProfileSkillItem {
@@ -824,6 +835,29 @@ class ConsultorApi {
 
   Future<int?> _getAccountId() async {
     return AuthSession.getAccountId();
+  }
+
+  Future<Map<String, dynamic>?> fetchPedidoDetail({required int pedidoId}) async {
+    final accountId = await _getAccountId();
+    if (accountId == null) return null;
+
+    try {
+      final uri = await _uri('/consultor/pedidos/$pedidoId?accountId=$accountId');
+      final response = await _getJson(uri);
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      final data = decoded is Map<String, dynamic> ? (decoded['data'] ?? decoded) : decoded;
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<BackendRequest?> fetchMyRequestDetail({required int pedidoId}) async {

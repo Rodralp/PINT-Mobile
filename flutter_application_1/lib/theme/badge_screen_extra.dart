@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
 import '../services/auth_session.dart';
-import 'order_detail_screen.dart';
+import '../screens/order_detail_screen.dart';
 
 enum BadgeState { owned, inProgress, review, warning, locked }
 

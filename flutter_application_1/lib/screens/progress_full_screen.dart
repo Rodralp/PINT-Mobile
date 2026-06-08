@@ -128,7 +128,7 @@ class _ProgressItemFull extends StatelessWidget {
               borderWidth: 0,
               iconSize: 32,
               title: title,
-              subtitle: subtitle,
+              levelKey: subtitle,
             ),
           ),
           const SizedBox(width: 16),

@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/consultor_api.dart';
+import '../services/auth_session.dart';
+import '../widgets/badge_artwork.dart';
+import 'app_shell_screen.dart';
 
 enum OrderStatus { approved, pending, rejected }
 
@@ -32,6 +35,11 @@ class OrderDetailData {
     this.submittedBy = '',
     this.serviceLine = '',
     this.area = '',
+    this.badgeImage,
+    this.levelKey,
+    this.isSpecial = false,
+    this.frameColor = const Color(0xFFBFC4CD),
+    this.shape = BoxShape.rectangle,
   });
 
   final int id;
@@ -43,6 +51,11 @@ class OrderDetailData {
   final String submittedBy;
   final String serviceLine;
   final String area;
+  final String? badgeImage;
+  final String? levelKey;
+  final bool isSpecial;
+  final Color frameColor;
+  final BoxShape shape;
 }
 
 class OrderDetailScreen extends StatefulWidget {
@@ -65,6 +78,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   bool _submittingAll = false;
   bool _submitted = false;
 
+  String? _reviewerNote;
+  String? _reviewerName;
+
   bool get _canUpload =>
       widget.order.status == OrderStatus.pending &&
       !_submitted;
@@ -72,11 +88,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRequirements();
+    _loadDetail();
   }
 
-  Future<void> _loadRequirements() async {
-    if (widget.order.badgeDbId == null) return;
+  Future<void> _loadDetail() async {
+    if (widget.order.badgeDbId == null && widget.order.id == 0) return;
 
     setState(() {
       _isLoadingRequirements = true;
@@ -84,19 +100,50 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     });
 
     try {
-      final data = await ConsultorApi.instance.fetchBadgeRequirements(
-        badgeId: widget.order.badgeDbId!,
+      final detail = await ConsultorApi.instance.fetchPedidoDetail(
+        pedidoId: widget.order.id,
       );
+
+      if (!mounted) return;
+
+      if (detail != null) {
+        final reviewerNote = detail['reviewerNote']?.toString() ??
+            detail['comentario']?.toString() ??
+            detail['nota']?.toString();
+        final reviewerName = detail['reviewerName']?.toString() ??
+            detail['avaliador']?.toString();
+
+        setState(() {
+          _reviewerNote = reviewerNote;
+          _reviewerName = reviewerName;
+        });
+      }
+
+      final reqData = detail?['requirements'];
+      final List<Map<String, dynamic>> reqList;
+      if (reqData is List) {
+        reqList = reqData.whereType<Map<String, dynamic>>().toList();
+      } else {
+        reqList = await ConsultorApi.instance.fetchBadgeRequirements(
+          badgeId: widget.order.badgeDbId!,
+        );
+      }
 
       if (!mounted) return;
 
       setState(() {
         _requirements.clear();
-        for (final item in data) {
-          final title = item['titulo']?.toString() ?? item['name']?.toString() ?? 'Sem título';
-          final desc = item['descricao']?.toString() ?? item['description']?.toString() ?? '';
+        for (final item in reqList) {
+          final title = item['titulo']?.toString() ??
+              item['name']?.toString() ??
+              item['requisito']?.toString() ??
+              item['title']?.toString() ??
+              'Sem titulo';
+          final desc = item['descricao']?.toString() ??
+              item['description']?.toString() ??
+              '';
           final nreq = item['nreq']?.toString() ?? '';
-          
+
           final List<String> attachments = [];
           if (item['evidencias'] is List) {
             for (final ev in item['evidencias']) {
@@ -123,6 +170,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         _requirementsError = 'Erro ao carregar requisitos: $e';
       });
     }
+  }
+
+  Future<void> _refreshDetail() async {
+    _filesByRequirement.clear();
+    _submitted = false;
+    await _loadDetail();
   }
 
   int _extractNreq(String id) {
@@ -174,10 +227,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evidências enviadas com sucesso.')),
+        const SnackBar(content: Text('Evidencias enviadas com sucesso.')),
       );
-      
-      _loadRequirements();
+
+      _loadDetail();
     } catch (e) {
       if (!mounted) return;
       setState(() => _uploadingByRequirement[requirementId] = false);
@@ -193,7 +246,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     setState(() => _submittingAll = true);
 
     try {
-      // 1. Upload de ficheiros pendentes
       for (final entry in _filesByRequirement.entries) {
         if (entry.value.isEmpty) continue;
         final nreq = _extractNreq(entry.key);
@@ -206,9 +258,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         );
       }
 
-      // 2. Mudar estado da candidatura para "Em Validação"
-      await ConsultorApi.instance.submitRequest(
-        pedidoId: widget.order.id,
+      await ConsultorApi.instance.requestBadgeAcquisition(
+        accountId: (await AuthSession.getAccountId())!,
+        badgeId: widget.order.badgeDbId!,
       );
 
       if (!mounted) return;
@@ -221,7 +273,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Candidatura submetida com sucesso para avaliação.'),
+          content: Text('Candidatura submetida com sucesso para avaliacao.'),
           backgroundColor: Color(0xFF05603A),
         ),
       );
@@ -246,22 +298,91 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final statusMeta = _statusMeta(order.status);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Detalhes da Candidatura'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Candidatura',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE5E7EB), height: 1),
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeroCard(order, statusMeta),
-            _buildBreadcrumb(order),
-            _buildRequirementsSection(order),
-            if (_canUpload)
-              _buildSubmitButton(),
-            const SizedBox(height: 32),
+      body: RefreshIndicator(
+        onRefresh: _refreshDetail,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeroCard(order, statusMeta),
+              const SizedBox(height: 16),
+              _buildRequirementsSection(),
+              _buildReviewerSection(),
+              if (_canUpload) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _submittingAll ? null : _submitAllAndRequest,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A90F0),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFF93C5FD),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: _submittingAll
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                          )
+                        : const Text(
+                            'Submeter',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: NavigationBar(
+          selectedIndex: 1,
+          onDestinationSelected: (index) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AppShellScreen(initialIndex: index)),
+            );
+          },
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFEAF2FF),
+          height: 74,
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
+            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
+            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
+            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
+            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
           ],
         ),
       ),
@@ -271,102 +392,99 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Widget _buildHeroCard(OrderDetailData order, _StatusMeta statusMeta) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: statusMeta.backgroundColor,
-              shape: BoxShape.circle,
-              border: Border.all(color: statusMeta.frameColor, width: 2),
+          SizedBox(
+            width: 160,
+            height: 160,
+            child: BadgeArtwork(
+              size: 160,
+              frameColor: order.frameColor,
+              backgroundColor: const Color(0xFFF0F0F0).withOpacity(0.35),
+              shape: order.shape,
+              borderWidth: 10,
+              iconSize: 86,
+              badgeImage: order.badgeImage,
+              levelKey: order.levelKey,
+              title: order.badge,
+              subtitle: order.level,
+              isSpecial: order.isSpecial,
             ),
-            child: Icon(statusMeta.icon, color: statusMeta.textColor, size: 32),
           ),
           const SizedBox(height: 16),
           Text(
             order.badge,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1E293B),
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF243047),
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             order.level,
             style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w500,
+              fontSize: 20,
+              color: Color(0xFF243047),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: statusMeta.backgroundColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: statusMeta.textColor, width: 1.6),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: statusMeta.frameColor, width: 1.6),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(statusMeta.icon, color: statusMeta.textColor, size: 24),
-                const SizedBox(width: 8),
-                Text(
-                  statusMeta.label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: statusMeta.textColor,
+                Icon(statusMeta.icon, color: statusMeta.textColor, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    statusMeta.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: statusMeta.textColor,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _metaItem(Icons.calendar_today_outlined, order.date),
-              if (order.submittedBy.isNotEmpty) ...[
-                const SizedBox(width: 24),
-                _metaItem(Icons.person_outline, order.submittedBy),
+          if (order.date.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 24),
+                const SizedBox(width: 6),
+                Text(
+                  order.date,
+                  style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+                ),
               ],
-            ],
-          ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildBreadcrumb(OrderDetailData order) {
-    final parts = [order.serviceLine, order.area].where((s) => s.isNotEmpty).toList();
-    if (parts.isEmpty) return const SizedBox.shrink();
-
+  Widget _buildRequirementsSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Text(
-        parts.join(' > '),
-        style: const TextStyle(
-          fontSize: 13,
-          color: Color(0xFF64748B),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRequirementsSection(OrderDetailData order) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
@@ -374,36 +492,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Requisitos',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-              ),
-              if (_isLoadingRequirements)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-            ],
+          const Text(
+            'Requisitos',
+            style: TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
-          if (_requirementsError != null)
+          if (_isLoadingRequirements)
+            const Center(child: CircularProgressIndicator())
+          else if (_requirementsError != null)
             Text(
               _requirementsError!,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+              style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
             )
-          else if (_requirements.isEmpty && !_isLoadingRequirements)
+          else if (_requirements.isEmpty)
             const Text(
-              'Sem requisitos disponiveis.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+              'Sem requisitos associados.',
+              style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
             )
           else
             ..._requirements.map(
@@ -422,54 +526,85 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
-          onPressed: _submittingAll ? null : _submitAllAndRequest,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A90F0),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+  Widget _buildReviewerSection() {
+    final hasReviewer = _reviewerName != null && _reviewerName!.isNotEmpty;
+    final hasNote = _reviewerNote != null && _reviewerNote!.isNotEmpty;
+
+    if (!hasReviewer && !hasNote) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
+        color: Colors.white,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Comentario do Avaliador',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
             ),
-            elevation: 0,
           ),
-          child: _submittingAll
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
+          const SizedBox(height: 12),
+          if (hasReviewer) ...[
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3F2FD),
+                    shape: BoxShape.circle,
                   ),
-                )
-              : const Text(
-                  'Submeter Candidatura',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  alignment: Alignment.center,
+                  child: Text(
+                    _reviewerName![0].toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1565C0),
+                    ),
                   ),
                 ),
-        ),
+                const SizedBox(width: 10),
+                Text(
+                  _reviewerName!,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (hasNote)
+            Text(
+              _reviewerNote!,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF374151),
+                height: 1.5,
+              ),
+            )
+          else
+            const Text(
+              'A aguardar validacao.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF94A3B8),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+        ],
       ),
-    );
-  }
-
-  Widget _metaItem(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF6B7280)),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-        ),
-      ],
     );
   }
 
@@ -494,7 +629,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       case OrderStatus.pending:
         return _submitted
             ? const _StatusMeta(
-                label: 'Em Validação',
+                label: 'Em Validacao',
                 icon: Icons.hourglass_empty,
                 textColor: Color(0xFF92400E),
                 backgroundColor: Color(0xFFFEF3C7),
