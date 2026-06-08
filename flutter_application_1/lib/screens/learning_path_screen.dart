@@ -78,20 +78,24 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: FutureBuilder<List<BackendLearningPath>>(
-          future: _loadPathsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Erro: ${snapshot.error}'));
-            }
+      appBar: AppTopBar(
+        onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
+        onNotificationsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const NotificationsFullScreen())),
+        onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
+        onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
+      ),
+      body: FutureBuilder<List<BackendLearningPath>>(
+        future: _loadPathsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Erro: ${snapshot.error}'));
+          }
 
-            return _buildLearningPathList(context);
-          },
-        ),
+          return _buildLearningPathList(context);
+        },
       ),
     );
   }
@@ -101,12 +105,6 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppTopBar(
-            onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
-            onNotificationsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const NotificationsFullScreen())),
-            onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
-            onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
-          ),
           const SizedBox(height: 16),
           for (final path in _learningPaths) ...[
             _buildPathHeader(path),

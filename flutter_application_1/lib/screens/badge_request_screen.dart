@@ -9,7 +9,7 @@ import '../widgets/app_top_bar.dart';
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
 
-enum _RequestStatus { approved, pending, rejected }
+enum _RequestStatus { approved, pending, inProgress, rejected }
 
 class _RequestData {
   const _RequestData({
@@ -36,6 +36,8 @@ extension on _RequestStatus {
         return 'Aprovado';
       case _RequestStatus.pending:
         return 'Pendente';
+      case _RequestStatus.inProgress:
+        return 'Em Progresso';
       case _RequestStatus.rejected:
         return 'Rejeitado';
     }
@@ -47,6 +49,8 @@ extension on _RequestStatus {
         return const Color(0xFFC9F0DE);
       case _RequestStatus.pending:
         return const Color(0xFFF7E8BF);
+      case _RequestStatus.inProgress:
+        return const Color(0xFFD0E8F7);
       case _RequestStatus.rejected:
         return const Color(0xFFF5D8D8);
     }
@@ -58,6 +62,8 @@ extension on _RequestStatus {
         return const Color(0xFF05603A);
       case _RequestStatus.pending:
         return const Color(0xFF9A5C09);
+      case _RequestStatus.inProgress:
+        return const Color(0xFF0B5FA3);
       case _RequestStatus.rejected:
         return const Color(0xFFA32424);
     }
@@ -141,18 +147,26 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
     switch (normalized) {
       case 'aprovado':
       case 'approved':
+      case 'obtido':
         return _RequestStatus.approved;
       case 'rejeitado':
       case 'rejected':
+      case 'evidencias_insuficientes':
         return _RequestStatus.rejected;
+      case 'candidatura_em_progresso':
+      case 'pendente-tm':
+      case 'pendente-sll':
       case 'pendente':
       case 'pending':
       case 'validacao':
       case 'em_validacao':
       case 'em_validacao_talento':
+      case 'em_validacao_tm':
+      case 'em_validacao_sl':
+      case 'em_validacao_sll':
       case 'em_analise':
       case 'em_analise_talento':
-        return _RequestStatus.pending;
+        return _RequestStatus.inProgress;
       default:
         return _RequestStatus.pending;
     }
@@ -189,6 +203,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
       case _RequestStatus.rejected:
         return OrderStatus.rejected;
       case _RequestStatus.pending:
+      case _RequestStatus.inProgress:
         return OrderStatus.pending;
     }
   }
@@ -197,84 +212,83 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshRequests,
-          child: FutureBuilder<void>(
-            future: _loadFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  _allRequests.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      appBar: AppTopBar(
+        onSettingsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SettingsMenuScreen(),
+            ),
+          );
+        },
+        onNotificationsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsFullScreen(),
+            ),
+          );
+        },
+        onProfileTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+        onMessagesTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MessagesScreen(),
+            ),
+          );
+        },
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshRequests,
+        child: FutureBuilder<void>(
+          future: _loadFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                _allRequests.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-              if (_loadError != null) {
-                return ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 120),
-                    Center(
-                      child: Text(
-                        _loadError!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-
+            if (_loadError != null) {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
                 children: [
-                  AppTopBar(
-                    onSettingsTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsMenuScreen(),
-                        ),
-                      );
-                    },
-                    onNotificationsTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NotificationsFullScreen(),
-                        ),
-                      );
-                    },
-                    onProfileTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProfileScreen(),
-                        ),
-                      );
-                    },
-                    onMessagesTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MessagesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 6),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 18, 20, 10),
+                  const SizedBox(height: 120),
+                  Center(
                     child: Text(
-                      'Lista de pedidos',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w500,
+                      _loadError!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF64748B),
                       ),
                     ),
                   ),
+                ],
+              );
+            }
+
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              children: [
+                const SizedBox(height: 6),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 18, 20, 10),
+                  child: Text(
+                    'Lista de pedidos',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
                   const Divider(height: 1, color: Color(0xFFE5E7EB)),
                   const Padding(
                     padding: EdgeInsets.fromLTRB(20, 14, 20, 14),
@@ -359,7 +373,6 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
             },
           ),
         ),
-      ),
     );
   }
 }

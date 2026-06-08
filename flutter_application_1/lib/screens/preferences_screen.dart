@@ -465,6 +465,8 @@ class _SearchField extends StatelessWidget {
         decoration: const InputDecoration(
           hintText: 'Pesquisar áreas de preferência',
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           prefixIcon: Icon(Icons.search, color: Colors.grey),
         ),

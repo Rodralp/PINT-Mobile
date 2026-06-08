@@ -22,7 +22,7 @@ class AppTopBar extends StatefulWidget implements PreferredSizeWidget {
   State<AppTopBar> createState() => _AppTopBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
 class _AppTopBarState extends State<AppTopBar> {

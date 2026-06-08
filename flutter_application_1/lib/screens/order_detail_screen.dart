@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/consultor_api.dart';
-import '../services/auth_session.dart';
 
 enum OrderStatus { approved, pending, rejected }
 
@@ -191,10 +190,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Future<void> _submitAllAndRequest() async {
     if (_submittingAll) return;
 
-    final hasAnyFiles = _filesByRequirement.values.any(
-      (files) => files.isNotEmpty,
-    );
-
     setState(() => _submittingAll = true);
 
     try {
@@ -230,6 +225,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           backgroundColor: Color(0xFF05603A),
         ),
       );
+
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() => _submittingAll = false);

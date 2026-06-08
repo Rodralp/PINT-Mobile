@@ -15,48 +15,47 @@ class MoreOptionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            AppTopBar(
-              onSettingsTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsMenuScreen(),
-                  ),
-                );
-              },
-              onNotificationsTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsFullScreen(),
-                  ),
-                );
-              },
-              onProfileTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              },
-              onMessagesTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MessagesScreen(),
-                  ),
-                );
-              },
+      appBar: AppTopBar(
+        onSettingsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SettingsMenuScreen(),
             ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
+          );
+        },
+        onNotificationsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsFullScreen(),
+            ),
+          );
+        },
+        onProfileTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+        onMessagesTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MessagesScreen(),
+            ),
+          );
+        },
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
                   _OptionTile(
                     icon: Icons.leaderboard_outlined,
                     title: 'Ranking',
@@ -101,7 +100,6 @@ class MoreOptionsScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

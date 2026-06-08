@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'app_shell_screen.dart';
 import 'notifications_full_screen.dart';
-import 'order_detail_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import '../services/auth_session.dart';
@@ -13,8 +14,8 @@ import '../widgets/app_top_bar.dart';
 
 enum BadgeState { approved, warning, review, inProgress }
 
-class _BadgeData {
-  const _BadgeData({
+class BadgeData {
+  const BadgeData({
     required this.id,
     required this.title,
     required this.level,
@@ -161,18 +162,21 @@ String _formatBadgeDate(String? rawDate) {
   return '${parsed.day.toString().padLeft(2, '0')} $month ${parsed.year}';
 }
 
-_BadgeData _badgeDataFromBackend(BackendBadge badge, {bool? isOwnedOverride}) {
+BadgeData _badgeDataFromBackend(BackendBadge badge, {bool? isOwnedOverride}) {
   final palette = _paletteForLevel(badge.level);
-  final owned = isOwnedOverride ?? badge.owned;
+  final stateId = (badge.stateId ?? badge.status)?.trim();
+  final inferredOwned = stateId == 'aprovado' ||
+      badge.status?.toLowerCase() == 'obtido' ||
+      badge.owned;
+  final owned = isOwnedOverride ?? inferredOwned;
   final title = (badge.area != null && badge.area!.trim().isNotEmpty)
       ? badge.area!.trim()
       : badge.title;
   final levelKey = badge.levelKey?.trim();
-  final stateId = (badge.stateId ?? badge.status)?.trim();
   final isSpecial =
       levelKey == null || levelKey.isEmpty || levelKey == 'special';
 
-  return _BadgeData(
+  return BadgeData(
     id: badge.id,
     title: title,
     level: badge.level,
@@ -211,6 +215,8 @@ const Map<String, String> _badgeLevelLabels = {
 const Map<String, String> _badgeStateLabels = {
   'aprovado': 'Aprovado',
   'em_validacao': 'Em Validação',
+  'pendente-tm': 'Em Validação',
+  'pendente-sll': 'Em Validação',
   'candidatura_em_progresso': 'Candidatura em Progresso',
   'rejeitado': 'Rejeitado',
 };
@@ -244,7 +250,7 @@ const List<_FilterOption> _badgeSortOptions = [
 String _normalizeKey(String? value) =>
     value?.trim().toLowerCase().replaceAll(' ', '_') ?? '';
 
-String _levelLabelForBadge(_BadgeData badge) {
+String _levelLabelForBadge(BadgeData badge) {
   if (badge.isSpecial) {
     return 'Especial';
   }
@@ -252,7 +258,7 @@ String _levelLabelForBadge(_BadgeData badge) {
   return _badgeLevelLabels[key] ?? badge.level;
 }
 
-String _stateIdForBadge(_BadgeData badge) {
+String _stateIdForBadge(BadgeData badge) {
   final raw = _normalizeKey(badge.stateId);
   if (raw.isNotEmpty) {
     return raw;
@@ -271,12 +277,12 @@ String _stateIdForBadge(_BadgeData badge) {
   }
 }
 
-String _stateLabelForBadge(_BadgeData badge) {
+String _stateLabelForBadge(BadgeData badge) {
   final stateId = _stateIdForBadge(badge);
   return _badgeStateLabels[stateId] ?? 'Sem estado';
 }
 
-List<_BadgeData> _sortBadges(List<_BadgeData> badges, String sortBy) {
+List<BadgeData> _sortBadges(List<BadgeData> badges, String sortBy) {
   final items = [...badges];
   switch (sortBy) {
     case 'points_asc':
@@ -304,8 +310,8 @@ class BadgesScreen extends StatefulWidget {
 }
 
 class _BadgesScreenState extends State<BadgesScreen> {
-  late Future<List<_BadgeData>> _catalogFuture;
-  late Future<List<_BadgeData>> _myBadgesFuture;
+  late Future<List<BadgeData>> _catalogFuture;
+  late Future<List<BadgeData>> _myBadgesFuture;
   final TextEditingController _myBadgesSearchController =
   TextEditingController();
   String _myBadgesSearchTerm = '';
@@ -319,15 +325,47 @@ class _BadgesScreenState extends State<BadgesScreen> {
     _myBadgesFuture = _loadMyBadges();
   }
 
-  Future<List<_BadgeData>> _loadCatalogBadges() async {
+  Future<List<BadgeData>> _loadCatalogBadges() async {
     final items = await BadgesApi.instance.fetchCatalog();
-    return items.map(_badgeDataFromBackend).toList(growable: false);
+    final catalogBadges = items.map(_badgeDataFromBackend).toList(growable: false);
+
+    try {
+      final accountId = await AuthSession.getAccountId();
+      if (accountId != null) {
+        final myBadges = await BadgesApi.instance.fetchMyBadges(accountId: accountId);
+        final myBadgesMap = {for (final b in myBadges) b.id: b};
+        return catalogBadges.map((catalog) {
+          final userBadge = myBadgesMap[catalog.id];
+          if (userBadge == null) return catalog;
+          final merged = _badgeDataFromBackend(userBadge);
+          return BadgeData(
+            id: merged.id != 0 ? merged.id : catalog.id,
+            title: merged.title.isNotEmpty ? merged.title : catalog.title,
+            level: merged.level.isNotEmpty ? merged.level : catalog.level,
+            points: merged.points > 0 ? merged.points : catalog.points,
+            date: merged.date != '-' ? merged.date : catalog.date,
+            badgeImage: merged.badgeImage ?? catalog.badgeImage,
+            frameColor: catalog.frameColor,
+            iconBackground: catalog.iconBackground,
+            shape: catalog.shape,
+            isOwned: merged.isOwned,
+            isSpecial: merged.isSpecial,
+            levelKey: merged.levelKey ?? catalog.levelKey,
+            stateId: merged.stateId ?? catalog.stateId,
+            state: merged.state ?? catalog.state,
+            requestId: merged.requestId ?? catalog.requestId,
+          );
+        }).toList(growable: false);
+      }
+    } catch (_) {}
+
+    return catalogBadges;
   }
 
-  Future<List<_BadgeData>> _loadMyBadges() async {
+  Future<List<BadgeData>> _loadMyBadges() async {
     final accountId = await AuthSession.getAccountId();
     if (accountId == null) {
-      return const <_BadgeData>[];
+      return const <BadgeData>[];
     }
     final items = await BadgesApi.instance.fetchMyBadges(accountId: accountId);
     return items
@@ -352,7 +390,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
     ]);
   }
 
-  List<_BadgeData> _applyMyBadgesFilters(List<_BadgeData> badges) {
+  List<BadgeData> _applyMyBadgesFilters(List<BadgeData> badges) {
     final normalizedSearch = _myBadgesSearchTerm.trim().toLowerCase();
     final filtered = badges.where((badge) {
       final matchesFilter =
@@ -552,6 +590,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
                               decoration: const InputDecoration(
                                 hintText: 'Pesquisar badges',
                                 border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
                                 isDense: true,
                               ),
                               onChanged: (value) {
@@ -582,7 +622,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       ? constraints.maxWidth
                       : MediaQuery.of(context).size.width - 40;
                   final itemWidth = (maxWidth - gap) / 2;
-                  return FutureBuilder<List<_BadgeData>>(
+                  return FutureBuilder<List<BadgeData>>(
                     future: _myBadgesFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState != ConnectionState.done) {
@@ -605,7 +645,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                           ),
                         );
                       }
-                      final ownedBadges = snapshot.data ?? const <_BadgeData>[];
+                      final ownedBadges = snapshot.data ?? const <BadgeData>[];
                       if (ownedBadges.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
@@ -679,7 +719,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
 class BadgeCatalogScreen extends StatefulWidget {
   const BadgeCatalogScreen({super.key, required this.catalogFuture});
 
-  final Future<List<_BadgeData>> catalogFuture;
+  final Future<List<BadgeData>> catalogFuture;
 
   @override
   State<BadgeCatalogScreen> createState() => _BadgeCatalogScreenState();
@@ -697,7 +737,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
     super.dispose();
   }
 
-  List<_BadgeData> _applyCatalogFilters(List<_BadgeData> badges) {
+  List<BadgeData> _applyCatalogFilters(List<BadgeData> badges) {
     final normalizedSearch = _searchTerm.trim().toLowerCase();
     final filtered = badges.where((badge) {
       final typeId = badge.isSpecial
@@ -837,6 +877,8 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                             decoration: const InputDecoration(
                               hintText: 'Pesquisar badges',
                               border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
                               isDense: true,
                             ),
                             onChanged: (value) {
@@ -864,7 +906,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                     ? constraints.maxWidth
                     : MediaQuery.of(context).size.width - 40;
                 final itemWidth = (maxWidth - gap) / 2;
-                return FutureBuilder<List<_BadgeData>>(
+                return FutureBuilder<List<BadgeData>>(
                   future: widget.catalogFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
@@ -887,7 +929,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                         ),
                       );
                     }
-                    final badges = snapshot.data ?? const <_BadgeData>[];
+                    final badges = snapshot.data ?? const <BadgeData>[];
                     if (badges.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
@@ -961,7 +1003,7 @@ class _CatalogBadgeCard extends StatelessWidget {
   const _CatalogBadgeCard({required this.width, required this.badge});
 
   final double width;
-  final _BadgeData badge;
+  final BadgeData badge;
 
   @override
   Widget build(BuildContext context) {
@@ -1003,6 +1045,7 @@ class _CatalogBadgeCard extends StatelessWidget {
                 levelKey: badge.levelKey,
                 title: badge.title,
                 subtitle: badge.level,
+                isSpecial: badge.isSpecial,
               ),
             ),
             const SizedBox(height: 10),
@@ -1140,7 +1183,7 @@ class _OwnedBadgeCard extends StatelessWidget {
   const _OwnedBadgeCard({required this.width, required this.badge});
 
   final double width;
-  final _BadgeData badge;
+  final BadgeData badge;
 
   @override
   Widget build(BuildContext context) {
@@ -1182,6 +1225,7 @@ class _OwnedBadgeCard extends StatelessWidget {
                 levelKey: badge.levelKey,
                 title: badge.title,
                 subtitle: badge.level,
+                isSpecial: badge.isSpecial,
               ),
             ),
             const SizedBox(height: 12),
@@ -1319,7 +1363,7 @@ class BadgeLiveDetailScreen extends StatefulWidget {
     this.selectedBottomNavIndex = 1,
   });
 
-  final _BadgeData badge;
+  final BadgeData badge;
   final int selectedBottomNavIndex;
 
   @override
@@ -1327,32 +1371,78 @@ class BadgeLiveDetailScreen extends StatefulWidget {
 }
 
 class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
-  late final Future<List<BackendBadgeRequirement>> _requirementsFuture;
+  late BadgeData _badge;
+  BadgeState? _previousBadgeState;
+  int? _currentRequestId;
+  late final Future<List<Map<String, dynamic>>> _requirementsFuture;
   bool _isRequesting = false;
   String? _requestResultMessage;
   bool _requestSuccess = false;
+  final Map<int, List<File>> _filesByRequirement = {};
+  bool _submittingAll = false;
+  bool _submitted = false;
+  final Set<int> _expandedRequirements = {};
 
   @override
   void initState() {
     super.initState();
-    if (widget.badge.id > 0) {
-      _requirementsFuture = BadgesApi.instance.fetchBadgeRequirements(
-        badgeId: widget.badge.id,
+    _badge = widget.badge;
+    _previousBadgeState = _badge.state;
+    _currentRequestId = _badge.requestId;
+    if (_badge.id > 0) {
+      _requirementsFuture = ConsultorApi.instance.fetchBadgeRequirements(
+        badgeId: _badge.id,
       );
+      _loadUserSpecificState();
     } else {
-      _requirementsFuture = Future.value(const <BackendBadgeRequirement>[]);
+      _requirementsFuture = Future.value(const <Map<String, dynamic>>[]);
     }
   }
 
-  bool get _canRequest {
-    final state = widget.badge.state;
-    return !widget.badge.isOwned && state == null;
+  Future<void> _loadUserSpecificState() async {
+    try {
+      final accountId = await AuthSession.getAccountId();
+      if (accountId == null) return;
+
+      final myBadges = await BadgesApi.instance.fetchMyBadges(
+        accountId: accountId,
+      );
+
+      for (final mb in myBadges) {
+        if (mb.id == _badge.id) {
+          if (!mounted) return;
+          setState(() {
+            _badge = BadgeData(
+              id: _badge.id,
+              title: _badge.title,
+              level: _badge.level,
+              points: _badge.points,
+              date: _badge.date,
+              badgeImage: _badge.badgeImage,
+              frameColor: _badge.frameColor,
+              iconBackground: _badge.iconBackground,
+              shape: _badge.shape,
+              isOwned: mb.owned,
+              isSpecial: _badge.isSpecial,
+              levelKey: _badge.levelKey,
+              stateId: mb.stateId,
+              state: _badgeStateFromStatus(mb.stateId),
+              requestId: mb.requestId,
+            );
+            _currentRequestId = mb.requestId;
+          });
+          break;
+        }
+      }
+    } catch (_) {}
   }
 
-  bool get _hasActiveRequest {
-    final state = widget.badge.state;
-    return !widget.badge.isOwned &&
-        (state == BadgeState.inProgress || state == BadgeState.review);
+  bool get _canRequest {
+    return !_badge.isOwned && (_badge.state == null || _badge.state == BadgeState.warning);
+  }
+
+  bool get _canUpload {
+    return _badge.state == BadgeState.inProgress && !_submitted;
   }
 
   Future<void> _requestBadge() async {
@@ -1375,37 +1465,72 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     try {
       final result = await ConsultorApi.instance.requestBadgeAcquisition(
         accountId: accountId,
-        badgeId: widget.badge.id,
+        badgeId: _badge.id,
       );
 
       if (!mounted) return;
 
       final status = result['status']?.toString() ?? '';
+      final requestId = result['requestId'] as int?;
+
       String message;
       bool success;
+      BadgeState newState;
+      String? newStateId;
 
       switch (status) {
         case 'obtido':
           message = 'Ja possui esta badge!';
           success = true;
+          newState = BadgeState.approved;
+          newStateId = 'aprovado';
           break;
         case 'pendente-tm':
           message = 'Pedido enviado com sucesso! Em validacao pelo Talent Manager.';
           success = true;
+          if (_previousBadgeState == BadgeState.warning) {
+            newState = BadgeState.inProgress;
+          } else {
+            newState = BadgeState.review;
+          }
+          newStateId = 'pendente-tm';
           break;
         case 'candidatura_em_progresso':
           message = 'Candidatura criada. Submeta evidencias para continuar.';
           success = true;
+          newState = BadgeState.inProgress;
+          newStateId = 'candidatura_em_progresso';
           break;
         default:
           message = 'Pedido processado.';
           success = true;
+          newState = BadgeState.inProgress;
+          newStateId = status;
       }
 
       setState(() {
         _isRequesting = false;
         _requestResultMessage = message;
         _requestSuccess = success;
+        _badge = BadgeData(
+          id: _badge.id,
+          title: _badge.title,
+          level: _badge.level,
+          points: _badge.points,
+          date: _badge.date,
+          badgeImage: _badge.badgeImage,
+          frameColor: _badge.frameColor,
+          iconBackground: _badge.iconBackground,
+          shape: _badge.shape,
+          isOwned: _badge.isOwned,
+          isSpecial: _badge.isSpecial,
+          levelKey: _badge.levelKey,
+          stateId: newStateId,
+          state: newState,
+          requestId: requestId ?? _currentRequestId,
+        );
+        _currentRequestId = requestId ?? _currentRequestId;
+        _previousBadgeState = newState;
       });
     } on ConsultorApiException catch (e) {
       if (!mounted) return;
@@ -1424,23 +1549,113 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     }
   }
 
-  OrderStatus _orderStatusFromBadge(BadgeState? state) {
-    switch (state) {
-      case BadgeState.approved:
-        return OrderStatus.approved;
-      case BadgeState.warning:
-        return OrderStatus.rejected;
-      case BadgeState.review:
-      case BadgeState.inProgress:
-        return OrderStatus.pending;
-      case null:
-        return OrderStatus.pending;
+  Future<void> _pickFiles(int requirementIndex) async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        final current = _filesByRequirement[requirementIndex] ?? [];
+        current.addAll(result.paths.whereType<String>().map((p) => File(p)));
+        _filesByRequirement[requirementIndex] = current;
+      });
+    }
+  }
+
+  void _removeFile(int requirementIndex, int fileIndex) {
+    setState(() {
+      _filesByRequirement[requirementIndex]?.removeAt(fileIndex);
+    });
+  }
+
+  Future<void> _submitAllAndRequest() async {
+    if (_submittingAll) return;
+    if (_currentRequestId == null) {
+      setState(() {
+        _requestResultMessage = 'Pedido nao encontrado.';
+        _requestSuccess = false;
+      });
+      return;
+    }
+
+    final hasAnyFiles = _filesByRequirement.values.any(
+      (files) => files.isNotEmpty,
+    );
+
+    if (!hasAnyFiles) {
+      setState(() {
+        _requestResultMessage = 'Adicione pelo menos um ficheiro antes de submeter.';
+        _requestSuccess = false;
+      });
+      return;
+    }
+
+    setState(() => _submittingAll = true);
+
+    try {
+      for (final entry in _filesByRequirement.entries) {
+        if (entry.value.isEmpty) continue;
+        await ConsultorApi.instance.uploadEvidence(
+          pedidoId: _currentRequestId!,
+          nreq: entry.key,
+          files: entry.value,
+        );
+      }
+
+      final accountId = await AuthSession.getAccountId();
+      if (accountId == null) {
+        throw Exception('Sessao expirada.');
+      }
+
+      await ConsultorApi.instance.requestBadgeAcquisition(
+        accountId: accountId,
+        badgeId: _badge.id,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _submittingAll = false;
+        _submitted = true;
+        _filesByRequirement.clear();
+        _requestResultMessage = 'Candidatura submetida com sucesso.';
+        _requestSuccess = true;
+        _badge = BadgeData(
+          id: _badge.id,
+          title: _badge.title,
+          level: _badge.level,
+          points: _badge.points,
+          date: _badge.date,
+          badgeImage: _badge.badgeImage,
+          frameColor: _badge.frameColor,
+          iconBackground: _badge.iconBackground,
+          shape: _badge.shape,
+          isOwned: _badge.isOwned,
+          isSpecial: _badge.isSpecial,
+          levelKey: _badge.levelKey,
+          stateId: 'em_validacao_tm',
+          state: BadgeState.review,
+          requestId: _currentRequestId,
+        );
+      });
+
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submittingAll = false;
+        _requestResultMessage = 'Falha ao submeter: $e';
+        _requestSuccess = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final badge = widget.badge;
+    final badge = _badge;
     final statusText = _statusLabel(badge.state);
     final statusColor = _statusColor(badge.state);
 
@@ -1467,13 +1682,11 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           child: Container(color: const Color(0xFFE5E7EB), height: 1),
         ),
       ),
-      body: FutureBuilder<List<BackendBadgeRequirement>>(
+      body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _requirementsFuture,
         builder: (context, snapshot) {
-          final requirements =
-              snapshot.data ?? const <BackendBadgeRequirement>[];
+          final requirements = snapshot.data ?? const <Map<String, dynamic>>[];
           final hasError = snapshot.hasError;
-          final errorText = snapshot.error?.toString();
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
@@ -1492,15 +1705,13 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                   ),
                   child: Column(
                     children: [
-                      Container(
+                      SizedBox(
                         width: 160,
                         height: 160,
                         child: BadgeArtwork(
                           size: 160,
                           frameColor: badge.frameColor,
-                          backgroundColor: badge.iconBackground.withOpacity(
-                            0.35,
-                          ),
+                          backgroundColor: badge.iconBackground.withOpacity(0.35),
                           shape: badge.shape,
                           borderWidth: 10,
                           iconSize: 86,
@@ -1508,6 +1719,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                           levelKey: badge.levelKey,
                           title: badge.title,
                           subtitle: badge.level,
+                          isSpecial: badge.isSpecial,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1534,74 +1746,58 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                         runSpacing: 8,
                         children: [
                           _metaItem(Icons.schedule, 'Expira ${badge.date}'),
-                          _metaItem(
-                            Icons.emoji_events_outlined,
-                            '${badge.points} pontos',
-                          ),
-                          _metaItem(
-                            Icons.description_outlined,
-                            '${requirements.length} requisitos',
-                          ),
+                          _metaItem(Icons.emoji_events_outlined, '${badge.points} pontos'),
+                          _metaItem(Icons.description_outlined, '${requirements.length} requisitos'),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: statusColor, width: 1.6),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.timelapse, color: statusColor, size: 28),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                statusText,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w500,
-                                  color: statusColor,
+                      if (badge.state != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: statusColor, width: 1.6),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.timelapse, color: statusColor, size: 28),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  statusText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                    color: statusColor,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                       if (_requestResultMessage != null) ...[
                         const SizedBox(height: 12),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: _requestSuccess
-                                ? const Color(0xFFE6F9ED)
-                                : const Color(0xFFFEE8E8),
+                            color: _requestSuccess ? const Color(0xFFE6F9ED) : const Color(0xFFFEE8E8),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: _requestSuccess
-                                  ? const Color(0xFF16C524)
-                                  : const Color(0xFFFF3B30),
+                              color: _requestSuccess ? const Color(0xFF16C524) : const Color(0xFFFF3B30),
                               width: 1.4,
                             ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                _requestSuccess
-                                    ? Icons.check_circle_outline
-                                    : Icons.error_outline,
-                                color: _requestSuccess
-                                    ? const Color(0xFF16C524)
-                                    : const Color(0xFFFF3B30),
+                                _requestSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                                color: _requestSuccess ? const Color(0xFF16C524) : const Color(0xFFFF3B30),
                                 size: 22,
                               ),
                               const SizedBox(width: 10),
@@ -1611,9 +1807,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: _requestSuccess
-                                        ? const Color(0xFF05603A)
-                                        : const Color(0xFFA32424),
+                                    color: _requestSuccess ? const Color(0xFF05603A) : const Color(0xFFA32424),
                                   ),
                                 ),
                               ),
@@ -1632,67 +1826,19 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                               backgroundColor: const Color(0xFF1A90F0),
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: const Color(0xFF93C5FD),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 0,
                             ),
                             child: _isRequesting
                                 ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              ),
-                            )
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                  )
                                 : const Text(
-                              'Pedir Badge',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (_hasActiveRequest) ...[
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OrderDetailScreen(
-                                    order: OrderDetailData(
-                                      id: widget.badge.requestId ?? widget.badge.id,
-                                      badge: widget.badge.title,
-                                      level: widget.badge.level,
-                                      date: widget.badge.date,
-                                      status: _orderStatusFromBadge(widget.badge.state),
-                                      badgeDbId: widget.badge.id,
-                                    ),
+                                    'Iniciar Candidatura',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                   ),
-                                ),
-                              );
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF1A90F0), width: 2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: const Text(
-                              'Ver Pedido',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A90F0),
-                              ),
-                            ),
                           ),
                         ),
                       ],
@@ -1705,20 +1851,14 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: const Color(0xFFD9E2EC),
-                      width: 1.6,
-                    ),
+                    border: Border.all(color: const Color(0xFFD9E2EC), width: 1.6),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Requisitos',
-                        style: TextStyle(
-                          fontSize: 24 / 2,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 12),
                       if (snapshot.connectionState != ConnectionState.done)
@@ -1726,57 +1866,174 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                       else if (hasError)
                         const Text(
                           'Nao foi possivel carregar a base de dados.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF6B7280),
-                          ),
+                          style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         )
                       else if (requirements.isEmpty)
-                          const Text(
-                            'Sem requisitos associados.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF6B7280),
-                            ),
-                          )
-                        else
-                          ...requirements.asMap().entries.map(
-                                (entry) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFFE2E8F0),
-                                  ),
-                                  color: Colors.white,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        entry.value.text,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          color: Color(0xFF111827),
-                                        ),
+                        const Text(
+                          'Sem requisitos associados.',
+                          style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+                        )
+                      else
+                        ...requirements.asMap().entries.map((entry) {
+                          final req = entry.value;
+                          final nreq = int.tryParse(req['nreq']?.toString() ?? '') ?? (entry.key + 1);
+                          final title = req['titulo']?.toString() ?? req['requisito']?.toString() ?? req['title']?.toString() ?? req['name']?.toString() ?? req['text']?.toString() ?? 'Sem titulo';
+                          final description = req['description']?.toString() ?? req['r_descricao']?.toString() ?? req['descricao']?.toString() ?? '';
+                          final isExpanded = _expandedRequirements.contains(nreq);
+                          final evidencias = req['evidencias'] is List ? (req['evidencias'] as List) : [];
+                          final hasFiles = _filesByRequirement[nreq]?.isNotEmpty == true;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                color: Colors.white,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        if (isExpanded) {
+                                          _expandedRequirements.remove(nreq);
+                                        } else {
+                                          _expandedRequirements.add(nreq);
+                                        }
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              title,
+                                              maxLines: isExpanded ? null : 2,
+                                              overflow: isExpanded ? null : TextOverflow.ellipsis,
+                                              style: const TextStyle(fontSize: 16, color: Color(0xFF111827)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                            size: 24,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    const Icon(Icons.visibility, size: 24),
-                                  ],
-                                ),
+                                  ),
+                                  AnimatedCrossFade(
+                                    firstChild: const SizedBox.shrink(),
+                                    secondChild: Padding(
+                                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (description.isNotEmpty) ...[
+                                            Text(
+                                              description,
+                                              style: const TextStyle(fontSize: 14, color: Color(0xFF374151), height: 1.5),
+                                            ),
+                                            const SizedBox(height: 8),
+                                          ],
+                                          if (evidencias.isNotEmpty) ...[
+                                            const Text(
+                                              'Evidencias:',
+                                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF6B7280)),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            ...evidencias.map((ev) {
+                                              final fileName = ev is Map ? (ev['ficheiro']?.toString() ?? ev['filename']?.toString() ?? '') : ev.toString();
+                                              return Padding(
+                                                padding: const EdgeInsets.only(bottom: 2),
+                                                child: Text(
+                                                  '  - $fileName',
+                                                  style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                                                ),
+                                              );
+                                            }),
+                                          ],
+                                          if (_canUpload) ...[
+                                            const SizedBox(height: 8),
+                                            if (hasFiles) ...[
+                                              ...(_filesByRequirement[nreq]!.asMap().entries.map((fe) {
+                                                final file = fe.value;
+                                                final fileName = file.path.split(Platform.pathSeparator).last;
+                                                return Row(
+                                                  children: [
+                                                    const Icon(Icons.attach_file, size: 16, color: Color(0xFF1A90F0)),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(fileName, style: const TextStyle(fontSize: 13, color: Color(0xFF111827))),
+                                                    ),
+                                                    GestureDetector(
+                                                      onTap: () => _removeFile(nreq, fe.key),
+                                                      child: const Icon(Icons.close, size: 16, color: Color(0xFFFF3B30)),
+                                                    ),
+                                                  ],
+                                                );
+                                              })),
+                                              const SizedBox(height: 8),
+                                            ],
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: OutlinedButton.icon(
+                                                onPressed: () => _pickFiles(nreq),
+                                                icon: const Icon(Icons.attach_file, size: 20),
+                                                label: const Text('Anexar ficheiro'),
+                                                style: OutlinedButton.styleFrom(
+                                                  side: const BorderSide(color: Color(0xFF1A90F0)),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                                    duration: const Duration(milliseconds: 200),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
+                          );
+                        }),
                     ],
                   ),
                 ),
+                if (_canUpload) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _submittingAll ? null : _submitAllAndRequest,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A90F0),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFF93C5FD),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: _submittingAll
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                            )
+                          : const Text(
+                              'Submeter',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
               ],
             ),
           );
@@ -1786,14 +2043,10 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         child: NavigationBar(
           selectedIndex: widget.selectedBottomNavIndex,
           onDestinationSelected: (index) {
-            if (index == widget.selectedBottomNavIndex) {
-              return;
-            }
+            if (index == widget.selectedBottomNavIndex) return;
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => AppShellScreen(initialIndex: index),
-              ),
+              MaterialPageRoute(builder: (context) => AppShellScreen(initialIndex: index)),
             );
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
@@ -1801,22 +2054,10 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           indicatorColor: const Color(0xFFEAF2FF),
           height: 74,
           destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_rounded),
-              label: 'Dashboard',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.workspace_premium_outlined),
-              label: 'Badges',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              label: 'Jornada',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              label: 'Pedidos',
-            ),
+            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
+            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
+            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
+            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
             NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
           ],
         ),

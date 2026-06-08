@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
-import '../services/auth_session.dart';
-import '../widgets/app_top_bar.dart';
-import 'order_detail_screen.dart';
-import 'settings_menu_screen.dart';
-import 'notifications_full_screen.dart';
-import 'profile_screen.dart';
-import 'messages_screen.dart';
+import '../widgets/badge_artwork.dart';
+import 'badges_screen.dart';
 
 class ServiceLineScreen extends StatefulWidget {
   final BackendServiceLine line;
@@ -31,13 +26,11 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
   }
 
   String? _resolveBadgeAsset(BackendLevel level) {
-    final raw = (level.badgeImage ?? '').toLowerCase();
-    if (raw.contains('junior')) return 'assets/badges/junior.png';
-    if (raw.contains('intermedio')) return 'assets/badges/intermedio.png';
-    if (raw.contains('senior')) return 'assets/badges/senior.png';
-    if (raw.contains('especialista')) return 'assets/badges/especialista.png';
-    if (raw.contains('lider')) return 'assets/badges/lider_conhecimento.png';
-    return null;
+    return resolveBadgeArtworkPath(
+      badgeImage: level.badgeImage,
+      levelKey: level.badgeImage,
+      title: level.title,
+    );
   }
 
   String? _resolveServiceLineImage(String? path) {
@@ -154,117 +147,47 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
   }
 
   void _openLevelDetails(BuildContext context, BackendLevel level, String serviceLine, String area) {
-    final status = _statusLabel(level.status);
-    final canRequest = level.status == 'visualizar' && level.badgeDbId != null;
-    final canContinue = level.status == 'candidatura_em_progresso' && level.requestId != null;
+    BadgeState? badgeState;
+    switch (level.status) {
+      case 'obtido':
+        badgeState = BadgeState.approved;
+        break;
+      case 'candidatura_em_progresso':
+        badgeState = BadgeState.inProgress;
+        break;
+      case 'em_validacao':
+      case 'pendente-tm':
+      case 'pendente-sll':
+        badgeState = BadgeState.review;
+        break;
+      case 'rejeitado':
+      case 'evidencias_insuficientes':
+        badgeState = BadgeState.warning;
+        break;
+    }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) {
-          bool isRequesting = false;
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(level.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(status.icon ?? Icons.info_outline, color: status.color, size: 20),
-                    const SizedBox(width: 8),
-                    Text(status.text, style: TextStyle(color: status.color, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                if (canRequest)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: isRequesting ? null : () async {
-                        setSheetState(() => isRequesting = true);
-                        final accountId = await AuthSession.getAccountId();
-                        if (accountId != null) {
-                          try {
-                            await ConsultorApi.instance.requestBadgeAcquisition(accountId: accountId, badgeId: level.badgeDbId!);
-                            if (!mounted) return;
-                            Navigator.pop(context);
-                          } catch (e) {
-                            setSheetState(() => isRequesting = false);
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A90F0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: isRequesting ? const CircularProgressIndicator(color: Colors.white) : const Text('Pedir Badge', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                if (canContinue)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A90F0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OrderDetailScreen(
-                              order: OrderDetailData(
-                                id: level.requestId!,
-                                badge: level.title,
-                                level: level.subtitle,
-                                status: OrderStatus.pending,
-                                date: '',
-                                badgeDbId: level.badgeDbId,
-                                serviceLine: serviceLine,
-                                area: area,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Continuar Candidatura', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                const SizedBox(height: 32),
-                const Text('Requisitos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                if (level.requirements.isEmpty)
-                  const Text('Sem requisitos associados.', style: TextStyle(color: Colors.grey))
-                else
-                  ...level.requirements.map((r) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(r.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(r.description),
-                      )),
-              ],
-            ),
-          );
-        },
+    final badgeData = BadgeData(
+      id: level.badgeDbId ?? 0,
+      title: level.title,
+      level: level.subtitle,
+      points: level.points,
+      date: '',
+      badgeImage: level.badgeImage,
+      frameColor: const Color(0xFFBFC4CD),
+      iconBackground: const Color(0xFFF0F0F0),
+      shape: BoxShape.rectangle,
+      isOwned: level.status == 'obtido',
+      isSpecial: level.isSpecial,
+      levelKey: level.levelKey,
+      stateId: level.status,
+      state: badgeState,
+      requestId: level.requestId,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BadgeLiveDetailScreen(badge: badgeData),
       ),
     );
   }
