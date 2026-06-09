@@ -104,6 +104,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           indicatorColor: const Color(0xFFEAF2FF),
+          height: 72,
         ),
         child: NavigationBar(
           selectedIndex: _selectedIndex,

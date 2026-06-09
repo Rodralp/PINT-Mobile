@@ -8,7 +8,6 @@ import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'messages_screen.dart';
 import 'service_line_screen.dart';
-import 'app_shell_screen.dart';
 
 class LearningPathScreen extends StatefulWidget {
   const LearningPathScreen({super.key});
@@ -106,28 +105,6 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
 
             return _buildLearningPathList(context);
           },
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: NavigationBar(
-          selectedIndex: 2,
-          onDestinationSelected: (index) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => AppShellScreen(initialIndex: index)),
-            );
-          },
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFEAF2FF),
-          height: 74,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
-            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
-            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
-            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
-          ],
         ),
       ),
     );
