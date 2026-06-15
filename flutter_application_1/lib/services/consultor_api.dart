@@ -347,10 +347,34 @@ class BackendSuggestionItem {
   final int badgeDbId;
 }
 
+class BackendProgressItem {
+  const BackendProgressItem({
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.iconKey,
+  });
+
+  factory BackendProgressItem.fromJson(Map<String, dynamic> json) {
+    return BackendProgressItem(
+      title: _readString(json, ['title', 'name', 'badge']) ?? '',
+      subtitle: _readString(json, ['subtitle', 'subtitleKey', 'levelKey']) ?? '',
+      accent: _readString(json, ['accent', 'tone']) ?? 'warning',
+      iconKey: _readString(json, ['iconKey', 'icon_key']) ?? 'clock',
+    );
+  }
+
+  final String title;
+  final String subtitle;
+  final String accent;
+  final String iconKey;
+}
+
 class BackendConsultorDashboard {
   const BackendConsultorDashboard({
     required this.timelineValues,
     required this.stats,
+    required this.inProgressItems,
     required this.suggestionItems,
   });
 
@@ -365,6 +389,12 @@ class BackendConsultorDashboard {
         .map(BackendDashboardStat.fromJson)
         .toList(growable: false);
 
+    final inProgressItems = (json['inProgressItems'] as List<dynamic>? ?? const [])
+      .whereType<Map<String, dynamic>>()
+      .map(BackendProgressItem.fromJson)
+      .where((item) => item.title.isNotEmpty)
+      .toList(growable: false);
+
     final suggestionItems =
         (json['suggestionItems'] as List<dynamic>? ?? const [])
             .whereType<Map<String, dynamic>>()
@@ -375,12 +405,14 @@ class BackendConsultorDashboard {
     return BackendConsultorDashboard(
       timelineValues: timelineValues,
       stats: stats,
+      inProgressItems: inProgressItems,
       suggestionItems: suggestionItems,
     );
   }
 
   final List<int> timelineValues;
   final List<BackendDashboardStat> stats;
+  final List<BackendProgressItem> inProgressItems;
   final List<BackendSuggestionItem> suggestionItems;
 }
 
@@ -612,6 +644,7 @@ class ConsultorApi {
       return const BackendConsultorDashboard(
         timelineValues: [],
         stats: [],
+        inProgressItems: [],
         suggestionItems: [],
       );
     } catch (_) {

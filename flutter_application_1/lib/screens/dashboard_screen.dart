@@ -41,6 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isRemindersLoading = true;
   List<_DashboardMetricData> _dashboardMetrics = const [];
   bool _isMetricsLoading = true;
+  List<BackendProgressItem> _dashboardProgressItems = const [];
   List<BackendSuggestionItem> _dashboardSuggestions = const [];
 
   @override
@@ -74,6 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dashboardMetrics = dashboard.stats
             .map(_metricFromBackend)
             .toList(growable: false);
+        _dashboardProgressItems = dashboard.inProgressItems;
         _dashboardSuggestions = dashboard.suggestionItems;
         _isMetricsLoading = false;
       });
@@ -82,6 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       setState(() {
         _dashboardMetrics = _defaultDashboardMetrics;
+        _dashboardProgressItems = const [];
         _dashboardSuggestions = const [];
         _isMetricsLoading = false;
       });
@@ -230,6 +233,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
           iconColor: Colors.grey,
         );
     }
+  }
+
+  Color _progressAccentFromBackend(String accent) {
+    switch (accent.toLowerCase()) {
+      case 'success':
+        return Colors.green;
+      case 'amber':
+        return Colors.orange;
+      case 'warning':
+        return Colors.blue;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  IconData _progressIconFromBackend(String iconKey) {
+    switch (iconKey.toLowerCase()) {
+      case 'searchcheck':
+        return Icons.check_circle_outline;
+      case 'clock':
+        return Icons.search;
+      case 'alerttriangle':
+      default:
+        return Icons.access_time;
+    }
+  }
+
+  String _progressStatusFromBackend(String iconKey, String accent) {
+    final normalizedIcon = iconKey.toLowerCase();
+    final normalizedAccent = accent.toLowerCase();
+
+    if (normalizedIcon == 'searchcheck' || normalizedAccent == 'success') {
+      return 'aprovado';
+    }
+
+    if (normalizedAccent == 'amber') {
+      return 'evidencias_insuficientes';
+    }
+
+    if (normalizedIcon == 'clock' || normalizedAccent == 'warning') {
+      return 'em_validacao';
+    }
+
+    return 'em_progresso';
   }
 
   String _formatReminderDate(String value) {
@@ -407,24 +454,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ProgressFullScreen(),
+                        builder: (context) => ProgressFullScreen(
+                          items: _dashboardProgressItems,
+                        ),
                       ),
                     );
                   },
                   child: Column(
-                    children: [
-                      _buildProgressCard(
-                        title: "LowCode (Outsystems)",
-                        subtitle: "Especialista",
-                        status: "reprovado",
-                      ),
-                      const SizedBox(height: 12),
-                      _buildProgressCard(
-                        title: "LowCode (Outsystems)",
-                        subtitle: "Sénior",
-                        status: "em_validacao",
-                      ),
-                    ],
+                    children: _isMetricsLoading && _dashboardProgressItems.isEmpty
+                        ? [
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2.5),
+                              ),
+                            ),
+                          ]
+                        : _dashboardProgressItems.isEmpty
+                        ? [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Sem itens em progresso para mostrar.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ),
+                          ]
+                        : List.generate(
+                            _dashboardProgressItems.length > 2
+                                ? 2
+                                : _dashboardProgressItems.length,
+                            (index) {
+                              final item = _dashboardProgressItems[index];
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom:
+                                      index ==
+                                              (_dashboardProgressItems.length > 2
+                                                  ? 1
+                                                  : _dashboardProgressItems.length - 1)
+                                          ? 0
+                                          : 12,
+                                ),
+                                child: _buildProgressCard(
+                                  title: item.title,
+                                  subtitle: item.subtitle,
+                                  status: _progressStatusFromBackend(
+                                    item.iconKey,
+                                    item.accent,
+                                  ),
+                                  icon: _progressIconFromBackend(item.iconKey),
+                                  iconColor: _progressAccentFromBackend(item.accent),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ),
 
@@ -682,22 +771,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String title,
     required String subtitle,
     required String status,
+    required IconData icon,
+    required Color iconColor,
   }) {
-    IconData statusIcon;
     Color statusColor;
 
     switch (status) {
+      case 'evidencias_insuficientes':
+        statusColor = Colors.orange;
+        break;
       case 'reprovado':
-        statusIcon = Icons.report_problem_outlined;
         statusColor = Colors.red;
         break;
       case 'em_validacao':
-        statusIcon = Icons.search;
         statusColor = Colors.orange;
+        break;
+      case 'aprovado':
+        statusColor = Colors.green;
         break;
       case 'em_progresso':
       default:
-        statusIcon = Icons.access_time;
         statusColor = Colors.blue;
         break;
     }
@@ -711,13 +804,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: 50,
             height: 50,
             child: BadgeArtwork(
               size: 50,
-              frameColor: Colors.deepPurple,
-              backgroundColor: Colors.deepPurple[50]!,
+              frameColor: iconColor,
+              backgroundColor: iconColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
               borderWidth: 0,
               iconSize: 28,
@@ -749,11 +842,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: statusColor.withOpacity(0.3)),
+              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
             ),
-            child: Icon(statusIcon, color: statusColor, size: 20),
+            child: Icon(icon, color: statusColor, size: 20),
           ),
         ],
       ),
@@ -777,13 +870,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: 50,
             height: 50,
             child: BadgeArtwork(
               size: 50,
               frameColor: accentColor,
-              backgroundColor: accentColor.withOpacity(0.1),
+              backgroundColor: accentColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               borderWidth: 0,
               iconSize: 28,
