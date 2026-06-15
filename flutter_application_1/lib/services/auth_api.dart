@@ -93,11 +93,11 @@ class AuthApi {
   AuthApi._();
 
   static final AuthApi instance = AuthApi._();
-  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const Duration _requestTimeout = Duration(seconds: 60);
 
-  Future<Uri> _uri(String path) async {
-    final baseUrl = await BackendConfig.getBaseUrl();
-    return Uri.parse('$baseUrl$path');
+  Future<List<Uri>> _candidateUris(String path) async {
+    final baseUrls = await BackendConfig.candidateBaseUrls();
+    return baseUrls.map((baseUrl) => Uri.parse('$baseUrl$path')).toList(growable: false);
   }
 
   Map<String, dynamic> _decodeBody(http.Response response) {
@@ -123,78 +123,115 @@ class AuthApi {
     );
   }
 
-  Future<http.Response> _postJson(Uri uri, Map<String, dynamic> payload) async {
-    try {
-      return await http
-          .post(
-            uri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          )
-          .timeout(_requestTimeout);
-    } on SocketException {
-      throw AuthApiException(
-        'Nao foi possivel ligar ao servidor ($uri). Verifique a rede e o endereco da API.',
-      );
-    } on HttpException {
-      throw AuthApiException('Falha de comunicacao com o servidor ($uri).');
-    } on TimeoutException {
-      throw AuthApiException(
-        'O servidor demorou demasiado tempo a responder ($uri).',
-      );
+  Future<({http.Response response, String baseUrl})> _postJson(
+    String path,
+    Map<String, dynamic> payload,
+  ) async {
+    final uris = await _candidateUris(path);
+    Object? lastError;
+
+    for (final uri in uris) {
+      try {
+        final response = await http
+            .post(
+              uri,
+              headers: const {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            )
+            .timeout(_requestTimeout);
+
+        await BackendConfig.setBaseUrl('${uri.scheme}://${uri.authority}/api');
+        return (response: response, baseUrl: '${uri.scheme}://${uri.authority}/api');
+      } on SocketException catch (error) {
+        lastError = error;
+      } on HttpException catch (error) {
+        lastError = error;
+      } on TimeoutException catch (error) {
+        lastError = error;
+      }
     }
+
+    throw AuthApiException(
+      'Nao foi possivel ligar ao servidor. Verifique a rede e o endereco da API.',
+      responseBody: lastError?.toString(),
+    );
   }
 
-  Future<http.Response> _getJson(Uri uri) async {
-    try {
-      return await http
-          .get(uri, headers: const {'Content-Type': 'application/json'})
-          .timeout(_requestTimeout);
-    } on SocketException {
-      throw AuthApiException(
-        'Nao foi possivel ligar ao servidor ($uri). Verifique a rede e o endereco da API.',
-      );
-    } on HttpException {
-      throw AuthApiException('Falha de comunicacao com o servidor ($uri).');
-    } on TimeoutException {
-      throw AuthApiException(
-        'O servidor demorou demasiado tempo a responder ($uri).',
-      );
+  Future<({http.Response response, String baseUrl})> _getJson(
+    String path,
+  ) async {
+    final uris = await _candidateUris(path);
+    Object? lastError;
+
+    for (final uri in uris) {
+      try {
+        final response = await http
+            .get(uri, headers: const {'Content-Type': 'application/json'})
+            .timeout(_requestTimeout);
+
+        await BackendConfig.setBaseUrl('${uri.scheme}://${uri.authority}/api');
+        return (response: response, baseUrl: '${uri.scheme}://${uri.authority}/api');
+      } on SocketException catch (error) {
+        lastError = error;
+      } on HttpException catch (error) {
+        lastError = error;
+      } on TimeoutException catch (error) {
+        lastError = error;
+      }
     }
+
+    throw AuthApiException(
+      'Nao foi possivel ligar ao servidor. Verifique a rede e o endereco da API.',
+      responseBody: lastError?.toString(),
+    );
   }
 
-  Future<http.Response> _putJson(Uri uri, Map<String, dynamic> payload) async {
-    try {
-      return await http
-          .put(
-            uri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          )
-          .timeout(_requestTimeout);
-    } on SocketException {
-      throw AuthApiException(
-        'Nao foi possivel ligar ao servidor ($uri). Verifique a rede e o endereco da API.',
-      );
-    } on HttpException {
-      throw AuthApiException('Falha de comunicacao com o servidor ($uri).');
-    } on TimeoutException {
-      throw AuthApiException(
-        'O servidor demorou demasiado tempo a responder ($uri).',
-      );
+  Future<({http.Response response, String baseUrl})> _putJson(
+    String path,
+    Map<String, dynamic> payload,
+  ) async {
+    final uris = await _candidateUris(path);
+    Object? lastError;
+
+    for (final uri in uris) {
+      try {
+        final response = await http
+            .put(
+              uri,
+              headers: const {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            )
+            .timeout(_requestTimeout);
+
+        await BackendConfig.setBaseUrl('${uri.scheme}://${uri.authority}/api');
+        return (response: response, baseUrl: '${uri.scheme}://${uri.authority}/api');
+      } on SocketException catch (error) {
+        lastError = error;
+      } on HttpException catch (error) {
+        lastError = error;
+      } on TimeoutException catch (error) {
+        lastError = error;
+      }
     }
+
+    throw AuthApiException(
+      'Nao foi possivel ligar ao servidor. Verifique a rede e o endereco da API.',
+      responseBody: lastError?.toString(),
+    );
   }
 
   Future<AuthAccount> login({
     required String email,
     required String senha,
   }) async {
-    final uri = await _uri('/auth/login');
-    final response = await _postJson(uri, {'email': email, 'senha': senha});
+    final attempt = await _postJson('/auth/login', {'email': email, 'senha': senha});
+    final response = attempt.response;
 
     if (response.statusCode != 200) {
       _throwApiError(response);
     }
+
+    await BackendConfig.setBaseUrl(attempt.baseUrl);
 
     return AuthAccount.fromJson(_decodeBody(response));
   }
@@ -204,16 +241,18 @@ class AuthApi {
     required String email,
     required String senha,
   }) async {
-    final uri = await _uri('/auth/register');
-    final response = await _postJson(uri, {
+    final attempt = await _postJson('/auth/register', {
       'nome': nome,
       'email': email,
       'senha': senha,
     });
+    final response = attempt.response;
 
     if (response.statusCode != 201) {
       _throwApiError(response);
     }
+
+    await BackendConfig.setBaseUrl(attempt.baseUrl);
 
     return AuthAccount.fromJson(_decodeBody(response));
   }
@@ -223,29 +262,31 @@ class AuthApi {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final uri = await _uri('/auth/change-password');
-    final response = await _postJson(uri, {
+    final attempt = await _postJson('/auth/change-password', {
       'accountId': accountId,
       'currentPassword': currentPassword,
       'newPassword': newPassword,
     });
+    final response = attempt.response;
 
     if (response.statusCode != 200) {
       _throwApiError(response);
     }
+
+    await BackendConfig.setBaseUrl(attempt.baseUrl);
   }
 
   Future<List<BackendArea>> fetchPreferenceAreas({
     required int accountId,
   }) async {
-    final uri = await _uri(
-      '/consultor/preferencias/areas?accountId=$accountId',
-    );
-    final response = await _getJson(uri);
+    final attempt = await _getJson('/consultor/preferencias/areas?accountId=$accountId');
+    final response = attempt.response;
 
     if (response.statusCode != 200) {
       _throwApiError(response);
     }
+
+    await BackendConfig.setBaseUrl(attempt.baseUrl);
 
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
@@ -262,14 +303,16 @@ class AuthApi {
     required int accountId,
     required List<int> areaIds,
   }) async {
-    final uri = await _uri('/consultor/preferencias');
-    final response = await _putJson(uri, {
+    final attempt = await _putJson('/consultor/preferencias', {
       'accountId': accountId,
       'areaIds': areaIds,
     });
+    final response = attempt.response;
 
     if (response.statusCode != 200) {
       _throwApiError(response);
     }
+
+    await BackendConfig.setBaseUrl(attempt.baseUrl);
   }
 }
