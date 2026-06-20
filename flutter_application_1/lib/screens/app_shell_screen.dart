@@ -98,8 +98,14 @@ class _AppShellScreenState extends State<AppShellScreen> {
           children: _pages,
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          indicatorShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          indicatorColor: const Color(0xFFEAF2FF),
+          height: 72,
+        ),
         child: NavigationBar(
           selectedIndex: _selectedIndex,
           onDestinationSelected: (index) {
@@ -109,8 +115,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFEAF2FF),
-          height: 78,
+          height: 65,
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_rounded),

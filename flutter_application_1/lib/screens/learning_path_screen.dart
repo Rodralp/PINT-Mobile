@@ -28,6 +28,13 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     _loadPathsFuture = _loadInitialData();
   }
 
+  Future<void> _refreshLearningPaths() async {
+    setState(() {
+      _loadPathsFuture = _loadInitialData();
+    });
+    await _loadPathsFuture;
+  }
+
   Future<List<BackendLearningPath>> _loadInitialData() async {
     final accountId = await AuthSession.getAccountId();
     if (accountId == null) return [];
@@ -78,7 +85,14 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
+      appBar: AppTopBar(
+        onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
+        onNotificationsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const NotificationsFullScreen())),
+        onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
+        onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshLearningPaths,
         child: FutureBuilder<List<BackendLearningPath>>(
           future: _loadPathsFuture,
           builder: (context, snapshot) {
@@ -98,15 +112,10 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
 
   Widget _buildLearningPathList(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppTopBar(
-            onSettingsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SettingsMenuScreen())),
-            onNotificationsTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const NotificationsFullScreen())),
-            onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfileScreen())),
-            onMessagesTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MessagesScreen())),
-          ),
           const SizedBox(height: 16),
           for (final path in _learningPaths) ...[
             _buildPathHeader(path),

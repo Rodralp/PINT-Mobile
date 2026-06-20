@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../services/consultor_api.dart';
 import '../widgets/badge_artwork.dart';
 
 class ProgressFullScreen extends StatelessWidget {
-  const ProgressFullScreen({super.key});
+  const ProgressFullScreen({super.key, required this.items});
+
+  final List<BackendProgressItem> items;
 
   @override
   Widget build(BuildContext context) {
@@ -33,37 +36,38 @@ class ProgressFullScreen extends StatelessWidget {
             ),
             const Divider(height: 1, color: Color(0xFFE5E7EB)),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 20,
-                ),
-                children: const [
-                  _ProgressItemFull(
-                    title: 'LowCode (Outsystems)',
-                    subtitle: 'Especialista',
-                    status: 'reprovado',
-                  ),
-                  SizedBox(height: 14),
-                  _ProgressItemFull(
-                    title: 'LowCode (Outsystems)',
-                    subtitle: 'Sénior',
-                    status: 'em_validacao',
-                  ),
-                  SizedBox(height: 14),
-                  _ProgressItemFull(
-                    title: 'LowCode (Outsystems)',
-                    subtitle: 'Intermédio',
-                    status: 'em_progresso',
-                  ),
-                  SizedBox(height: 14),
-                  _ProgressItemFull(
-                    title: 'C++ Mastery',
-                    subtitle: 'Especialista',
-                    status: 'aprovado',
-                  ),
-                ],
-              ),
+              child: items.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Sem itens em progresso para mostrar.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 20,
+                      ),
+                      itemCount: items.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return _ProgressItemFull(
+                          title: item.title,
+                          subtitle: item.subtitle,
+                          status: _ProgressItemFull._statusFromBackend(item),
+                          accent: _ProgressItemFull._accentFromBackend(item.accent),
+                          icon: _ProgressItemFull._iconFromBackend(item.iconKey),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -77,33 +81,79 @@ class _ProgressItemFull extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.status,
+    required this.accent,
+    required this.icon,
   });
 
   final String title;
   final String subtitle;
   final String status;
+  final Color accent;
+  final IconData icon;
+
+  static String _statusFromBackend(BackendProgressItem item) {
+    final iconKey = item.iconKey.toLowerCase();
+    final accent = item.accent.toLowerCase();
+
+    if (iconKey == 'searchcheck' || accent == 'success') {
+      return 'aprovado';
+    }
+
+    if (accent == 'amber') {
+      return 'evidencias_insuficientes';
+    }
+
+    if (iconKey == 'clock' || accent == 'warning') {
+      return 'em_validacao';
+    }
+
+    return 'em_progresso';
+  }
+
+  static Color _accentFromBackend(String accent) {
+    switch (accent.toLowerCase()) {
+      case 'success':
+        return Colors.green;
+      case 'amber':
+        return Colors.orange;
+      case 'warning':
+        return Colors.blue;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  static IconData _iconFromBackend(String iconKey) {
+    switch (iconKey.toLowerCase()) {
+      case 'searchcheck':
+        return Icons.check_circle_outline;
+      case 'clock':
+        return Icons.search;
+      case 'alerttriangle':
+      default:
+        return Icons.access_time;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    IconData statusIcon;
     Color statusColor;
 
     switch (status) {
+      case 'evidencias_insuficientes':
+        statusColor = Colors.orange;
+        break;
       case 'aprovado':
-        statusIcon = Icons.check_circle_outline;
         statusColor = Colors.green;
         break;
       case 'reprovado':
-        statusIcon = Icons.report_problem_outlined;
         statusColor = Colors.red;
         break;
       case 'em_validacao':
-        statusIcon = Icons.search;
         statusColor = Colors.orange;
         break;
       case 'em_progresso':
       default:
-        statusIcon = Icons.access_time;
         statusColor = Colors.blue;
         break;
     }
@@ -117,18 +167,18 @@ class _ProgressItemFull extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: 56,
             height: 56,
             child: BadgeArtwork(
               size: 56,
-              frameColor: Colors.grey,
-              backgroundColor: Colors.grey[50]!,
+              frameColor: accent,
+              backgroundColor: accent.withValues(alpha: 0.10),
               shape: BoxShape.rectangle,
               borderWidth: 0,
               iconSize: 32,
               title: title,
-              subtitle: subtitle,
+              levelKey: subtitle,
             ),
           ),
           const SizedBox(width: 16),
@@ -156,11 +206,11 @@ class _ProgressItemFull extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: statusColor.withOpacity(0.3)),
+              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
             ),
-            child: Icon(statusIcon, color: statusColor, size: 24),
+            child: Icon(icon, color: statusColor, size: 24),
           ),
         ],
       ),

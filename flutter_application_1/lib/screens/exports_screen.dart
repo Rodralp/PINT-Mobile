@@ -215,8 +215,13 @@ class _ExportsScreenState extends State<ExportsScreen> {
   }
 
   Widget _buildBottomNavigationBar(BuildContext context) {
-    return SafeArea(
-      top: false,
+    return NavigationBarTheme(
+      data: NavigationBarThemeData(
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        indicatorColor: const Color(0xFFEAF2FF),
+      ),
       child: NavigationBar(
         selectedIndex: 4,
         onDestinationSelected: (index) {
@@ -232,8 +237,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
         },
         labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
         backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFEAF2FF),
-        height: 74,
+        height: 65,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_rounded),

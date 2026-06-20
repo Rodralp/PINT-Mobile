@@ -6,6 +6,11 @@ class BackendConfig {
   BackendConfig._();
 
   static const String baseUrlKey = 'backend_base_url';
+  static const String _definedBaseUrl = String.fromEnvironment(
+    'PINT_API_BASE_URL',
+    defaultValue: '',
+  );
+
   static String _fallbackBaseUrl() {
     if (kIsWeb) {
       return 'http://localhost:4000/api';
@@ -24,15 +29,17 @@ class BackendConfig {
     }
   }
 
-  static final String defaultBaseUrl = String.fromEnvironment(
-    'PINT_API_BASE_URL',
-    defaultValue: _fallbackBaseUrl(),
-  );
+  static String get defaultBaseUrl {
+    final definedBaseUrl = _definedBaseUrl.trim();
+    return definedBaseUrl.isNotEmpty ? definedBaseUrl : _fallbackBaseUrl();
+  }
 
   static Future<String> getBaseUrl() async {
-    // If the app was launched with --dart-define, honor it over stale saved values.
-    if (defaultBaseUrl != _fallbackBaseUrl()) {
-      return defaultBaseUrl;
+    final definedBaseUrl = _definedBaseUrl.trim();
+
+    // If the app was launched with --dart-define, always honor it over saved values.
+    if (definedBaseUrl.isNotEmpty) {
+      return definedBaseUrl;
     }
 
     final storedValue = (await localStorage.getString(baseUrlKey))?.trim();
@@ -40,7 +47,35 @@ class BackendConfig {
       return storedValue;
     }
 
-    return defaultBaseUrl;
+    return _fallbackBaseUrl();
+  }
+
+  static Future<List<String>> candidateBaseUrls() async {
+    final candidates = <String>[];
+    final seen = <String>{};
+
+    void addCandidate(String? value) {
+      final normalized = value?.trim();
+      if (normalized == null || normalized.isEmpty || seen.contains(normalized)) {
+        return;
+      }
+
+      seen.add(normalized);
+      candidates.add(normalized);
+    }
+
+    addCandidate(_definedBaseUrl);
+
+    final storedValue = (await localStorage.getString(baseUrlKey))?.trim();
+    addCandidate(storedValue);
+
+    addCandidate(_fallbackBaseUrl());
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      addCandidate('http://127.0.0.1:4000/api');
+    }
+
+    return candidates;
   }
 
   static Future<void> setBaseUrl(String value) async {

@@ -164,7 +164,7 @@ class _SuggestionItemFull extends StatelessWidget {
                   borderWidth: 0,
                   iconSize: 28,
                   title: title,
-                  subtitle: subtitleKey,
+                  levelKey: subtitleKey,
                   imagePadding: const EdgeInsets.all(2),
                 ),
               ),
