@@ -278,6 +278,96 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     });
   }
 
+  Widget _buildPagination() {
+    final totalPages = _totalPages;
+    if (totalPages <= 1) return const SizedBox.shrink();
+
+    final pages = <Widget>[];
+
+    pages.add(
+      IconButton(
+        onPressed: _page > 1 ? () => setState(() => _page -= 1) : null,
+        icon: const Icon(Icons.chevron_left),
+      ),
+    );
+
+    List<int> visiblePages = [];
+
+    if (totalPages <= 7) {
+      visiblePages = List.generate(totalPages, (i) => i + 1);
+    } else {
+      visiblePages.add(1);
+      if (_page > 3) {
+        visiblePages.add(-1);
+      }
+      final start = (_page - 1).clamp(2, totalPages - 1);
+      final end = (_page + 1).clamp(2, totalPages - 1);
+      for (var i = start; i <= end; i++) {
+        if (!visiblePages.contains(i)) {
+          visiblePages.add(i);
+        }
+      }
+      if (_page < totalPages - 2) {
+        visiblePages.add(-1);
+      }
+      if (!visiblePages.contains(totalPages)) {
+        visiblePages.add(totalPages);
+      }
+    }
+
+    for (final page in visiblePages) {
+      if (page == -1) {
+        pages.add(
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text('...', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+          ),
+        );
+      } else {
+        final selected = page == _page;
+        pages.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: InkWell(
+              onTap: () => setState(() => _page = page),
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: selected ? const Color(0xFFEAF2FF) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$page',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? const Color(0xFF1A90F0) : const Color(0xFF243047),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    pages.add(
+      IconButton(
+        onPressed: _page < totalPages
+            ? () => setState(() => _page += 1)
+            : null,
+        icon: const Icon(Icons.chevron_right),
+      ),
+    );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: pages,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sortOptions = const [
@@ -448,106 +538,116 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(color: accent.withValues(alpha: 0.25), width: 2.5),
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      width: 28,
-                                      height: 56,
-                                      decoration: BoxDecoration(
-                                        color: accent,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              if (!item.isRead)
-                                                Container(
-                                                  width: 10,
-                                                  height: 10,
-                                                  margin: const EdgeInsets.only(right: 8),
-                                                  decoration: const BoxDecoration(
-                                                    color: Color(0xFF1A90F0),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                              Expanded(
-                                                child: Text(
-                                                  item.title,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0xFF243047),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            item.summary.isNotEmpty ? item.summary : details,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: accent.withValues(alpha: 0.12),
-                                                  borderRadius: BorderRadius.circular(999),
-                                                ),
-                                                child: Text(
-                                                  _notificationTypeLabel(item.type),
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: accent,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                _formatDate(item.date),
-                                                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                                              ),
-                                            ],
-                                          ),
-                                          if (expanded && details.isNotEmpty) ...[
-                                            const SizedBox(height: 10),
-                                            Text(
-                                              details,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                color: Color(0xFF243047),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Icon(
-                                          _notificationIcon(item.type),
-                                          color: accent,
-                                          size: 28,
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: accent.withValues(alpha: 0.12),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            _notificationIcon(item.type),
+                                            color: accent,
+                                            size: 22,
+                                          ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        TextButton(
-                                          onPressed: () => _handleNotificationTap(item),
-                                          child: Text(expanded ? 'Ver menos' : 'Ver mais'),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  if (!item.isRead)
+                                                    Container(
+                                                      width: 10,
+                                                      height: 10,
+                                                      margin: const EdgeInsets.only(right: 8),
+                                                      decoration: const BoxDecoration(
+                                                        color: Color(0xFF1A90F0),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.title,
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: Color(0xFF243047),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                item.summary.isNotEmpty ? item.summary : details,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: accent.withValues(alpha: 0.12),
+                                                      borderRadius: BorderRadius.circular(999),
+                                                    ),
+                                                    child: Text(
+                                                      _notificationTypeLabel(item.type),
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: accent,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    _formatDate(item.date),
+                                                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                                  ),
+                                                  const Spacer(),
+                                                  GestureDetector(
+                                                    onTap: () => _handleNotificationTap(item),
+                                                    child: Text(
+                                                      expanded ? 'Ver menos' : 'Ver mais',
+                                                      style: const TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: Color(0xFF1A90F0),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
+                                    if (expanded && details.isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        details,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF243047),
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -555,51 +655,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                           ];
                         }),
                         const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: _page > 1
-                                  ? () => setState(() => _page -= 1)
-                                  : null,
-                              icon: const Icon(Icons.chevron_left),
-                            ),
-                            ...List.generate(_totalPages, (index) {
-                              final pageNumber = index + 1;
-                              final selected = pageNumber == _page;
-
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                child: InkWell(
-                                  onTap: () => setState(() => _page = pageNumber),
-                                  borderRadius: BorderRadius.circular(999),
-                                  child: Container(
-                                    width: 34,
-                                    height: 34,
-                                    decoration: BoxDecoration(
-                                      color: selected ? const Color(0xFFEAF2FF) : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '$pageNumber',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: selected ? const Color(0xFF1A90F0) : const Color(0xFF243047),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                            IconButton(
-                              onPressed: _page < _totalPages
-                                  ? () => setState(() => _page += 1)
-                                  : null,
-                              icon: const Icon(Icons.chevron_right),
-                            ),
-                          ],
-                        ),
+                        _buildPagination(),
                       ],
                     ),
                 ],
