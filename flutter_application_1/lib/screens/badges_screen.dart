@@ -1036,7 +1036,7 @@ class _CatalogBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: () {
         Navigator.push(
           context,
@@ -1047,28 +1047,28 @@ class _CatalogBadgeCard extends StatelessWidget {
       },
       child: Container(
         width: width,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: _badgeBackgroundColor(),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: badge.frameColor.withOpacity(0.28),
-            width: 1,
+            color: badge.frameColor.withOpacity(0.32),
+            width: 1.2,
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 112,
-              height: 112,
+              width: 92,
+              height: 92,
               child: BadgeArtwork(
-                size: 112,
+                size: 92,
                 frameColor: badge.frameColor,
-                backgroundColor: badge.iconBackground.withOpacity(0.3),
+                backgroundColor: badge.iconBackground.withOpacity(0.24),
                 shape: badge.shape,
-                borderWidth: 6,
-                iconSize: 48,
+                borderWidth: 5,
+                iconSize: 38,
                 badgeImage: badge.badgeImage,
                 levelKey: badge.levelKey,
                 title: badge.title,
@@ -1076,82 +1076,68 @@ class _CatalogBadgeCard extends StatelessWidget {
                 isSpecial: badge.isSpecial,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               badge.title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                height: 1.25,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               badge.level,
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.emoji_events_outlined,
-                          size: 14,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${badge.points}pt',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[600],
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.emoji_events_outlined, size: 13),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              '${badge.points} pts',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                color: Colors.grey[700],
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule_outlined,
-                          size: 14,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          badge.date,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[600],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.schedule_outlined, size: 13),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              badge.date,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                color: Colors.grey[700],
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _stateColor(badge.state),
-                      width: 1.5,
-                    ),
-                    color: _stateColor(badge.state).withOpacity(0.08),
-                  ),
-                  child: Icon(
-                    _stateIcon(badge.state),
-                    color: _stateColor(badge.state),
-                    size: 16,
-                  ),
+                const SizedBox(width: 8),
+                Icon(
+                  _stateIcon(badge.state),
+                  color: _stateColor(badge.state),
+                  size: 28,
                 ),
               ],
             ),
@@ -1272,9 +1258,10 @@ class _OwnedBadgeCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               badge.level,
+              textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -1283,29 +1270,29 @@ class _OwnedBadgeCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.emoji_events_outlined, size: 16),
-                          const SizedBox(width: 5),
+                          const Icon(Icons.emoji_events_outlined, size: 13),
+                          const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              '${badge.points} pontos',
+                              '${badge.points} pts',
                               style: TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 9.5,
                                 color: Colors.grey[700],
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
-                          const Icon(Icons.schedule_outlined, size: 16),
-                          const SizedBox(width: 5),
+                          const Icon(Icons.schedule_outlined, size: 13),
+                          const SizedBox(width: 3),
                           Expanded(
                             child: Text(
                               badge.date,
                               style: TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 9.5,
                                 color: Colors.grey[700],
                               ),
                             ),
@@ -1316,22 +1303,10 @@ class _OwnedBadgeCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _stateColor(badge.state),
-                      width: 1.8,
-                    ),
-                    color: const Color(0xFFFFFFFF),
-                  ),
-                  child: Icon(
-                    _stateIcon(badge.state),
-                    color: _stateColor(badge.state),
-                    size: 18,
-                  ),
+                Icon(
+                  _stateIcon(badge.state),
+                  color: _stateColor(badge.state),
+                  size: 28,
                 ),
               ],
             ),
