@@ -103,7 +103,7 @@ class MessagesApi {
   MessagesApi._();
 
   static final MessagesApi instance = MessagesApi._();
-  static const Duration _requestTimeout = Duration(seconds: 20);
+  static const Duration _requestTimeout = Duration(seconds: 60);
 
   Future<int> _requireAccountId() async {
     final accountId = await AuthSession.getAccountId();

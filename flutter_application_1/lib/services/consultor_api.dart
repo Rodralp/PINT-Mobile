@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'local_storage.dart';
 import 'auth_session.dart';
@@ -344,6 +345,10 @@ class BackendSuggestionItem {
     required this.subtitleKey,
     required this.accent,
     required this.badgeDbId,
+    this.badgeImage,
+    this.levelKey,
+    this.typeId,
+    this.isSpecial = false,
   });
 
   factory BackendSuggestionItem.fromJson(Map<String, dynamic> json) {
@@ -353,6 +358,10 @@ class BackendSuggestionItem {
           _readString(json, ['subtitleKey', 'subtitle_key', 'levelKey']) ?? '',
       accent: _readString(json, ['accent', 'tone']) ?? 'success',
       badgeDbId: _readInt(json, ['badgeDbId', 'badgeId', 'nbadge']) ?? 0,
+      badgeImage: _readString(json, ['badgeImage', 'badge_image', 'imagem']),
+      levelKey: _readString(json, ['levelKey', 'level_key']),
+      typeId: _readString(json, ['typeId', 'type_id']),
+      isSpecial: json['isSpecial'] == true,
     );
   }
 
@@ -360,6 +369,10 @@ class BackendSuggestionItem {
   final String subtitleKey;
   final String accent;
   final int badgeDbId;
+  final String? badgeImage;
+  final String? levelKey;
+  final String? typeId;
+  final bool isSpecial;
 }
 
 class BackendProgressItem {
@@ -368,6 +381,10 @@ class BackendProgressItem {
     required this.subtitle,
     required this.accent,
     required this.iconKey,
+    this.badgeImage,
+    this.levelKey,
+    this.typeId,
+    this.isSpecial = false,
   });
 
   factory BackendProgressItem.fromJson(Map<String, dynamic> json) {
@@ -376,6 +393,10 @@ class BackendProgressItem {
       subtitle: _readString(json, ['subtitle', 'subtitleKey', 'levelKey']) ?? '',
       accent: _readString(json, ['accent', 'tone']) ?? 'warning',
       iconKey: _readString(json, ['iconKey', 'icon_key']) ?? 'clock',
+      badgeImage: _readString(json, ['badgeImage', 'badge_image', 'imagem']),
+      levelKey: _readString(json, ['levelKey', 'level_key']),
+      typeId: _readString(json, ['typeId', 'type_id']),
+      isSpecial: json['isSpecial'] == true,
     );
   }
 
@@ -383,6 +404,10 @@ class BackendProgressItem {
   final String subtitle;
   final String accent;
   final String iconKey;
+  final String? badgeImage;
+  final String? levelKey;
+  final String? typeId;
+  final bool isSpecial;
 }
 
 class BackendConsultorDashboard {
@@ -468,7 +493,7 @@ class ConsultorApi {
   ConsultorApi._();
 
   static final ConsultorApi instance = ConsultorApi._();
-  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const Duration _requestTimeout = Duration(seconds: 60);
   static const String _profileCacheKey = 'cache_consultor_profile';
   static const String _dashboardCacheKey = 'cache_consultor_dashboard';
   static const String _rankingCacheKey = 'cache_consultor_ranking';
@@ -639,8 +664,8 @@ class ConsultorApi {
     final cacheKey = _cacheKey(_dashboardCacheKey, accountId);
     try {
       final path = accountId == null
-          ? '/dashboard/consultor'
-          : '/dashboard/consultor?accountId=$accountId';
+          ? '/consultor/profile'
+          : '/consultor/profile?accountId=$accountId';
       final uri = await _uri(path);
       final response = await _getJson(uri);
 
@@ -652,8 +677,40 @@ class ConsultorApi {
       if (decoded is Map<String, dynamic>) {
         final data = decoded['data'];
         final resolved = data is Map<String, dynamic> ? data : decoded;
+
+        final stats = (resolved['stats'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(BackendDashboardStat.fromJson)
+            .toList(growable: false);
+
+        final timelineValues =
+            (resolved['timelineValues'] as List<dynamic>? ?? const [])
+                .map((value) => int.tryParse(value.toString()) ?? 0)
+                .toList(growable: false);
+
+        final inProgressItems =
+            (resolved['skillsItems'] as List<dynamic>? ?? const [])
+                .whereType<Map<String, dynamic>>()
+                .map(BackendProgressItem.fromJson)
+                .where((item) => item.title.isNotEmpty)
+                .toList(growable: false);
+
+        final suggestionItems =
+            (resolved['certificationsItems'] as List<dynamic>? ?? const [])
+                .whereType<Map<String, dynamic>>()
+                .map(BackendSuggestionItem.fromJson)
+                .where((item) => item.title.isNotEmpty)
+                .toList(growable: false);
+
+        final dashboard = BackendConsultorDashboard(
+          timelineValues: timelineValues,
+          stats: stats,
+          inProgressItems: inProgressItems,
+          suggestionItems: suggestionItems,
+        );
+
         await _writeCache(cacheKey, resolved);
-        return BackendConsultorDashboard.fromJson(resolved);
+        return dashboard;
       }
 
       return const BackendConsultorDashboard(
@@ -662,7 +719,9 @@ class ConsultorApi {
         inProgressItems: [],
         suggestionItems: [],
       );
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint('[ConsultorApi] fetchConsultorDashboard error: $e');
+      debugPrint('[ConsultorApi] stack: $stack');
       final cached = await _readCacheMap(cacheKey);
       if (cached != null) {
         return BackendConsultorDashboard.fromJson(cached);

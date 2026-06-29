@@ -79,7 +79,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dashboardSuggestions = dashboard.suggestionItems;
         _isMetricsLoading = false;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint('[Dashboard] _loadDashboardMetrics error: $e');
+      debugPrint('[Dashboard] stack: $stack');
       if (!mounted) return;
 
       setState(() {
@@ -115,7 +117,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dashboardReminders = reminders.take(2).toList();
         _isRemindersLoading = false;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint('[Dashboard] _loadDashboardReminders error: $e');
+      debugPrint('[Dashboard] stack: $stack');
       if (!mounted) return;
 
       setState(() {
@@ -510,6 +514,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                   icon: _progressIconFromBackend(item.iconKey),
                                   iconColor: _progressAccentFromBackend(item.accent),
+                                  badgeImage: item.badgeImage,
+                                  levelKey: item.levelKey,
                                 ),
                               );
                             },
@@ -580,6 +586,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   title: suggestion.title,
                                   subtitleKey: suggestion.subtitleKey,
                                   accent: suggestion.accent,
+                                  badgeImage: suggestion.badgeImage,
+                                  levelKey: suggestion.levelKey,
                                 ),
                               );
                             },
@@ -773,6 +781,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String status,
     required IconData icon,
     required Color iconColor,
+    String? badgeImage,
+    String? levelKey,
   }) {
     Color statusColor;
 
@@ -815,7 +825,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               borderWidth: 0,
               iconSize: 28,
               title: title,
-              levelKey: subtitle,
+              levelKey: levelKey ?? subtitle,
+              badgeImage: badgeImage,
             ),
           ),
           const SizedBox(width: 12),
@@ -857,6 +868,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String title,
     required String subtitleKey,
     required String accent,
+    String? badgeImage,
+    String? levelKey,
   }) {
     final accentColor = _accentColorForSuggestion(accent);
     final subtitle = _badgeLevelLabelFromKey(subtitleKey);
@@ -881,7 +894,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               borderWidth: 0,
               iconSize: 28,
               title: title,
-              levelKey: subtitleKey,
+              levelKey: levelKey ?? subtitleKey,
+              badgeImage: badgeImage,
             ),
           ),
           const SizedBox(width: 12),

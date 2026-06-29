@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/auth_session.dart';
-import '../services/backend_config.dart';
 import 'account_info_screen.dart';
 import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
@@ -14,82 +13,6 @@ class SettingsMenuScreen extends StatefulWidget {
 }
 
 class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
-  final TextEditingController _backendUrlController = TextEditingController();
-
-  @override
-  void dispose() {
-    _backendUrlController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _showBackendConfigDialog() async {
-    final currentBaseUrl = await BackendConfig.getBaseUrl();
-    if (!mounted) {
-      return;
-    }
-
-    _backendUrlController.text =
-        BackendConfig.formatServerInput(currentBaseUrl);
-    final savedUrl = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Configurar servidor'),
-        content: TextField(
-          controller: _backendUrlController,
-          decoration: const InputDecoration(
-            labelText: 'IP do servidor',
-            hintText: '10.65.8.74',
-            helperText: 'A porta 4000 e /api sao adicionados automaticamente.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              final input = _backendUrlController.text.trim();
-              if (input.isEmpty) {
-                Navigator.pop(dialogContext);
-                return;
-              }
-
-              final normalized = BackendConfig.normalizeBaseUrlInput(input);
-              if (normalized == null) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Servidor invalido. Introduza um IP valido, e.g. 10.65.8.74',
-                    ),
-                  ),
-                );
-                return;
-              }
-
-              Navigator.pop(dialogContext, normalized);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted || savedUrl == null) {
-      return;
-    }
-
-    await BackendConfig.setBaseUrl(savedUrl);
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Servidor guardado.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,12 +65,7 @@ class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
                     title: 'Notificações',
                     subtitle: 'Alertas e comunicações',
                   ),
-                  _SettingsOptionTile(
-                    icon: Icons.dns_outlined,
-                    title: 'Servidor',
-                    subtitle: 'Configurar API base URL',
-                    onTap: _showBackendConfigDialog,
-                  ),
+
                   const _SettingsOptionTile(
                     icon: Icons.logout,
                     title: 'Terminar Sessão',
@@ -168,13 +86,11 @@ class _SettingsOptionTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback? onTap;
 
   void _showLogoutDialog(BuildContext parentContext) {
     showDialog(
@@ -300,10 +216,6 @@ class _SettingsOptionTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            if (onTap != null) {
-              onTap!();
-              return;
-            }
             if (title == 'Conta') {
               Navigator.push(
                 context,

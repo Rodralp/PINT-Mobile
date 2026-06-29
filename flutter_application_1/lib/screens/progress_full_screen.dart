@@ -65,6 +65,8 @@ class ProgressFullScreen extends StatelessWidget {
                           status: _ProgressItemFull._statusFromBackend(item),
                           accent: _ProgressItemFull._accentFromBackend(item.accent),
                           icon: _ProgressItemFull._iconFromBackend(item.iconKey),
+                          badgeImage: item.badgeImage,
+                          levelKey: item.levelKey,
                         );
                       },
                     ),
@@ -83,6 +85,8 @@ class _ProgressItemFull extends StatelessWidget {
     required this.status,
     required this.accent,
     required this.icon,
+    this.badgeImage,
+    this.levelKey,
   });
 
   final String title;
@@ -90,6 +94,8 @@ class _ProgressItemFull extends StatelessWidget {
   final String status;
   final Color accent;
   final IconData icon;
+  final String? badgeImage;
+  final String? levelKey;
 
   static String _statusFromBackend(BackendProgressItem item) {
     final iconKey = item.iconKey.toLowerCase();
@@ -178,7 +184,8 @@ class _ProgressItemFull extends StatelessWidget {
               borderWidth: 0,
               iconSize: 32,
               title: title,
-              levelKey: subtitle,
+              levelKey: levelKey ?? subtitle,
+              badgeImage: badgeImage,
             ),
           ),
           const SizedBox(width: 16),

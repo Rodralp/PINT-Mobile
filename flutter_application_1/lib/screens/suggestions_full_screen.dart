@@ -100,6 +100,8 @@ class SuggestionsFullScreen extends StatelessWidget {
                         description:
                             'Sugestões e badges alinhados com as suas preferências.',
                         accentColor: _accentColorFromKey(item.accent),
+                        badgeImage: item.badgeImage,
+                        levelKey: item.levelKey,
                       ),
                     );
                   }),
@@ -119,6 +121,8 @@ class _SuggestionItemFull extends StatelessWidget {
     required this.subtitleKey,
     required this.description,
     required this.accentColor,
+    this.badgeImage,
+    this.levelKey,
   });
 
   final String title;
@@ -126,6 +130,8 @@ class _SuggestionItemFull extends StatelessWidget {
   final String subtitleKey;
   final String description;
   final Color accentColor;
+  final String? badgeImage;
+  final String? levelKey;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +159,7 @@ class _SuggestionItemFull extends StatelessWidget {
                 height: 60,
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.08),
+                  color: accentColor.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: BadgeArtwork(
@@ -164,7 +170,8 @@ class _SuggestionItemFull extends StatelessWidget {
                   borderWidth: 0,
                   iconSize: 28,
                   title: title,
-                  levelKey: subtitleKey,
+                  levelKey: levelKey ?? subtitleKey,
+                  badgeImage: badgeImage,
                   imagePadding: const EdgeInsets.all(2),
                 ),
               ),

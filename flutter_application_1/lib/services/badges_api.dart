@@ -214,7 +214,7 @@ class BadgesApi {
   BadgesApi._();
 
   static final BadgesApi instance = BadgesApi._();
-  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const Duration _requestTimeout = Duration(seconds: 60);
   static const String _catalogCacheKey = 'cache_badges_catalog';
   static const String _myBadgesCacheKey = 'cache_badges_my';
 

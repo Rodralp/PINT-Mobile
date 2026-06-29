@@ -96,8 +96,8 @@ class AuthApi {
   static const Duration _requestTimeout = Duration(seconds: 60);
 
   Future<List<Uri>> _candidateUris(String path) async {
-    final baseUrls = await BackendConfig.candidateBaseUrls();
-    return baseUrls.map((baseUrl) => Uri.parse('$baseUrl$path')).toList(growable: false);
+    final baseUrl = await BackendConfig.getBaseUrl();
+    return [Uri.parse('$baseUrl$path')];
   }
 
   Map<String, dynamic> _decodeBody(http.Response response) {
@@ -140,7 +140,6 @@ class AuthApi {
             )
             .timeout(_requestTimeout);
 
-        await BackendConfig.setBaseUrl('${uri.scheme}://${uri.authority}/api');
         return (response: response, baseUrl: '${uri.scheme}://${uri.authority}/api');
       } on SocketException catch (error) {
         lastError = error;
@@ -169,7 +168,6 @@ class AuthApi {
             .get(uri, headers: const {'Content-Type': 'application/json'})
             .timeout(_requestTimeout);
 
-        await BackendConfig.setBaseUrl('${uri.scheme}://${uri.authority}/api');
         return (response: response, baseUrl: '${uri.scheme}://${uri.authority}/api');
       } on SocketException catch (error) {
         lastError = error;
@@ -203,7 +201,6 @@ class AuthApi {
             )
             .timeout(_requestTimeout);
 
-        await BackendConfig.setBaseUrl('${uri.scheme}://${uri.authority}/api');
         return (response: response, baseUrl: '${uri.scheme}://${uri.authority}/api');
       } on SocketException catch (error) {
         lastError = error;
@@ -231,8 +228,6 @@ class AuthApi {
       _throwApiError(response);
     }
 
-    await BackendConfig.setBaseUrl(attempt.baseUrl);
-
     return AuthAccount.fromJson(_decodeBody(response));
   }
 
@@ -251,8 +246,6 @@ class AuthApi {
     if (response.statusCode != 201) {
       _throwApiError(response);
     }
-
-    await BackendConfig.setBaseUrl(attempt.baseUrl);
 
     return AuthAccount.fromJson(_decodeBody(response));
   }
@@ -273,7 +266,6 @@ class AuthApi {
       _throwApiError(response);
     }
 
-    await BackendConfig.setBaseUrl(attempt.baseUrl);
   }
 
   Future<List<BackendArea>> fetchPreferenceAreas({
@@ -285,8 +277,6 @@ class AuthApi {
     if (response.statusCode != 200) {
       _throwApiError(response);
     }
-
-    await BackendConfig.setBaseUrl(attempt.baseUrl);
 
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
@@ -313,6 +303,5 @@ class AuthApi {
       _throwApiError(response);
     }
 
-    await BackendConfig.setBaseUrl(attempt.baseUrl);
   }
 }
