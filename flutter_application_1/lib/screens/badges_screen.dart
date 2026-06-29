@@ -694,7 +694,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                         runSpacing: gap,
                         children: visibleBadges
                             .map(
-                              (badge) => _OwnedBadgeCard(
+                              (badge) => BadgeCard(
                             width: itemWidth,
                             badge: badge,
                             onRefresh: _refreshBadges,
@@ -992,7 +992,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                       runSpacing: gap,
                       children: visibleBadges
                           .map(
-                            (badge) => _CatalogBadgeCard(
+                            (badge) => BadgeCard(
                           width: itemWidth,
                           badge: badge,
                         ),
@@ -1027,174 +1027,8 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
   }
 }
 
-class _CatalogBadgeCard extends StatelessWidget {
-  const _CatalogBadgeCard({required this.width, required this.badge});
-
-  final double width;
-  final BadgeData badge;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BadgeLiveDetailScreen(badge: badge),
-          ),
-        );
-      },
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.all(11),
-        decoration: BoxDecoration(
-          color: _badgeBackgroundColor(),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: badge.frameColor.withOpacity(0.32),
-            width: 1.2,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 92,
-              height: 92,
-              child: BadgeArtwork(
-                size: 92,
-                frameColor: badge.frameColor,
-                backgroundColor: badge.iconBackground.withOpacity(0.24),
-                shape: badge.shape,
-                borderWidth: 5,
-                iconSize: 38,
-                badgeImage: badge.badgeImage,
-                levelKey: badge.levelKey,
-                title: badge.title,
-                subtitle: badge.level,
-                isSpecial: badge.isSpecial,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              badge.title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                height: 1.25,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              badge.level,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.emoji_events_outlined, size: 13),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              '${badge.points} pts',
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          const Icon(Icons.schedule_outlined, size: 13),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              badge.date,
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  _stateIcon(badge.state),
-                  color: _stateColor(badge.state),
-                  size: 28,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _stateIcon(BadgeState? state) {
-    switch (state) {
-      case BadgeState.approved:
-        return Icons.check_rounded;
-      case BadgeState.warning:
-        return Icons.warning_amber_rounded;
-      case BadgeState.review:
-        return Icons.manage_search_outlined;
-      case BadgeState.inProgress:
-        return Icons.timer_outlined;
-      case null:
-        return Icons.radio_button_unchecked;
-    }
-  }
-
-  Color _stateColor(BadgeState? state) {
-    switch (state) {
-      case BadgeState.approved:
-        return const Color(0xFF16C524);
-      case BadgeState.warning:
-        return const Color(0xFFFF3B30);
-      case BadgeState.review:
-        return const Color(0xFFF7B500);
-      case BadgeState.inProgress:
-        return const Color(0xFF1A90F0);
-      case null:
-        return const Color(0xFFC7CFD8);
-    }
-  }
-
-  Color _badgeBackgroundColor() {
-    switch (badge.state) {
-      case BadgeState.approved:
-        return const Color(0xFFF0F9F4);
-      case BadgeState.warning:
-        return const Color(0xFFFCF4F1);
-      case BadgeState.review:
-        return const Color(0xFFFFFAF0);
-      case BadgeState.inProgress:
-        return const Color(0xFFEFF6FF);
-      case null:
-        return const Color(0xFFF9FBFD);
-    }
-  }
-}
-
-class _OwnedBadgeCard extends StatelessWidget {
-  const _OwnedBadgeCard({required this.width, required this.badge, this.onRefresh});
+class BadgeCard extends StatelessWidget {
+  const BadgeCard({required this.width, required this.badge, this.onRefresh});
 
   final double width;
   final BadgeData badge;
@@ -1203,7 +1037,7 @@ class _OwnedBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: () {
         Navigator.push(
           context,
