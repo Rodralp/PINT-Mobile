@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'backend_config.dart';
@@ -67,7 +68,7 @@ class ReminderApi {
   ReminderApi._();
 
   static final ReminderApi instance = ReminderApi._();
-  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const Duration _requestTimeout = Duration(seconds: 60);
 
   Future<Uri> _uri(String path) async {
     final baseUrl = await BackendConfig.getBaseUrl();
@@ -197,7 +198,9 @@ class ReminderApi {
 
   Future<List<Reminder>> fetchReminders({required int accountId}) async {
     final uri = await _uri('/consultor/lembretes?accountId=$accountId');
+    debugPrint('[ReminderApi] GET $uri');
     final response = await _getJson(uri);
+    debugPrint('[ReminderApi] Response status: ${response.statusCode}');
 
     if (response.statusCode != 200) {
       _throwApiError(response);

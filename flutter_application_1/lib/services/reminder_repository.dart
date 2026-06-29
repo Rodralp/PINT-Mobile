@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'connectivity_service.dart';
@@ -295,9 +296,14 @@ class ReminderRepository {
       final remote = await ReminderApi.instance.fetchReminders(
         accountId: accountId,
       );
+      debugPrint('[ReminderRepo] Fetched ${remote.length} reminders from server');
       await _mergeRemote(db, accountId, remote);
-    } on ReminderApiException {
+    } on ReminderApiException catch (e) {
+      debugPrint('[ReminderRepo] fetchReminders failed: $e');
       // Keep local cache when the server is unavailable.
+    } catch (e, stack) {
+      debugPrint('[ReminderRepo] sync error: $e');
+      debugPrint('[ReminderRepo] stack: $stack');
     }
   }
 
@@ -384,7 +390,10 @@ class ReminderRepository {
     int accountId,
     List<Reminder> remote,
   ) async {
+    final remoteIds = <int>{};
     for (final reminder in remote) {
+      remoteIds.add(reminder.id);
+
       final rows = await db.query(
         'reminders',
         where: 'account_id = ? AND server_id = ?',
@@ -430,6 +439,24 @@ class ReminderRepository {
       );
 
       await db.insert('reminders', newRecord.toMap());
+    }
+
+    final localRows = await db.query(
+      'reminders',
+      where: 'account_id = ? AND deleted = 0',
+      whereArgs: [accountId],
+    );
+
+    for (final row in localRows) {
+      final record = ReminderRecord.fromMap(row);
+      if (record.dirty) continue;
+      if (record.serverId != null && !remoteIds.contains(record.serverId)) {
+        await db.delete(
+          'reminders',
+          where: 'local_id = ?',
+          whereArgs: [record.localId],
+        );
+      }
     }
   }
 }

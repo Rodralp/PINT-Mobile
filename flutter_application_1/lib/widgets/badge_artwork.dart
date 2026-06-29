@@ -34,6 +34,48 @@ Uint8List? _decodeDataUrl(String url) {
   }
 }
 
+const _defaultBadgeArtworks = <String, String>{
+  'badge_level_junior': '/badges/Júnior.png',
+  'badge_level_intermediate': '/badges/Intermédio.png',
+  'badge_level_senior': '/badges/Sénior.png',
+  'badge_level_specialist': '/badges/Especialista.png',
+  'badge_level_knowledge_lead': '/badges/Líder de Conhecimento.png',
+};
+
+const _defaultBadgeArtworkByTitle = <String, String>{
+  'junior': '/badges/Júnior.png',
+  'intermedio': '/badges/Intermédio.png',
+  'intermédio': '/badges/Intermédio.png',
+  'senior': '/badges/Sénior.png',
+  'sénior': '/badges/Sénior.png',
+  'especialista': '/badges/Especialista.png',
+  'specialist': '/badges/Especialista.png',
+  'lider': '/badges/Líder de Conhecimento.png',
+  'líder': '/badges/Líder de Conhecimento.png',
+  'knowledge lead': '/badges/Líder de Conhecimento.png',
+  'especial': '/badges/Especial.png',
+  'special': '/badges/Especial.png',
+};
+
+String? resolveDefaultBadgeArtwork({String? levelKey, String? title, String? subtitle}) {
+  final nLevel = _normalize(levelKey);
+  if (nLevel.isNotEmpty && nLevel != 'null') {
+    for (final entry in _defaultBadgeArtworks.entries) {
+      if (nLevel.contains(entry.key)) return entry.value;
+    }
+  }
+
+  for (final candidate in [title, subtitle]) {
+    final n = _normalize(candidate);
+    if (n.isEmpty) continue;
+    for (final entry in _defaultBadgeArtworkByTitle.entries) {
+      if (n.contains(entry.key)) return entry.value;
+    }
+  }
+
+  return null;
+}
+
 String? resolveBadgeFramePath({String? levelKey, String? title, String? subtitle}) {
   final nLevel = _normalize(levelKey);
   if (nLevel.isNotEmpty && nLevel != 'null') {
@@ -130,7 +172,11 @@ class BadgeArtwork extends StatelessWidget {
   Widget build(BuildContext context) {
     final framePath = resolveBadgeFramePath(levelKey: levelKey, title: title, subtitle: subtitle);
     final maskPath = resolveBadgeMaskPath(levelKey: levelKey, title: title, subtitle: subtitle);
-    final hasContent = badgeImage != null && badgeImage!.isNotEmpty;
+
+    final resolvedImage = (badgeImage != null && badgeImage!.isNotEmpty)
+        ? badgeImage!
+        : resolveDefaultBadgeArtwork(levelKey: levelKey, title: title, subtitle: subtitle);
+    final hasContent = resolvedImage != null && resolvedImage.isNotEmpty;
 
     if (framePath == null || maskPath == null) {
       return _buildFallback(size, frameColor, iconSize);
@@ -142,9 +188,17 @@ class BadgeArtwork extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: shape,
+            ),
+          ),
           if (hasContent)
             _MaskedImage(
-              imageUrl: badgeImage!,
+              imageUrl: resolvedImage,
               maskAsset: maskPath,
               size: size,
             )
@@ -223,6 +277,7 @@ class _MaskedImage extends StatefulWidget {
 class _MaskedImageState extends State<_MaskedImage> {
   ui.Image? _contentImage;
   ui.Image? _maskImage;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -257,10 +312,14 @@ class _MaskedImageState extends State<_MaskedImage> {
   }
 
   Future<void> _loadImages() async {
+    _loadFailed = false;
     ImageProvider content;
     if (widget.imageUrl.startsWith('data:')) {
       final bytes = _decodeDataUrl(widget.imageUrl);
-      if (bytes == null) return;
+      if (bytes == null) {
+        if (mounted) setState(() { _loadFailed = true; });
+        return;
+      }
       content = MemoryImage(bytes);
     } else if (widget.imageUrl.startsWith('http://') || widget.imageUrl.startsWith('https:')) {
       content = NetworkImage(widget.imageUrl);
@@ -281,12 +340,14 @@ class _MaskedImageState extends State<_MaskedImage> {
         _contentImage = results[0];
         _maskImage = results[1];
       });
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) setState(() { _loadFailed = true; });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_contentImage == null || _maskImage == null) {
+    if (_loadFailed || _contentImage == null || _maskImage == null) {
       return const SizedBox.shrink();
     }
 

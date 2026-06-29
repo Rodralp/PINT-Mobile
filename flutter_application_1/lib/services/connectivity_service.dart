@@ -6,8 +6,8 @@ class ConnectivityService {
   static final ConnectivityService instance = ConnectivityService._();
 
   Future<bool> hasConnection() async {
-    final result = await Connectivity().checkConnectivity();
-    return result != ConnectivityResult.none;
+    final results = await Connectivity().checkConnectivity();
+    return results.any((r) => r != ConnectivityResult.none);
   }
 }
 

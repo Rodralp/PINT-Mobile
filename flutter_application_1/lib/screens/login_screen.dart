@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_api.dart';
-import '../services/backend_config.dart';
 import '../services/auth_session.dart';
 import '../services/local_storage.dart';
 import 'preferences_screen.dart';
@@ -17,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _backendUrlController = TextEditingController();
+
   bool obscurePassword = true;
   bool rememberMe = false;
   bool _loading = false;
@@ -102,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _backendUrlController.dispose();
+
     super.dispose();
   }
 
@@ -216,74 +215,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
-  }
-
-  Future<void> _showBackendConfigDialog() async {
-    final currentBaseUrl = await BackendConfig.getBaseUrl();
-    if (!mounted) {
-      return;
-    }
-
-    _backendUrlController.text =
-        BackendConfig.formatServerInput(currentBaseUrl);
-    final savedUrl = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Configurar servidor'),
-        content: TextField(
-          controller: _backendUrlController,
-          decoration: const InputDecoration(
-            labelText: 'IP do servidor',
-            hintText: '10.65.8.74',
-            helperText: 'A porta 4000 e /api sao adicionados automaticamente.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              final input = _backendUrlController.text.trim();
-              if (input.isEmpty) {
-                Navigator.pop(dialogContext);
-                return;
-              }
-
-              final normalized = BackendConfig.normalizeBaseUrlInput(input);
-              if (normalized == null) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Servidor invalido. Introduza um IP valido, e.g. 10.65.8.74',
-                    ),
-                  ),
-                );
-                return;
-              }
-
-              Navigator.pop(dialogContext, normalized);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted || savedUrl == null) {
-      return;
-    }
-
-    await BackendConfig.setBaseUrl(savedUrl);
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Servidor guardado.')));
   }
 
   static const List<Map<String, String>> _terms = [
@@ -824,21 +755,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: const Text(
                       "Esqueceu a senha?",
-                      style: TextStyle(color: Colors.blue),
-                    ),
-                  ),
-                ),
-
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: _showBackendConfigDialog,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 40),
-                    ),
-                    child: const Text(
-                      'Configurar servidor',
                       style: TextStyle(color: Colors.blue),
                     ),
                   ),
