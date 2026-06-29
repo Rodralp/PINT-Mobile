@@ -588,7 +588,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      height: 64,
+                      height: 54,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
@@ -619,13 +619,26 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  _toolButton(
-                    Icons.filter_alt_outlined,
-                    onTap: _showMyBadgesFilterSheet,
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _toolButton(
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Filtrar',
+                      onTap: _showMyBadgesFilterSheet,
+                    ),
                   ),
                   const SizedBox(width: 10),
-                  _toolButton(Icons.tune_rounded, onTap: _showMyBadgesSortSheet),
+                  Expanded(
+                    child: _toolButton(
+                      icon: Icons.tune_rounded,
+                      label: 'Ordenar',
+                      onTap: _showMyBadgesSortSheet,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
@@ -713,19 +726,33 @@ class _BadgesScreenState extends State<BadgesScreen> {
     );
   }
 
-  Widget _toolButton(IconData icon, {VoidCallback? onTap}) {
+  Widget _toolButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
-        width: 54,
         height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFE0E6F0)),
           color: Colors.white,
         ),
-        child: Icon(icon, size: 22),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -889,7 +916,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    height: 64,
+                    height: 54,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
@@ -920,10 +947,26 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                     ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _toolButton(
+                    icon: Icons.filter_alt_outlined,
+                    label: 'Filtrar',
+                    onTap: _showFilterSheet,
+                  ),
+                ),
                 const SizedBox(width: 10),
-                _toolButton(Icons.filter_alt_outlined, onTap: _showFilterSheet),
-                const SizedBox(width: 10),
-                _toolButton(Icons.tune_rounded, onTap: _showSortSheet),
+                Expanded(
+                  child: _toolButton(
+                    icon: Icons.tune_rounded,
+                    label: 'Ordenar',
+                    onTap: _showSortSheet,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -1009,19 +1052,33 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
     );
   }
 
-  Widget _toolButton(IconData icon, {VoidCallback? onTap}) {
+  Widget _toolButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
-        width: 54,
         height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFE0E6F0)),
           color: Colors.white,
         ),
-        child: Icon(icon, size: 22),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

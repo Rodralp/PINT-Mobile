@@ -1,12 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'app_shell_screen.dart';
-import 'notifications_full_screen.dart';
-import 'profile_screen.dart';
-import 'settings_menu_screen.dart';
-import 'messages_screen.dart';
-import '../widgets/app_top_bar.dart';
-
 class ExportsScreen extends StatefulWidget {
   const ExportsScreen({super.key});
 
@@ -21,39 +14,26 @@ class _ExportsScreenState extends State<ExportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppTopBar(
-        onSettingsTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SettingsMenuScreen(),
-            ),
-          );
-        },
-        onNotificationsTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const NotificationsFullScreen(),
-            ),
-          );
-        },
-        onProfileTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ProfileScreen(),
-            ),
-          );
-        },
-        onMessagesTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MessagesScreen(),
-            ),
-          );
-        },
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Exportações',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE5E7EB), height: 1),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -61,19 +41,6 @@ class _ExportsScreenState extends State<ExportsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Exportações',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF111827),
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Todas as Service Lines',
-                style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-              ),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -209,54 +176,6 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(context),
-    );
-  }
-
-  Widget _buildBottomNavigationBar(BuildContext context) {
-    return NavigationBarTheme(
-      data: NavigationBarThemeData(
-        indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        indicatorColor: const Color(0xFFEAF2FF),
-      ),
-      child: NavigationBar(
-        selectedIndex: 4,
-        onDestinationSelected: (index) {
-          if (index == 4) {
-            return;
-          }
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AppShellScreen(initialIndex: index),
-            ),
-          );
-        },
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        backgroundColor: Colors.white,
-        height: 65,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.workspace_premium_outlined),
-            label: 'Badges',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            label: 'Jornada',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            label: 'Pedidos',
-          ),
-          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
-        ],
       ),
     );
   }
