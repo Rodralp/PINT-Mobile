@@ -350,23 +350,16 @@ class _RankingScreenState extends State<RankingScreen> {
                       children: [
                         Expanded(
                           child: Container(
-                            height: 58,
+                            height: 54,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFFE0E6F0),
-                              ),
-                              color: const Color(0xFFF8FAFC),
+                              border: Border.all(color: const Color(0xFFE0E6F0)),
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.search,
-                                  color: Colors.grey[400],
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
+                                Icon(Icons.search, color: Colors.grey[500], size: 24),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: TextField(
                                     controller: _searchController,
@@ -388,19 +381,29 @@ class _RankingScreenState extends State<RankingScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        _toolButton(
-                          icon: Icons.filter_alt_outlined,
-                          onTap: _showFilterSheet,
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _toolButton(
+                            icon: Icons.filter_alt_outlined,
+                            label: 'Filtrar',
+                            onTap: _showFilterSheet,
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                        _toolButton(
-                          icon: Icons.tune_rounded,
-                          onTap: _showSortSheet,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _toolButton(
+                            icon: Icons.tune_rounded,
+                            label: 'Ordenar',
+                            onTap: _showSortSheet,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
                   ],
                 ),
               ),
@@ -466,19 +469,33 @@ class _RankingScreenState extends State<RankingScreen> {
     );
   }
 
-  Widget _toolButton({required IconData icon, VoidCallback? onTap}) {
+  Widget _toolButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
-        width: 58,
-        height: 58,
+        height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFE0E6F0)),
           color: Colors.white,
         ),
-        child: Icon(icon, size: 24, color: const Color(0xFF64748B)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

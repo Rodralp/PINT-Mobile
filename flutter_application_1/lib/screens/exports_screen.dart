@@ -9,6 +9,14 @@ class ExportsScreen extends StatefulWidget {
 
 class _ExportsScreenState extends State<ExportsScreen> {
   bool _isCertificateSelected = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchTerm = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,75 +77,63 @@ class _ExportsScreenState extends State<ExportsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: Container(
-                      height: 64,
+                      height: 54,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFE0E6F0),
-                        ),
-                        color: const Color(0xFFF8FAFC),
+                        border: Border.all(color: const Color(0xFFE0E6F0)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search, size: 28, color: Colors.grey[400]),
+                          Icon(Icons.search, color: Colors.grey[500], size: 24),
                           const SizedBox(width: 10),
-                          Text(
-                            'Pesquisar badge',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[400],
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Pesquisar badges',
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                isDense: true,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchTerm = value;
+                                });
+                              },
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _toolButton(Icons.filter_alt_outlined),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
               Row(
-                children: const [
+                children: [
                   Expanded(
-                    child: Text(
-                      'Selecionar Badge',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: _toolButton(
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Filtrar',
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_left,
-                    size: 28,
-                    color: Color(0xFF64748B),
-                  ),
-                  SizedBox(width: 2),
-                  Text(
-                    '1/3',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF1F2937),
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _toolButton(
+                      icon: Icons.tune_rounded,
+                      label: 'Ordenar',
                     ),
-                  ),
-                  SizedBox(width: 2),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 28,
-                    color: Color(0xFF64748B),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _badgeItem(
                 iconShape: _BadgeShape.circle,
                 color: const Color(0xFFD67F45),
@@ -180,16 +176,34 @@ class _ExportsScreenState extends State<ExportsScreen> {
     );
   }
 
-  Widget _toolButton(IconData icon) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E6F0)),
-        color: Colors.white,
+  Widget _toolButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE0E6F0)),
+          color: Colors.white,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
-      child: Icon(icon, size: 28, color: const Color(0xFF64748B)),
     );
   }
 
