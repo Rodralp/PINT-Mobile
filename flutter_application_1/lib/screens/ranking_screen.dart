@@ -277,29 +277,31 @@ class _RankingScreenState extends State<RankingScreen> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-                ...options.map(
-                  (option) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(option.label),
-                    trailing: selectedId == option.id
-                        ? const Icon(Icons.check, color: Color(0xFF1A90F0))
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onSelected(option.id);
-                    },
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  ...options.map(
+                    (option) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(option.label),
+                      trailing: selectedId == option.id
+                          ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                          : null,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onSelected(option.id);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
