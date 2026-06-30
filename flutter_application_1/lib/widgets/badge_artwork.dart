@@ -79,63 +79,63 @@ String? resolveDefaultBadgeArtwork({String? levelKey, String? title, String? sub
 String? resolveBadgeFramePath({String? levelKey, String? title, String? subtitle}) {
   final nLevel = _normalize(levelKey);
   if (nLevel.isNotEmpty && nLevel != 'null') {
-    if (nLevel.contains('junior')) return 'assets/badges/junior_frame.png';
+    if (nLevel.contains('junior')) return 'assets/badges/Júnior.png';
     if (nLevel.contains('intermediate') || nLevel.contains('intermedio') || nLevel.contains('interm')) {
-      return 'assets/badges/intermediate_frame.png';
+      return 'assets/badges/Intermédio.png';
     }
-    if (nLevel.contains('senior')) return 'assets/badges/senior_frame.png';
+    if (nLevel.contains('senior')) return 'assets/badges/Sénior.png';
     if (nLevel.contains('especialista') || nLevel.contains('specialist')) {
-      return 'assets/badges/specialist_frame.png';
+      return 'assets/badges/Especialista.png';
     }
     if (nLevel.contains('knowledge_lead') || nLevel.contains('lider') || nLevel.contains('lead')) {
-      return 'assets/badges/knowledge_lead_frame.png';
+      return 'assets/badges/Líder de Conhecimento.png';
     }
-    if (nLevel.contains('special')) return 'assets/badges/special_frame.png';
+    if (nLevel.contains('special')) return 'assets/badges/Especial.png';
   }
 
   for (final candidate in [title, subtitle]) {
     final n = _normalize(candidate);
     if (n.isEmpty) continue;
-    if (n.contains('junior')) return 'assets/badges/junior_frame.png';
-    if (n.contains('intermedio') || n.contains('interm')) return 'assets/badges/intermediate_frame.png';
-    if (n.contains('senior')) return 'assets/badges/senior_frame.png';
-    if (n.contains('especialista') || n.contains('specialist')) return 'assets/badges/specialist_frame.png';
-    if (n.contains('lider') || n.contains('conhecimento')) return 'assets/badges/knowledge_lead_frame.png';
-    if (n.contains('especial') || n.contains('special')) return 'assets/badges/special_frame.png';
+    if (n.contains('junior')) return 'assets/badges/Júnior.png';
+    if (n.contains('intermedio') || n.contains('interm')) return 'assets/badges/Intermédio.png';
+    if (n.contains('senior')) return 'assets/badges/Sénior.png';
+    if (n.contains('especialista') || n.contains('specialist')) return 'assets/badges/Especialista.png';
+    if (n.contains('lider') || n.contains('conhecimento')) return 'assets/badges/Líder de Conhecimento.png';
+    if (n.contains('especial') || n.contains('special')) return 'assets/badges/Especial.png';
   }
 
-  return 'assets/badges/special_frame.png';
+  return 'assets/badges/Especial.png';
 }
 
 String? resolveBadgeMaskPath({String? levelKey, String? title, String? subtitle}) {
   final nLevel = _normalize(levelKey);
   if (nLevel.isNotEmpty && nLevel != 'null') {
-    if (nLevel.contains('junior')) return 'assets/badges/junior_mask.png';
+    if (nLevel.contains('junior')) return 'assets/badges/gs_Júnior_Especial.png';
     if (nLevel.contains('intermediate') || nLevel.contains('intermedio') || nLevel.contains('interm')) {
-      return 'assets/badges/intermediate_mask.png';
+      return 'assets/badges/gs_Intermédio.png';
     }
-    if (nLevel.contains('senior')) return 'assets/badges/senior_mask.png';
+    if (nLevel.contains('senior')) return 'assets/badges/gs_Sénior.png';
     if (nLevel.contains('especialista') || nLevel.contains('specialist')) {
-      return 'assets/badges/specialist_mask.png';
+      return 'assets/badges/gs_Especialista.png';
     }
     if (nLevel.contains('knowledge_lead') || nLevel.contains('lider') || nLevel.contains('lead')) {
-      return 'assets/badges/knowledge_lead_mask.png';
+      return 'assets/badges/gs_Líder de Conhecimento.png';
     }
-    if (nLevel.contains('special')) return 'assets/badges/junior_mask.png';
+    if (nLevel.contains('special')) return 'assets/badges/gs_Júnior_Especial.png';
   }
 
   for (final candidate in [title, subtitle]) {
     final n = _normalize(candidate);
     if (n.isEmpty) continue;
-    if (n.contains('junior')) return 'assets/badges/junior_mask.png';
-    if (n.contains('intermedio') || n.contains('interm')) return 'assets/badges/intermediate_mask.png';
-    if (n.contains('senior')) return 'assets/badges/senior_mask.png';
-    if (n.contains('especialista') || n.contains('specialist')) return 'assets/badges/specialist_mask.png';
-    if (n.contains('lider') || n.contains('conhecimento')) return 'assets/badges/knowledge_lead_mask.png';
-    if (n.contains('especial') || n.contains('special')) return 'assets/badges/junior_mask.png';
+    if (n.contains('junior')) return 'assets/badges/gs_Júnior_Especial.png';
+    if (n.contains('intermedio') || n.contains('interm')) return 'assets/badges/gs_Intermédio.png';
+    if (n.contains('senior')) return 'assets/badges/gs_Sénior.png';
+    if (n.contains('especialista') || n.contains('specialist')) return 'assets/badges/gs_Especialista.png';
+    if (n.contains('lider') || n.contains('conhecimento')) return 'assets/badges/gs_Líder de Conhecimento.png';
+    if (n.contains('especial') || n.contains('special')) return 'assets/badges/gs_Júnior_Especial.png';
   }
 
-  return 'assets/badges/junior_mask.png';
+  return 'assets/badges/gs_Júnior_Especial.png';
 }
 
 class BadgeArtwork extends StatelessWidget {
@@ -188,22 +188,12 @@ class BadgeArtwork extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: shape,
-            ),
-          ),
           if (hasContent)
             _MaskedImage(
               imageUrl: resolvedImage,
               maskAsset: maskPath,
               size: size,
-            )
-          else
-            _buildFrameOnlyBadge(size, maskPath),
+            ),
           Image.asset(
             framePath,
             width: size,
@@ -212,32 +202,6 @@ class BadgeArtwork extends StatelessWidget {
             errorBuilder: (_, __, ___) => const SizedBox.shrink(),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFrameOnlyBadge(double size, String maskPath) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: shape,
-      ),
-      child: ColorFiltered(
-        colorFilter: const ColorFilter.matrix([
-          0, 0, 0, 0, 1,
-          0, 0, 0, 0, 1,
-          0, 0, 0, 0, 1,
-          0, 0, 0, 0.9, 0,
-        ]),
-        child: Image.asset(
-          maskPath,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        ),
       ),
     );
   }
