@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../services/notifications_api.dart';
 
+class _FilterOption {
+  const _FilterOption(this.id, this.label);
+
+  final String id;
+  final String label;
+}
+
 class NotificationsFullScreen extends StatefulWidget {
   const NotificationsFullScreen({super.key});
 
@@ -248,20 +255,6 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     });
   }
 
-  String _filterLabelFor(String value) {
-    switch (value) {
-      case 'alerta':
-        return 'Alertas';
-      case 'info':
-        return 'Informações';
-      case 'sucesso':
-        return 'Sucesso';
-      case 'todos':
-      default:
-        return 'Todas';
-    }
-  }
-
   void _setSort(String value) {
     setState(() {
       _sortBy = value;
@@ -368,160 +361,221 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final sortOptions = const [
-      ('recentes', 'Mais recentes'),
-      ('antigas', 'Mais antigas'),
-      ('titulo_asc', 'Título (A-Z)'),
+  void _showFilterSheet() {
+    final options = [
+      const _FilterOption('todos', 'Todas'),
+      const _FilterOption('alerta', 'Alertas'),
+      const _FilterOption('info', 'Informações'),
+      const _FilterOption('sucesso', 'Sucesso'),
     ];
 
-    return Scaffold(
+    _showOptionsSheet(
+      title: 'Filtrar notificações',
+      options: options,
+      selectedId: _activeFilter,
+      onSelected: _setFilter,
+    );
+  }
+
+  void _showSortSheet() {
+    final options = [
+      const _FilterOption('recentes', 'Mais recentes'),
+      const _FilterOption('antigas', 'Mais antigas'),
+      const _FilterOption('titulo_asc', 'Título (A-Z)'),
+    ];
+
+    _showOptionsSheet(
+      title: 'Ordenar notificações',
+      options: options,
+      selectedId: _sortBy,
+      onSelected: _setSort,
+    );
+  }
+
+  void _showOptionsSheet({
+    required String title,
+    required List<_FilterOption> options,
+    required String selectedId,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshNotifications,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, size: 36),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Notificações',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF243047),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
-                      hintText: 'Pesquisar notificações',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  const SizedBox(height: 12),
+                  ...options.map(
+                    (option) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(option.label),
+                      trailing: selectedId == option.id
+                          ? const Icon(Icons.check, color: Color(0xFF1A90F0))
+                          : null,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onSelected(option.id);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _toolButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE0E6F0)),
+          color: Colors.white,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Notificações',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE5E7EB), height: 1),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshNotifications,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 54,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE0E6F0)),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, color: Colors.grey[500], size: 24),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Pesquisar notificações',
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                isDense: true,
+                              ),
+                              onChanged: _onSearchChanged,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: PopupMenuButton<String>(
-                          onSelected: _setFilter,
-                          position: PopupMenuPosition.over,
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'todos', child: Text('Todas')),
-                            PopupMenuItem(value: 'alerta', child: Text('Alertas')),
-                            PopupMenuItem(value: 'info', child: Text('Informações')),
-                            PopupMenuItem(value: 'sucesso', child: Text('Sucesso')),
-                          ],
-                          child: Container(
-                            height: 46,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFD7DDE7)),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.filter_alt_outlined, size: 18),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    _filterLabelFor(_activeFilter),
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: PopupMenuButton<String>(
-                          onSelected: _setSort,
-                          itemBuilder: (context) => sortOptions
-                              .map(
-                                (entry) => PopupMenuItem<String>(
-                                  value: entry.$1,
-                                  child: Text(entry.$2),
-                                ),
-                              )
-                              .toList(growable: false),
-                          child: Container(
-                            height: 46,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFD7DDE7)),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.sort, size: 18),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    _sortBy == 'antigas'
-                                        ? 'Mais antigas'
-                                        : _sortBy == 'titulo_asc'
-                                            ? 'Título (A-Z)'
-                                            : 'Mais recentes',
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _toolButton(
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Filtrar',
+                      onTap: _showFilterSheet,
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_pagedNotifications.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 36),
-                      child: Center(
-                        child: Text(
-                          'Sem notificações para mostrar.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        ),
-                      ),
-                    )
-                  else
-                    Column(
-                      children: [
-                        ..._pagedNotifications.expand((item) {
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _toolButton(
+                      icon: Icons.tune_rounded,
+                      label: 'Ordenar',
+                      onTap: _showSortSheet,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_pagedNotifications.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 36),
+                  child: Center(
+                    child: Text(
+                      'Sem notificações para mostrar.',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    ..._pagedNotifications.expand((item) {
                           final details = item.message.trim().isNotEmpty ? item.message : item.summary;
                           final accent = _notificationAccent(item.type);
                           final expanded = _expandedNotificationId == item.id;
@@ -662,8 +716,6 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }
