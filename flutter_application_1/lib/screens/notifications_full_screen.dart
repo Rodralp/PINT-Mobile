@@ -485,7 +485,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
         title: const Text(
           'Notificações',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
           ),

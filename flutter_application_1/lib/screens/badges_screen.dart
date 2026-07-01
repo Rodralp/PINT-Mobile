@@ -898,7 +898,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
         title: const Text(
           'Catálogo de Badges',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
           ),
@@ -1696,7 +1696,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         title: const Text(
           'Badge',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
           ),

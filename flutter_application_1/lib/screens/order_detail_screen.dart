@@ -310,7 +310,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         title: const Text(
           'Candidatura',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
           ),

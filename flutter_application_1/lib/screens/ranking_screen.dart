@@ -327,7 +327,7 @@ class _RankingScreenState extends State<RankingScreen> {
         title: const Text(
           'Ranking',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
           ),

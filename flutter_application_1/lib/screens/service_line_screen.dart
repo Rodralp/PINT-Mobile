@@ -217,7 +217,7 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(line.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 19)),
+        title: Text(line.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0,

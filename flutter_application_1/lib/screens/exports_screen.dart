@@ -33,7 +33,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
         title: const Text(
           'Exportações',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
           ),
