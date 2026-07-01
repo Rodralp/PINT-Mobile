@@ -76,38 +76,33 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
               ),
               const SizedBox(width: 20),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      line.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E293B),
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      line.description,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey[600],
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  line.name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            line.description,
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Progresso da Service Line',
+                'Progresso',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -273,7 +268,14 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          indicatorShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          indicatorColor: const Color(0xFFEAF2FF),
+          height: 72,
+        ),
         child: NavigationBar(
           selectedIndex: 2,
           onDestinationSelected: (index) {
@@ -284,8 +286,7 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFEAF2FF),
-          height: 74,
+          height: 65,
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
             NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
