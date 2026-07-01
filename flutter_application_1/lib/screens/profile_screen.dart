@@ -140,6 +140,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
+        ),
+        title: const Text(
+          'Perfil',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF243047),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE5E7EB), height: 1),
+        ),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshProfile,
@@ -150,24 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, size: 36),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Perfil',
-                        style: TextStyle(
-                          fontSize: 48 / 2,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF243047),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
                   FutureBuilder<void>(
                     future: _loadFuture,
                     builder: (context, snapshot) {
@@ -264,24 +267,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 20),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Row(
                               children: [
-                                _MetricInfoCard(
-                                  title: 'Pontos',
-                                  value: '${_points ?? 0}',
-                                  subtitle: '',
-                                  icon: Icons.emoji_events_outlined,
-                                  iconColor: const Color(0xFF1A90F0),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: _MetricInfoCard(
+                                    title: 'Pontos',
+                                    value: '${_points ?? 0}',
+                                    subtitle: '',
+                                    icon: Icons.emoji_events_outlined,
+                                    iconColor: const Color(0xFF1A90F0),
+                                  ),
                                 ),
-                                const SizedBox(width: 12),
-                                _MetricInfoCard(
-                                  title: 'Ranking',
-                                  value: _ranking == null ? '-' : '#${_ranking!}',
-                                  subtitle: '',
-                                  icon: Icons.leaderboard_outlined,
-                                  iconColor: const Color(0xFFF59E0B),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: _MetricInfoCard(
+                                    title: 'Ranking',
+                                    value: _ranking == null ? '-' : '#${_ranking!}',
+                                    subtitle: '',
+                                    icon: Icons.leaderboard_outlined,
+                                    iconColor: const Color(0xFFF59E0B),
+                                  ),
                                 ),
-                                const SizedBox(width: 12),
                                 _MetricInfoCard(
                                   title: 'Badges',
                                   value: '${_badges ?? 0}',
@@ -366,44 +374,50 @@ class _MetricInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 304,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      width: 170,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD9E1EC), width: 1.6),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
             style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, color: iconColor, size: 48),
-              const SizedBox(width: 14),
+              Icon(icon, size: 44, color: iconColor),
+              const SizedBox(width: 12),
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 66 / 2,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
               ),
             ],
           ),
           if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 17,
-                color: Colors.grey[600],
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ],

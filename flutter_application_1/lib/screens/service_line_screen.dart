@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
 import '../widgets/badge_artwork.dart';
 import 'badges_screen.dart';
-import 'app_shell_screen.dart';
+
 
 class ServiceLineScreen extends StatefulWidget {
   final BackendServiceLine line;
@@ -46,13 +46,12 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 100,
-                height: 100,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   gradient: const LinearGradient(
                     colors: [Color(0xFF1A90F0), Color(0xFF4059D5)],
                     begin: Alignment.topLeft,
@@ -69,17 +68,17 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
                 alignment: Alignment.center,
                 child: imageAsset != null
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.asset(imageAsset, width: 80, height: 80, fit: BoxFit.cover),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(imageAsset, width: 64, height: 64, fit: BoxFit.cover),
                       )
-                    : const Icon(Icons.business_center, color: Colors.white, size: 48),
+                    : const Icon(Icons.business_center, color: Colors.white, size: 40),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   line.name,
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.5,
@@ -88,7 +87,7 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             line.description,
             style: TextStyle(
@@ -268,34 +267,7 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          indicatorShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          indicatorColor: const Color(0xFFEAF2FF),
-          height: 72,
-        ),
-        child: NavigationBar(
-          selectedIndex: 2,
-          onDestinationSelected: (index) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => AppShellScreen(initialIndex: index)),
-            );
-          },
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          backgroundColor: Colors.white,
-          height: 65,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
-            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
-            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
-            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
-          ],
-        ),
-      ),
+
     );
   }
 }
