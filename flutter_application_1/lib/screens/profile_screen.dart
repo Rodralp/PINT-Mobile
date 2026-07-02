@@ -167,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -203,66 +203,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 36,
-                                backgroundColor: const Color(0xFFEFF6FF),
-                                backgroundImage: _avatar.isNotEmpty
-                                    ? NetworkImage(_avatar)
-                                    : null,
-                                child: _avatar.isEmpty
-                                    ? Text(
-                                        initials,
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1A90F0),
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _name.isEmpty ? 'Sem nome' : _name,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF111827),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _email.isEmpty ? '-' : _email,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF6B7280),
-                                      ),
-                                    ),
-                                    if (_location.isNotEmpty || _joined.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 6),
-                                        child: Text(
-                                          [
-                                            if (_location.isNotEmpty)
-                                              _location,
-                                            if (_joined.isNotEmpty)
-                                              'Membro desde $_joined',
-                                          ].join(' · '),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: const Color(0xFFEFF6FF),
+                                  backgroundImage: _avatar.isNotEmpty
+                                      ? NetworkImage(_avatar)
+                                      : null,
+                                  child: _avatar.isEmpty
+                                      ? Text(
+                                          initials,
                                           style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Color(0xFF94A3B8),
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF1A90F0),
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _name.isEmpty ? 'Sem nome' : _name,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF111827),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _email.isEmpty ? '-' : _email,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      if (_joined.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 6),
+                                          child: Text(
+                                            'Membro desde $_joined',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Color(0xFF94A3B8),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                  ],
+                                      if (_location.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            _location,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Color(0xFF94A3B8),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 20),
                           SingleChildScrollView(
@@ -300,9 +309,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           _CompetenciesCard(items: _competencies),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           _RequirementsCard(items: _requirements),
                         ],
                       );
@@ -317,17 +326,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _iconActionButton({required IconData icon, required Color color}) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(icon, color: Colors.white, size: 34),
-    );
-  }
 }
 
 class _CompetencyData {
@@ -435,10 +433,12 @@ class _CompetenciesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 14),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD9E1EC), width: 1.6),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,8 +446,9 @@ class _CompetenciesCard extends StatelessWidget {
           const Text(
             'Maiores Competências',
             style: TextStyle(
-              fontSize: 24 / 2,
-              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF243047),
             ),
           ),
           const SizedBox(height: 16),
@@ -495,7 +496,8 @@ class _CompetencyProgress extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 22,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
             color: Color(0xFF243047),
           ),
         ),
@@ -503,9 +505,8 @@ class _CompetencyProgress extends StatelessWidget {
         Text(
           subtitle,
           style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
+            fontSize: 13,
+            color: Colors.grey[500],
           ),
         ),
         const SizedBox(height: 8),
@@ -532,10 +533,12 @@ class _RequirementsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD9E1EC), width: 1.6),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,8 +546,9 @@ class _RequirementsCard extends StatelessWidget {
           const Text(
             'Requisitos',
             style: TextStyle(
-              fontSize: 24 / 2,
-              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF243047),
             ),
           ),
           const SizedBox(height: 12),
@@ -593,7 +597,8 @@ class _RequirementItem extends StatelessWidget {
                   Text(
                     data.title,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: Color(0xFF243047),
                     ),
                   ),
@@ -601,8 +606,8 @@ class _RequirementItem extends StatelessWidget {
                   Text(
                     data.level.isEmpty ? '-' : data.level,
                     style: TextStyle(
-                      fontSize: 17,
-                      color: Colors.grey[600],
+                      fontSize: 13,
+                      color: Colors.grey[500],
                     ),
                   ),
                 ],
