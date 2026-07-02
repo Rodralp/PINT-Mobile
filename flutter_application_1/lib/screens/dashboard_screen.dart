@@ -192,9 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _DashboardMetricData(
           title: 'Badges Obtidos',
           value: stat.value,
-          subtitle: stat.noteKey == 'dashboard_stat_badges_note'
-              ? '2 este mês'
-              : stat.noteKey,
+          subtitle: '',
           icon: Icons.stars_rounded,
           iconColor: Colors.orange,
         );
@@ -202,9 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _DashboardMetricData(
           title: 'Sequência de Dias',
           value: stat.value,
-          subtitle: stat.noteKey == 'dashboard_stat_streak_note'
-              ? 'Recorde: 8 dias'
-              : stat.noteKey,
+          subtitle: '',
           icon: Icons.local_fire_department_rounded,
           iconColor: Colors.deepOrange,
         );
@@ -212,9 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _DashboardMetricData(
           title: 'Pedidos Pendentes',
           value: stat.value,
-          subtitle: stat.noteKey == 'dashboard_stat_requests_note'
-              ? '2 em validação'
-              : stat.noteKey,
+          subtitle: '',
           icon: Icons.watch_later,
           iconColor: Colors.blue,
         );
@@ -222,9 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _DashboardMetricData(
           title: 'Ranking',
           value: stat.value,
-          subtitle: stat.noteKey == 'dashboard_stat_ranking_note'
-              ? '+3 posições este mês'
-              : stat.noteKey,
+          subtitle: '',
           icon: Icons.leaderboard,
           iconColor: Colors.amber,
         );
@@ -232,7 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _DashboardMetricData(
           title: stat.titleKey,
           value: stat.value,
-          subtitle: stat.noteKey,
+          subtitle: '',
           icon: Icons.circle,
           iconColor: Colors.grey,
         );
@@ -696,15 +688,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
     );
