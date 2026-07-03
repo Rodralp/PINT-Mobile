@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -53,6 +57,47 @@ class ExportService {
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
+  Future<pw.MemoryImage?> _downloadBadgeImage(String? url) async {
+    if (url == null || url.isEmpty) return null;
+    try {
+      if (url.startsWith('data:')) {
+        final mimeType = url.split(';').first.split(':').last;
+        final base64Data = url.split(',').last;
+        final bytes = base64Decode(base64Data);
+        return pw.MemoryImage(await _convertToPngIfNeeded(bytes, mimeType));
+      }
+
+      if (url.startsWith('http://') || url.startsWith('https:')) {
+        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200) {
+          return pw.MemoryImage(response.bodyBytes);
+        }
+      }
+
+      final decodedPath = Uri.decodeComponent(url);
+      final assetPath = decodedPath.startsWith('/') ? 'assets$decodedPath' : 'assets/$decodedPath';
+      final data = await rootBundle.load(assetPath);
+      return pw.MemoryImage(data.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('[ExportService] _downloadBadgeImage error: $e (url: $url)');
+    }
+    return null;
+  }
+
+  Future<Uint8List> _convertToPngIfNeeded(Uint8List bytes, String mimeType) async {
+    if (mimeType == 'image/webp' || mimeType == 'image/bmp' || mimeType == 'image/gif') {
+      try {
+        final codec = await ui.instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData != null) {
+          return byteData.buffer.asUint8List();
+        }
+      } catch (_) {}
+    }
+    return bytes;
+  }
+
   // ==================== PDF: Badges ====================
 
   Future<Uint8List> generateBadgesPDF(
@@ -64,6 +109,7 @@ class ExportService {
     for (int i = 0; i < badges.length; i++) {
       final badge = badges[i];
       final levelLabel = _translateLevel(badge.levelKey);
+      final image = await _downloadBadgeImage(badge.badgeImage);
 
       doc.addPage(
         pw.MultiPage(
@@ -90,6 +136,16 @@ class ExportService {
               ),
             ),
             pw.SizedBox(height: 20),
+            if (image != null)
+              pw.Center(
+                child: pw.Image(
+                  image,
+                  width: 120,
+                  height: 120,
+                  fit: pw.BoxFit.contain,
+                ),
+              ),
+            if (image != null) pw.SizedBox(height: 20),
             pw.Container(
               padding: const pw.EdgeInsets.all(24),
               decoration: pw.BoxDecoration(
@@ -175,6 +231,7 @@ class ExportService {
   ) async {
     final doc = pw.Document();
     final levelLabel = _translateLevel(badge.levelKey);
+    final image = await _downloadBadgeImage(badge.badgeImage);
 
     doc.addPage(
       pw.Page(
@@ -210,6 +267,14 @@ class ExportService {
                   ),
                 ),
                 pw.SizedBox(height: 20),
+                if (image != null)
+                  pw.Image(
+                    image,
+                    width: 100,
+                    height: 100,
+                    fit: pw.BoxFit.contain,
+                  ),
+                if (image != null) pw.SizedBox(height: 20),
                 pw.Text(
                   'Concedemos o presente certificado a',
                   style: pw.TextStyle(

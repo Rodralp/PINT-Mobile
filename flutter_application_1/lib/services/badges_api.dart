@@ -62,7 +62,7 @@ class BackendBadge {
       area: area,
       levelKey: levelKey,
       stateId: stateId,
-      badgeImage: _readString(json, ['badgeImage', 'image', 'imagem']),
+      badgeImage: _readString(json, ['badgeImage', 'badge_image', 'image', 'imagem']),
       requestId: _readInt(json, ['requestId', 'pedidoId', 'npedido']),
     );
   }

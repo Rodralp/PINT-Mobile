@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/badges_api.dart';
 import '../services/auth_session.dart';
 import '../services/export_service.dart';
+import '../widgets/badge_artwork.dart';
 
 enum _ExportTab { badges, certificate }
 
@@ -765,17 +766,15 @@ class _ExportsScreenState extends State<ExportsScreen> {
   Widget _badgeIcon(BackendBadge badge) {
     final color = _colorForLevel(badge.levelKey);
 
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color, width: 3),
-      ),
-      child: Center(
-        child: Icon(Icons.workspace_premium, color: color, size: 24),
-      ),
+    return BadgeArtwork(
+      size: 52,
+      frameColor: color,
+      backgroundColor: Colors.white,
+      shape: BoxShape.rectangle,
+      borderWidth: 3,
+      badgeImage: badge.badgeImage,
+      levelKey: badge.levelKey,
+      title: badge.title,
     );
   }
 
@@ -848,15 +847,16 @@ class _ExportsScreenState extends State<ExportsScreen> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: _colorForLevel(b.levelKey), width: 2),
-                          ),
-                          child: Icon(Icons.workspace_premium, color: _colorForLevel(b.levelKey), size: 18),
+                        BadgeArtwork(
+                          size: 40,
+                          frameColor: _colorForLevel(b.levelKey),
+                          backgroundColor: Colors.white,
+                          shape: BoxShape.rectangle,
+                          borderWidth: 2,
+                          iconSize: 18,
+                          badgeImage: b.badgeImage,
+                          levelKey: b.levelKey,
+                          title: b.title,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -931,17 +931,16 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: _colorForLevel(badge.levelKey), width: 3),
-            ),
-            child: Center(
-              child: Icon(Icons.workspace_premium, color: _colorForLevel(badge.levelKey), size: 36),
-            ),
+          BadgeArtwork(
+            size: 80,
+            frameColor: _colorForLevel(badge.levelKey),
+            backgroundColor: Colors.white,
+            shape: BoxShape.circle,
+            borderWidth: 3,
+            iconSize: 36,
+            badgeImage: badge.badgeImage,
+            levelKey: badge.levelKey,
+            title: badge.title,
           ),
           const SizedBox(height: 16),
           const Text(
