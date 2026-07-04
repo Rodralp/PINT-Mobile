@@ -1038,6 +1038,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                             (badge) => BadgeCard(
                           width: itemWidth,
                           badge: badge,
+                          forceWhiteBackground: true,
                         ),
                       )
                           .toList(),
@@ -1085,11 +1086,12 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
 }
 
 class BadgeCard extends StatelessWidget {
-  const BadgeCard({required this.width, required this.badge, this.onRefresh});
+  const BadgeCard({required this.width, required this.badge, this.onRefresh, this.forceWhiteBackground = false});
 
   final double width;
   final BadgeData badge;
   final VoidCallback? onRefresh;
+  final bool forceWhiteBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -1112,7 +1114,7 @@ class BadgeCard extends StatelessWidget {
           color: _badgeBackgroundColor(),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: badge.frameColor.withOpacity(0.32),
+            color: (forceWhiteBackground ? const Color(0xFFC7CFD8) : _stateBorderColor(badge.state)).withOpacity(0.32),
             width: 1.2,
           ),
         ),
@@ -1222,6 +1224,21 @@ class BadgeCard extends StatelessWidget {
     }
   }
 
+  Color _stateBorderColor(BadgeState? state) {
+    switch (state) {
+      case BadgeState.approved:
+        return const Color(0xFF16C524);
+      case BadgeState.warning:
+        return const Color(0xFFFF3B30);
+      case BadgeState.review:
+        return const Color(0xFFF7B500);
+      case BadgeState.inProgress:
+        return const Color(0xFF1A90F0);
+      case null:
+        return const Color(0xFFC7CFD8);
+    }
+  }
+
   Color _stateColor(BadgeState? state) {
     switch (state) {
       case BadgeState.approved:
@@ -1238,6 +1255,7 @@ class BadgeCard extends StatelessWidget {
   }
 
   Color _badgeBackgroundColor() {
+    if (forceWhiteBackground) return Colors.white;
     switch (badge.state) {
       case BadgeState.approved:
         return const Color(0xFFF0F9F4);
