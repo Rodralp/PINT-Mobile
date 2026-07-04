@@ -9,7 +9,7 @@ import '../widgets/app_top_bar.dart';
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
 
-enum _RequestStatus { approved, pending, inProgress, rejected }
+enum RequestStatus { approved, pending, inProgress, rejected }
 
 class _RequestData {
   const _RequestData({
@@ -25,62 +25,62 @@ class _RequestData {
   final String title;
   final String level;
   final String date;
-  final _RequestStatus status;
+  final RequestStatus status;
   final int? badgeDbId;
 }
 
-extension on _RequestStatus {
+extension RequestStatusExtension on RequestStatus {
   String get label {
     switch (this) {
-      case _RequestStatus.approved:
+      case RequestStatus.approved:
         return 'Aprovado';
-      case _RequestStatus.pending:
+      case RequestStatus.pending:
         return 'Pendente';
-      case _RequestStatus.inProgress:
+      case RequestStatus.inProgress:
         return 'Em Progresso';
-      case _RequestStatus.rejected:
+      case RequestStatus.rejected:
         return 'Rejeitado';
     }
   }
 
   Color get backgroundColor {
     switch (this) {
-      case _RequestStatus.approved:
+      case RequestStatus.approved:
         return const Color(0xFFC9F0DE);
-      case _RequestStatus.pending:
+      case RequestStatus.pending:
         return const Color(0xFFF7E8BF);
-      case _RequestStatus.inProgress:
+      case RequestStatus.inProgress:
         return const Color(0xFFD0E8F7);
-      case _RequestStatus.rejected:
+      case RequestStatus.rejected:
         return const Color(0xFFF5D8D8);
     }
   }
 
   Color get textColor {
     switch (this) {
-      case _RequestStatus.approved:
+      case RequestStatus.approved:
         return const Color(0xFF05603A);
-      case _RequestStatus.pending:
+      case RequestStatus.pending:
         return const Color(0xFF9A5C09);
-      case _RequestStatus.inProgress:
+      case RequestStatus.inProgress:
         return const Color(0xFF0B5FA3);
-      case _RequestStatus.rejected:
+      case RequestStatus.rejected:
         return const Color(0xFFA32424);
     }
   }
 }
 
 class BadgeRequestScreen extends StatefulWidget {
-  const BadgeRequestScreen({super.key});
+  const BadgeRequestScreen({super.key, this.initialFilters});
+
+  final Set<RequestStatus>? initialFilters;
 
   @override
   State<BadgeRequestScreen> createState() => _BadgeRequestScreenState();
 }
 
 class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
-  final Set<_RequestStatus> _activeStatuses = Set<_RequestStatus>.from(
-    _RequestStatus.values.where((s) => s != _RequestStatus.inProgress),
-  );
+  late final Set<RequestStatus> _activeStatuses;
 
   final List<_RequestData> _allRequests = [];
   late Future<void> _loadFuture;
@@ -89,6 +89,10 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
   @override
   void initState() {
     super.initState();
+    _activeStatuses = widget.initialFilters ??
+        Set<RequestStatus>.from(
+          RequestStatus.values.where((s) => s != RequestStatus.inProgress),
+        );
     _loadFuture = _loadRequests();
   }
 
@@ -147,17 +151,17 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
     await _loadFuture;
   }
 
-  _RequestStatus _requestStatusFromApi(String status) {
+  RequestStatus _requestStatusFromApi(String status) {
     final normalized = status.trim().toLowerCase().replaceAll(' ', '_');
     switch (normalized) {
       case 'aprovado':
       case 'approved':
       case 'obtido':
-        return _RequestStatus.approved;
+        return RequestStatus.approved;
       case 'rejeitado':
       case 'rejected':
       case 'evidencias_insuficientes':
-        return _RequestStatus.rejected;
+        return RequestStatus.rejected;
       case 'pendente-tm':
       case 'pendente-sll':
       case 'pendente':
@@ -171,9 +175,9 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
       case 'em_analise':
       case 'em_analise_talento':
       case 'candidatura_em_progresso':
-        return _RequestStatus.pending;
+        return RequestStatus.pending;
       default:
-        return _RequestStatus.pending;
+        return RequestStatus.pending;
     }
   }
 
@@ -186,16 +190,16 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
   void _showRequestDetails(_RequestData request) {
     BadgeState? badgeState;
     switch (request.status) {
-      case _RequestStatus.approved:
+      case RequestStatus.approved:
         badgeState = BadgeState.approved;
         break;
-      case _RequestStatus.pending:
+      case RequestStatus.pending:
         badgeState = BadgeState.review;
         break;
-      case _RequestStatus.rejected:
+      case RequestStatus.rejected:
         badgeState = BadgeState.warning;
         break;
-      case _RequestStatus.inProgress:
+      case RequestStatus.inProgress:
         badgeState = BadgeState.inProgress;
         break;
     }
@@ -214,7 +218,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
             frameColor: const Color(0xFFBFC4CD),
             iconBackground: const Color(0xFFF0F0F0),
             shape: BoxShape.rectangle,
-            isOwned: request.status == _RequestStatus.approved,
+            isOwned: request.status == RequestStatus.approved,
             isSpecial: false,
             levelKey: null,
             stateId: null,
@@ -326,8 +330,8 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                         Wrap(
                           spacing: 10,
                           runSpacing: 10,
-                          children: _RequestStatus.values
-                              .where((s) => s != _RequestStatus.inProgress)
+                          children: RequestStatus.values
+                              .where((s) => s != RequestStatus.inProgress)
                               .map(
                                 (status) => _FilterChipPill(
                                   label: status.label,

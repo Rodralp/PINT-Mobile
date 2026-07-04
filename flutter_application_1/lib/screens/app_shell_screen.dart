@@ -15,9 +15,11 @@ class AppShellScreen extends StatefulWidget {
   const AppShellScreen({
     super.key,
     this.initialIndex = 0,
+    this.initialFilters,
   });
 
   final int initialIndex;
+  final Set<RequestStatus>? initialFilters;
 
   @override
   State<AppShellScreen> createState() => _AppShellScreenState();
@@ -33,7 +35,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
     const DashboardScreen(),
     const BadgesScreen(),
     const LearningPathScreen(),
-    const BadgeRequestScreen(),
+    BadgeRequestScreen(initialFilters: widget.initialFilters),
     const MoreOptionsScreen(),
   ];
 

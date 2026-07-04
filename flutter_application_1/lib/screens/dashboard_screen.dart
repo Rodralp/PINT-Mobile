@@ -6,8 +6,10 @@ import '../services/reminder_repository.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
-import 'progress_full_screen.dart';
 import 'suggestions_full_screen.dart';
+import 'app_shell_screen.dart';
+import 'badge_request_screen.dart';
+import 'badges_screen.dart';
 import 'reminders_screen.dart';
 import 'messages_screen.dart';
 import '../widgets/badge_artwork.dart';
@@ -54,10 +56,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardMetrics() async {
     try {
       final accountId = await AuthSession.getAccountId();
+      debugPrint('[Dashboard] _loadDashboardMetrics accountId: $accountId');
 
       if (!mounted) return;
 
       if (accountId == null || accountId <= 0) {
+        debugPrint('[Dashboard] accountId null/invalid, using defaults');
         setState(() {
           _dashboardMetrics = _defaultDashboardMetrics;
           _isMetricsLoading = false;
@@ -69,6 +73,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         accountId: accountId,
       );
 
+      debugPrint('[Dashboard] dashboard stats: ${dashboard.stats.length}, inProgress: ${dashboard.inProgressItems.length}, suggestions: ${dashboard.suggestionItems.length}');
+
       if (!mounted) return;
 
       setState(() {
@@ -79,6 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dashboardSuggestions = dashboard.suggestionItems;
         _isMetricsLoading = false;
       });
+      debugPrint('[Dashboard] setState done. metrics: ${_dashboardMetrics.length}, progress: ${_dashboardProgressItems.length}, suggestions: ${_dashboardSuggestions.length}');
     } catch (e, stack) {
       debugPrint('[Dashboard] _loadDashboardMetrics error: $e');
       debugPrint('[Dashboard] stack: $stack');
@@ -447,11 +454,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildSection(
                   title: "Em Progresso",
                   onViewAll: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ProgressFullScreen(
-                          items: _dashboardProgressItems,
+                        builder: (context) => AppShellScreen(
+                          initialIndex: 3,
+                          initialFilters: {
+                            RequestStatus.pending,
+                            RequestStatus.rejected,
+                          },
                         ),
                       ),
                     );
@@ -508,6 +519,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   iconColor: _progressAccentFromBackend(item.accent),
                                   badgeImage: item.badgeImage,
                                   levelKey: item.levelKey,
+                                  badgeDbId: item.badgeDbId,
+                                  isSpecial: item.isSpecial,
                                 ),
                               );
                             },
@@ -580,6 +593,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   accent: suggestion.accent,
                                   badgeImage: suggestion.badgeImage,
                                   levelKey: suggestion.levelKey,
+                                  badgeDbId: suggestion.badgeDbId,
                                 ),
                               );
                             },
@@ -766,83 +780,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color iconColor,
     String? badgeImage,
     String? levelKey,
+    int? badgeDbId,
+    bool isSpecial = false,
   }) {
-    Color statusColor;
+    final displayLevel = isSpecial
+        ? 'Especial'
+        : _badgeLevelLabelFromKey(levelKey ?? '');
 
-    switch (status) {
-      case 'evidencias_insuficientes':
-        statusColor = Colors.orange;
-        break;
-      case 'reprovado':
-        statusColor = Colors.red;
-        break;
-      case 'em_validacao':
-        statusColor = Colors.orange;
-        break;
-      case 'aprovado':
-        statusColor = Colors.green;
-        break;
-      case 'em_progresso':
-      default:
-        statusColor = Colors.blue;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[100]!),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 50,
-            height: 50,
-            child: BadgeArtwork(
-              size: 50,
-              frameColor: iconColor,
-              backgroundColor: iconColor.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              borderWidth: 0,
-              iconSize: 28,
-              title: title,
-              levelKey: levelKey ?? subtitle,
-              badgeImage: badgeImage,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF243047),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: badgeDbId != null
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BadgeLiveDetailScreen(
+                    badge: BadgeData(
+                      id: badgeDbId,
+                      title: title,
+                      level: displayLevel,
+                      points: 0,
+                      date: '',
+                      badgeImage: badgeImage,
+                      frameColor: iconColor,
+                      iconBackground: iconColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      isOwned: false,
+                      isSpecial: isSpecial,
+                      levelKey: levelKey,
+                    ),
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                ),
-              ],
+              );
+            }
+          : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[100]!),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: BadgeArtwork(
+                size: 50,
+                frameColor: iconColor,
+                backgroundColor: iconColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                borderWidth: 0,
+                iconSize: 28,
+                title: title,
+                levelKey: levelKey ?? subtitle,
+                badgeImage: badgeImage,
+              ),
             ),
-          ),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF243047),
+                    ),
+                  ),
+                  Text(
+                    displayLevel.isNotEmpty ? displayLevel : subtitle,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
             ),
-            child: Icon(icon, color: statusColor, size: 20),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -853,55 +870,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String accent,
     String? badgeImage,
     String? levelKey,
+    int? badgeDbId,
   }) {
     final accentColor = _accentColorForSuggestion(accent);
     final subtitle = _badgeLevelLabelFromKey(subtitleKey);
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[100]!),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 50,
-            height: 50,
-            child: BadgeArtwork(
-              size: 50,
-              frameColor: accentColor,
-              backgroundColor: accentColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              borderWidth: 0,
-              iconSize: 28,
-              title: title,
-              levelKey: levelKey ?? subtitleKey,
-              badgeImage: badgeImage,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF243047),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: badgeDbId != null
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BadgeLiveDetailScreen(
+                    badge: BadgeData(
+                      id: badgeDbId,
+                      title: title,
+                      level: subtitle,
+                      points: 0,
+                      date: '',
+                      badgeImage: badgeImage,
+                      frameColor: accentColor,
+                      iconBackground: accentColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      isOwned: false,
+                      isSpecial: false,
+                      levelKey: levelKey,
+                    ),
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                ),
-              ],
+              );
+            }
+          : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[100]!),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: BadgeArtwork(
+                size: 50,
+                frameColor: accentColor,
+                backgroundColor: accentColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                borderWidth: 0,
+                iconSize: 28,
+                title: title,
+                levelKey: levelKey ?? subtitleKey,
+                badgeImage: badgeImage,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF243047),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Color(0xFFB7C0CE),
+              size: 22,
+            ),
+          ],
+        ),
       ),
     );
   }

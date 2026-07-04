@@ -381,6 +381,7 @@ class BackendProgressItem {
     required this.subtitle,
     required this.accent,
     required this.iconKey,
+    this.badgeDbId,
     this.badgeImage,
     this.levelKey,
     this.typeId,
@@ -393,6 +394,7 @@ class BackendProgressItem {
       subtitle: _readString(json, ['subtitle', 'subtitleKey', 'levelKey']) ?? '',
       accent: _readString(json, ['accent', 'tone']) ?? 'warning',
       iconKey: _readString(json, ['iconKey', 'icon_key']) ?? 'clock',
+      badgeDbId: _readInt(json, ['badgeDbId', 'badgeId', 'nbadge']),
       badgeImage: _readString(json, ['badgeImage', 'badge_image', 'imagem']),
       levelKey: _readString(json, ['levelKey', 'level_key']),
       typeId: _readString(json, ['typeId', 'type_id']),
@@ -404,6 +406,7 @@ class BackendProgressItem {
   final String subtitle;
   final String accent;
   final String iconKey;
+  final int? badgeDbId;
   final String? badgeImage;
   final String? levelKey;
   final String? typeId;
@@ -664,10 +667,12 @@ class ConsultorApi {
     final cacheKey = _cacheKey(_dashboardCacheKey, accountId);
     try {
       final path = accountId == null
-          ? '/consultor/profile'
-          : '/consultor/profile?accountId=$accountId';
+          ? '/dashboard/consultor'
+          : '/dashboard/consultor?accountId=$accountId';
       final uri = await _uri(path);
+      debugPrint('[ConsultorApi] fetchConsultorDashboard URL: $uri');
       final response = await _getJson(uri);
+      debugPrint('[ConsultorApi] fetchConsultorDashboard status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         _throwApiError(response);
@@ -678,7 +683,7 @@ class ConsultorApi {
         final data = decoded['data'];
         final resolved = data is Map<String, dynamic> ? data : decoded;
 
-        final stats = (resolved['stats'] as List<dynamic>? ?? const [])
+        var stats = (resolved['stats'] as List<dynamic>? ?? const [])
             .whereType<Map<String, dynamic>>()
             .map(BackendDashboardStat.fromJson)
             .toList(growable: false);
@@ -688,19 +693,97 @@ class ConsultorApi {
                 .map((value) => int.tryParse(value.toString()) ?? 0)
                 .toList(growable: false);
 
-        final inProgressItems =
-            (resolved['skillsItems'] as List<dynamic>? ?? const [])
+        var inProgressItems =
+            (resolved['inProgressItems'] as List<dynamic>? ?? const [])
                 .whereType<Map<String, dynamic>>()
                 .map(BackendProgressItem.fromJson)
                 .where((item) => item.title.isNotEmpty)
                 .toList(growable: false);
 
-        final suggestionItems =
-            (resolved['certificationsItems'] as List<dynamic>? ?? const [])
+        var suggestionItems =
+            (resolved['suggestionItems'] as List<dynamic>? ?? const [])
                 .whereType<Map<String, dynamic>>()
                 .map(BackendSuggestionItem.fromJson)
                 .where((item) => item.title.isNotEmpty)
                 .toList(growable: false);
+
+        final statsAllZero = stats.isEmpty ||
+            stats.every((s) => s.value == '0' || s.value == '#0');
+
+        final needsProfileFallback = (statsAllZero || inProgressItems.isEmpty || suggestionItems.isEmpty) && accountId != null && accountId > 0;
+
+        if (needsProfileFallback) {
+          debugPrint('[ConsultorApi] dashboard incomplete, fetching from profile (statsAllZero=$statsAllZero, inProgress=${inProgressItems.isEmpty}, suggestions=${suggestionItems.isEmpty})');
+          try {
+            final profilePath = '/consultor/profile?accountId=$accountId';
+            final profileUri = await _uri(profilePath);
+            final profileResponse = await _getJson(profileUri);
+            if (profileResponse.statusCode == 200) {
+              final profileDecoded = jsonDecode(profileResponse.body);
+              if (profileDecoded is Map<String, dynamic>) {
+                final profileData = profileDecoded['data'];
+                final profileResolved = profileData is Map<String, dynamic>
+                    ? profileData
+                    : profileDecoded;
+
+                if (statsAllZero) {
+                  final profileStats =
+                      (profileResolved['stats'] as List<dynamic>? ?? const [])
+                          .whereType<Map<String, dynamic>>()
+                          .map(BackendDashboardStat.fromJson)
+                          .toList(growable: false);
+                  if (profileStats.isNotEmpty) {
+                    debugPrint('[ConsultorApi] using profile stats: ${profileStats.map((s) => '${s.titleKey}=${s.value}').join(', ')}');
+                    stats = profileStats;
+                  }
+                }
+
+                if (inProgressItems.isEmpty) {
+                  final profileInProgress =
+                      (profileResolved['skillsItems'] as List<dynamic>? ?? const [])
+                          .whereType<Map<String, dynamic>>()
+                          .map(BackendProgressItem.fromJson)
+                          .where((item) => item.title.isNotEmpty)
+                          .toList(growable: false);
+                  if (profileInProgress.isNotEmpty) {
+                    debugPrint('[ConsultorApi] using profile inProgressItems: ${profileInProgress.length}');
+                    inProgressItems = profileInProgress;
+                  }
+                }
+
+                if (suggestionItems.isEmpty) {
+                  try {
+                    final sugPath = '/consultor/sugestoes?accountId=$accountId&limit=3';
+                    final sugUri = await _uri(sugPath);
+                    final sugResponse = await _getJson(sugUri);
+                    if (sugResponse.statusCode == 200) {
+                      final sugDecoded = jsonDecode(sugResponse.body);
+                      if (sugDecoded is Map<String, dynamic>) {
+                        final sugValue = sugDecoded['value'];
+                        final sugList = sugValue is List ? sugValue : (sugDecoded['data'] is List ? sugDecoded['data'] : const []);
+                        final profileSuggestions = sugList
+                            .whereType<Map<String, dynamic>>()
+                            .map(BackendSuggestionItem.fromJson)
+                            .where((item) => item.title.isNotEmpty)
+                            .toList(growable: false);
+                        if (profileSuggestions.isNotEmpty) {
+                          debugPrint('[ConsultorApi] using /consultor/sugestoes: ${profileSuggestions.length}');
+                          suggestionItems = profileSuggestions;
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    debugPrint('[ConsultorApi] sugestoes fallback error: $e');
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            debugPrint('[ConsultorApi] profile fallback error: $e');
+          }
+        }
+
+        debugPrint('[ConsultorApi] stats: ${stats.length}, inProgress: ${inProgressItems.length}, suggestions: ${suggestionItems.length}');
 
         final dashboard = BackendConsultorDashboard(
           timelineValues: timelineValues,
@@ -724,6 +807,7 @@ class ConsultorApi {
       debugPrint('[ConsultorApi] stack: $stack');
       final cached = await _readCacheMap(cacheKey);
       if (cached != null) {
+        debugPrint('[ConsultorApi] returning cached dashboard data');
         return BackendConsultorDashboard.fromJson(cached);
       }
       rethrow;
