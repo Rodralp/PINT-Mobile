@@ -8,6 +8,7 @@ import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import '../services/auth_session.dart';
 import '../services/badges_api.dart';
+import '../services/badge_cache_repository.dart';
 import '../services/consultor_api.dart';
 import 'messages_screen.dart';
 import '../widgets/badge_artwork.dart';
@@ -1327,10 +1328,13 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     int badgeId = _badge.id;
     Map<String, dynamic>? detail;
 
+    final accountId = await AuthSession.getAccountId() ?? 0;
+
     if (_currentRequestId != null) {
       try {
-        detail = await ConsultorApi.instance.fetchPedidoDetail(
+        detail = await BadgeCacheRepository.instance.loadPedidoDetail(
           pedidoId: _currentRequestId!,
+          accountId: accountId,
         );
         if (detail != null) {
           _reviewerNote = detail['reviewerNote']?.toString() ??
@@ -1352,9 +1356,17 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
 
     if (badgeId > 0) {
       try {
-        badgeReqs = await ConsultorApi.instance.fetchBadgeRequirements(
+        final cachedReqs = await BadgeCacheRepository.instance.loadBadgeRequirements(
           badgeId: badgeId,
+          accountId: accountId,
         );
+        if (cachedReqs != null && cachedReqs.isNotEmpty) {
+          badgeReqs = cachedReqs.map((r) => {'title': r.text}).toList();
+        } else {
+          badgeReqs = await ConsultorApi.instance.fetchBadgeRequirements(
+            badgeId: badgeId,
+          );
+        }
 
         for (final badgeReq in badgeReqs) {
           if (badgeReq['attachments'] is List &&

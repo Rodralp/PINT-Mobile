@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
 import '../services/auth_session.dart';
+import '../services/learning_path_repository.dart';
 import '../widgets/app_top_bar.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
@@ -39,7 +40,9 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     final accountId = await AuthSession.getAccountId();
     if (accountId == null) return [];
     
-    final paths = await ConsultorApi.instance.fetchLearningPaths(accountId: accountId);
+    final paths = await LearningPathRepository.instance.loadLearningPaths(
+      accountId: accountId,
+    );
     if (paths.isNotEmpty) {
       setState(() {
         _learningPaths = paths;

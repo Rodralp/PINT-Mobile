@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
+import '../services/dashboard_repository.dart';
 import '../services/reminder_api.dart';
 import '../services/reminder_repository.dart';
+import '../services/request_repository.dart';
 import 'settings_menu_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
-import 'progress_full_screen.dart';
 import 'suggestions_full_screen.dart';
 import 'reminders_screen.dart';
 import 'messages_screen.dart';
+import 'badge_request_screen.dart';
+import 'app_shell_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
 
@@ -49,6 +52,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _loadDashboardReminders();
     _loadDashboardMetrics();
+    _loadInProgressRequests();
+  }
+
+  Future<void> _loadInProgressRequests() async {
+    try {
+      final accountId = await AuthSession.getAccountId();
+      if (accountId == null || accountId <= 0) return;
+
+      final requests = await RequestRepository.instance.loadRequests(
+        accountId: accountId,
+      );
+
+      final progressItems = requests
+          .where((r) {
+            final normalized = r.status.trim().toLowerCase().replaceAll(' ', '_');
+            return normalized == 'pendente' ||
+                normalized == 'pending' ||
+                normalized == 'rejeitado' ||
+                normalized == 'rejected' ||
+                normalized == 'evidencias_insuficientes' ||
+                normalized == 'pendente-tm' ||
+                normalized == 'pendente-sll' ||
+                normalized == 'validacao' ||
+                normalized == 'em_validacao' ||
+                normalized == 'em_validacao_talento' ||
+                normalized == 'em_validacao_tm' ||
+                normalized == 'em_validacao_sl' ||
+                normalized == 'em_validacao_sll' ||
+                normalized == 'em_analise' ||
+                normalized == 'em_analise_talento';
+          })
+          .map((r) {
+            final normalized = r.status.trim().toLowerCase().replaceAll(' ', '_');
+            final isRejected = normalized == 'rejeitado' ||
+                normalized == 'rejected' ||
+                normalized == 'evidencias_insuficientes';
+            return BackendProgressItem(
+              title: r.badge,
+              subtitle: r.level,
+              accent: isRejected ? 'danger' : 'warning',
+              iconKey: isRejected ? 'xmark' : 'clock',
+              badgeImage: null,
+              levelKey: null,
+              typeId: null,
+              isSpecial: false,
+            );
+          })
+          .toList(growable: false);
+
+      if (!mounted) return;
+
+      setState(() {
+        _dashboardProgressItems = progressItems;
+      });
+    } catch (e) {
+      debugPrint('[Dashboard] _loadInProgressRequests error: $e');
+    }
   }
 
   Future<void> _loadDashboardMetrics() async {
@@ -65,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return;
       }
 
-      final dashboard = await ConsultorApi.instance.fetchConsultorDashboard(
+      final dashboard = await DashboardRepository.instance.loadDashboard(
         accountId: accountId,
       );
 
@@ -75,7 +135,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dashboardMetrics = dashboard.stats
             .map(_metricFromBackend)
             .toList(growable: false);
-        _dashboardProgressItems = dashboard.inProgressItems;
         _dashboardSuggestions = dashboard.suggestionItems;
         _isMetricsLoading = false;
       });
@@ -447,11 +506,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildSection(
                   title: "Em Progresso",
                   onViewAll: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ProgressFullScreen(
-                          items: _dashboardProgressItems,
+                        builder: (context) => const AppShellScreen(
+                          initialIndex: 3,
+                          badgeRequestInitialStatuses: {
+                            BadgeRequestStatus.pending,
+                            BadgeRequestStatus.rejected,
+                          },
                         ),
                       ),
                     );

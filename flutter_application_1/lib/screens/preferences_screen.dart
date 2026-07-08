@@ -4,6 +4,7 @@ import '../services/local_storage.dart';
 import '../services/achievement_center.dart';
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
+import '../services/preference_repository.dart';
 import '../theme/softinsa_theme.dart';
 
 class PreferencesScreen extends StatefulWidget {
@@ -42,9 +43,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   Future<void> _loadAreas() async {
     try {
       final accountId = await AuthSession.getAccountId();
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (accountId == null || accountId <= 0) {
         setState(() {
@@ -54,33 +53,18 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         return;
       }
 
-      final backendAreas = await AuthApi.instance.fetchPreferenceAreas(
+      final backendAreas = await PreferenceRepository.instance.loadPreferenceAreas(
         accountId: accountId,
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _areas = backendAreas;
         _statusMessage = '';
       });
-    } on AuthApiException catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _statusMessage = error.message.isEmpty
-            ? 'Não foi possível carregar as áreas.'
-            : error.message;
-        _areas = const [];
-      });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _statusMessage = 'Não foi possível carregar as áreas.';

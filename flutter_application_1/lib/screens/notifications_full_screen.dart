@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_session.dart';
+import '../services/notification_repository.dart';
 import '../services/notifications_api.dart';
 
 class _FilterOption {
@@ -46,18 +48,25 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     });
 
     try {
-      final items = await NotificationsApi.instance.fetchNotifications();
-      if (!mounted) {
+      final accountId = await AuthSession.getAccountId();
+      if (accountId == null || accountId <= 0) {
+        if (!mounted) return;
+        setState(() {
+          _notifications = const [];
+        });
         return;
       }
+
+      final items = await NotificationRepository.instance.loadNotifications(
+        accountId: accountId,
+      );
+      if (!mounted) return;
 
       setState(() {
         _notifications = items;
       });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _notifications = const [];
@@ -196,19 +205,17 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
   }
 
   Future<void> _markAsRead(BackendNotificationItem item) async {
-    if (item.isRead) {
-      return;
-    }
+    if (item.isRead) return;
 
-    try {
-      await NotificationsApi.instance.markAsRead(item.id);
-    } catch (_) {
-      // Keep UI responsive even if the update fails.
-    }
+    final accountId = await AuthSession.getAccountId();
+    if (accountId == null || accountId <= 0) return;
 
-    if (!mounted) {
-      return;
-    }
+    await NotificationRepository.instance.markAsRead(
+      accountId: accountId,
+      notificationId: item.id,
+    );
+
+    if (!mounted) return;
 
     setState(() {
       _notifications = _notifications

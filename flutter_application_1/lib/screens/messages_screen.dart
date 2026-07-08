@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/auth_session.dart';
+import '../services/message_repository.dart';
 import '../services/messages_api.dart';
 
 class _FilterOption {
@@ -47,18 +49,25 @@ class _MessagesScreenState extends State<MessagesScreen> {
     });
 
     try {
-      final items = await MessagesApi.instance.fetchMessages();
-      if (!mounted) {
+      final accountId = await AuthSession.getAccountId();
+      if (accountId == null || accountId <= 0) {
+        if (!mounted) return;
+        setState(() {
+          _messages = const [];
+        });
         return;
       }
+
+      final items = await MessageRepository.instance.loadMessages(
+        accountId: accountId,
+      );
+      if (!mounted) return;
 
       setState(() {
         _messages = items;
       });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _messages = const [];

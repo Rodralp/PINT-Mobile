@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/consultor_api.dart';
+import '../services/ranking_repository.dart';
 
 class _RankingConsultant {
   const _RankingConsultant({
@@ -118,7 +119,7 @@ class _RankingScreenState extends State<RankingScreen> {
     });
 
     try {
-      final data = await ConsultorApi.instance.fetchRankingConsultores();
+      final data = await RankingRepository.instance.loadRanking();
       setState(() {
         _consultants = data.map(_RankingConsultant.fromBackend).toList();
       });

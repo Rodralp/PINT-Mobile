@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/consultor_api.dart';
 import '../services/auth_session.dart';
+import '../services/badge_cache_repository.dart';
 import '../widgets/badge_artwork.dart';
 import 'app_shell_screen.dart';
 
@@ -100,8 +101,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     });
 
     try {
-      final detail = await ConsultorApi.instance.fetchPedidoDetail(
+      final accountId = await AuthSession.getAccountId() ?? 0;
+
+      final detail = await BadgeCacheRepository.instance.loadPedidoDetail(
         pedidoId: widget.order.id,
+        accountId: accountId,
       );
 
       if (!mounted) return;
@@ -124,9 +128,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (reqData is List) {
         reqList = reqData.whereType<Map<String, dynamic>>().toList();
       } else {
-        reqList = await ConsultorApi.instance.fetchBadgeRequirements(
+        final cachedReqs = await BadgeCacheRepository.instance.loadBadgeRequirements(
           badgeId: widget.order.badgeDbId!,
+          accountId: accountId,
         );
+        if (cachedReqs != null && cachedReqs.isNotEmpty) {
+          reqList = cachedReqs.map((r) => {'title': r.text}).toList();
+        } else {
+          reqList = await ConsultorApi.instance.fetchBadgeRequirements(
+            badgeId: widget.order.badgeDbId!,
+          );
+        }
       }
 
       if (!mounted) return;

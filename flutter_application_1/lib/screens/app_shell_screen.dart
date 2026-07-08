@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/achievement_center.dart';
+import '../services/preload_service.dart';
 import '../theme/softinsa_theme.dart';
 import '../widgets/achievement_unlock_dialog.dart';
 import 'badge_request_screen.dart';
@@ -15,9 +16,11 @@ class AppShellScreen extends StatefulWidget {
   const AppShellScreen({
     super.key,
     this.initialIndex = 0,
+    this.badgeRequestInitialStatuses,
   });
 
   final int initialIndex;
+  final Set<BadgeRequestStatus>? badgeRequestInitialStatuses;
 
   @override
   State<AppShellScreen> createState() => _AppShellScreenState();
@@ -33,7 +36,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
     const DashboardScreen(),
     const BadgesScreen(),
     const LearningPathScreen(),
-    const BadgeRequestScreen(),
+    BadgeRequestScreen(initialStatuses: widget.badgeRequestInitialStatuses),
     const MoreOptionsScreen(),
   ];
 
@@ -53,6 +56,8 @@ class _AppShellScreenState extends State<AppShellScreen> {
         _showNextAchievement();
       }
     });
+
+    PreloadService.instance.preloadAll();
   }
 
   @override
