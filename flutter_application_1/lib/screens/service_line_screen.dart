@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/consultor_api.dart';
 import '../widgets/badge_artwork.dart';
 import 'badges_screen.dart';
@@ -182,16 +183,17 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
   }
 
   _StatusLabel _statusLabel(String status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
-      case 'obtido': return const _StatusLabel('Aprovado', Color(0xFF39C65A), Icons.check_circle);
-      case 'candidatura_em_progresso': return const _StatusLabel('Candidatura em Progresso', Color(0xFF1A90F0), Icons.timer_outlined);
+      case 'obtido': return _StatusLabel(l10n.approved, Color(0xFF39C65A), Icons.check_circle);
+      case 'candidatura_em_progresso': return _StatusLabel(l10n.applicationInProgress, Color(0xFF1A90F0), Icons.timer_outlined);
       case 'pendente-tm':
       case 'pendente-sll':
-      case 'em_validacao': return const _StatusLabel('Pendente', Color(0xFFF59E0B), Icons.search);
+      case 'em_validacao': return _StatusLabel('Pendente', Color(0xFFF59E0B), Icons.search);
       case 'rejeitado':
-      case 'evidencias_insuficientes': return const _StatusLabel('Rejeitado', Color(0xFFEF4444), Icons.cancel_outlined);
-      case 'sem_badge': return const _StatusLabel('Sem badge', Color(0xFF64748B), Icons.warning_amber_outlined);
-      default: return const _StatusLabel('Visualizar', Color(0xFF64748B), null);
+      case 'evidencias_insuficientes': return _StatusLabel(l10n.rejected, Color(0xFFEF4444), Icons.cancel_outlined);
+      case 'sem_badge': return _StatusLabel('Sem badge', Color(0xFF64748B), Icons.warning_amber_outlined);
+      default: return _StatusLabel('Visualizar', Color(0xFF64748B), null);
     }
   }
 
@@ -202,7 +204,7 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
     final obtained = levels.where((level) => level.status == 'obtido').length;
     final total = levels.length;
     final percent = total > 0 ? obtained / total : 0.0;
-    final progressLabel = '$obtained de $total obtidas';
+    final progressLabel = AppLocalizations.of(context)!.badgesObtainedCount(obtained, total);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

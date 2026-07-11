@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/achievement_center.dart';
 import '../services/preload_service.dart';
 import '../theme/softinsa_theme.dart';
@@ -121,26 +122,26 @@ class _AppShellScreenState extends State<AppShellScreen> {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           backgroundColor: Colors.white,
           height: 65,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home_rounded),
-              label: 'Dashboard',
+              icon: const Icon(Icons.home_rounded),
+              label: AppLocalizations.of(context)!.dashboardNav,
             ),
             NavigationDestination(
-              icon: Icon(Icons.workspace_premium_outlined),
-              label: 'Badges',
+              icon: const Icon(Icons.workspace_premium_outlined),
+              label: AppLocalizations.of(context)!.badgesNav,
             ),
             NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              label: 'Jornada',
+              icon: const Icon(Icons.menu_book_outlined),
+              label: AppLocalizations.of(context)!.learningPathNav,
             ),
             NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              label: 'Pedidos',
+              icon: const Icon(Icons.history_outlined),
+              label: AppLocalizations.of(context)!.requestsNav,
             ),
             NavigationDestination(
-              icon: Icon(Icons.more_horiz),
-              label: 'Mais',
+              icon: const Icon(Icons.more_horiz),
+              label: AppLocalizations.of(context)!.moreNav,
             ),
           ],
         ),

@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/local_storage.dart';
 
 import '../services/achievement_center.dart';
@@ -50,7 +51,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
       if (accountId == null || accountId <= 0) {
         setState(() {
-          _statusMessage = 'Não foi possível identificar a conta ativa.';
+          _statusMessage = AppLocalizations.of(context)!.accountIdentificationError;
           _areas = const [];
         });
         return;
@@ -70,7 +71,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       if (!mounted) return;
 
       setState(() {
-        _statusMessage = 'Não foi possível carregar as áreas.';
+        _statusMessage = AppLocalizations.of(context)!.couldNotLoadAreas;
         _areas = const [];
       });
     } finally {
@@ -148,7 +149,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
     if (selectedAreaIds.isEmpty) {
       setState(() {
-        _statusMessage = 'Selecione pelo menos uma área para continuar.';
+        _statusMessage = AppLocalizations.of(context)!.selectAtLeastOne;
       });
       return;
     }
@@ -160,7 +161,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
     if (accountId == null || accountId <= 0) {
       setState(() {
-        _statusMessage = 'Não foi possível identificar a conta ativa.';
+        _statusMessage = AppLocalizations.of(context)!.accountIdentificationError;
       });
       return;
     }
@@ -183,11 +184,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       await AuthSession.setHasPreferences(true);
 
       AchievementCenter.instance.unlock(
-        const AchievementUnlock(
+        AchievementUnlock(
           id: 'welcome-achievement',
-          title: 'Bem-vindo a Bordo',
+          title: AppLocalizations.of(context)!.welcomeAchievementTitle,
           description:
-              'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.',
+              AppLocalizations.of(context)!.welcomeAchievementDescription,
           points: 50,
           badgesCount: 1,
           imageAsset: 'assets/images/welcome.png',
@@ -206,7 +207,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
       setState(() {
         _statusMessage = error.message.isEmpty
-            ? 'Não foi possível guardar as preferências.'
+            ? AppLocalizations.of(context)!.couldNotSavePreferences
             : error.message;
       });
     } catch (_) {
@@ -215,7 +216,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       }
 
       setState(() {
-        _statusMessage = 'Não foi possível guardar as preferências.';
+        _statusMessage = AppLocalizations.of(context)!.couldNotSavePreferences;
       });
     } finally {
       if (mounted) {
@@ -259,9 +260,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                         ),
                         const SizedBox(width: 8),
                       ],
-                      const Text(
-                        'Preferências',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.preferencesTitle,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF243047),
@@ -270,10 +271,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Bem-vindo à personalização da sua conta',
+                  Text(
+                    AppLocalizations.of(context)!.welcomePersonalization,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF111827),
@@ -281,10 +282,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Escolha uma ou mais áreas de preferência para orientar as sugestões de badges no dashboard.',
+                  Text(
+                    AppLocalizations.of(context)!.chooseAreas,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
                       height: 1.4,
@@ -313,7 +314,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           border: Border.all(color: SoftinsaColors.border),
                         ),
                         child: Text(
-                          '$_selectedCount selecionadas',
+                          AppLocalizations.of(context)!.selectedCount(_selectedCount),
                           style: const TextStyle(
                             color: Color(0xFF243047),
                             fontWeight: FontWeight.w700,
@@ -323,9 +324,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       const Spacer(),
                       TextButton(
                         onPressed: _isSaving ? null : _clearSelection,
-                        child: const Text(
-                          'Limpar seleção',
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context)!.clearSelection,
+                          style: const TextStyle(
                             color: SoftinsaColors.blueDark,
                             fontWeight: FontWeight.w600,
                           ),
@@ -368,8 +369,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       child: Center(
                         child: Text(
                           _searchTerm.trim().isEmpty
-                              ? 'Não foram encontradas áreas.'
-                              : 'Nao foram encontradas areas com esse termo.',
+                              ? AppLocalizations.of(context)!.noAreasFound
+                              : AppLocalizations.of(context)!.noAreasForTerm,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: SoftinsaColors.textMuted,
@@ -416,9 +417,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                                 ),
                               ),
                             )
-                          : const Text(
-                              'Guardar preferências',
-                              style: TextStyle(
+                          : Text(
+                              AppLocalizations.of(context)!.savePreferencesButton,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -454,13 +455,13 @@ class _SearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        decoration: const InputDecoration(
-          hintText: 'Pesquisar áreas de preferência',
+        decoration: InputDecoration(
+          hintText: AppLocalizations.of(context)!.searchPreferenceAreas,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          prefixIcon: Icon(Icons.search, color: Colors.grey),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          prefixIcon: const Icon(Icons.search, color: Colors.grey),
         ),
       ),
     );
@@ -543,7 +544,7 @@ class _PreferenceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '${area.badgeCount} badges disponíveis',
+                    AppLocalizations.of(context)!.badgesAvailable(area.badgeCount),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

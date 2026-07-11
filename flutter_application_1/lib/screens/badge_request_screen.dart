@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
@@ -31,19 +32,6 @@ class _RequestData {
 }
 
 extension RequestStatusExtension on BadgeRequestStatus {
-  String get label {
-    switch (this) {
-      case BadgeRequestStatus.approved:
-        return 'Aprovado';
-      case BadgeRequestStatus.pending:
-        return 'Pendente';
-      case BadgeRequestStatus.inProgress:
-        return 'Em Progresso';
-      case BadgeRequestStatus.rejected:
-        return 'Rejeitado';
-    }
-  }
-
   Color get backgroundColor {
     switch (this) {
       case BadgeRequestStatus.approved:
@@ -100,6 +88,20 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
     _loadFuture = _loadRequests();
   }
 
+  String _statusLabel(BadgeRequestStatus status) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (status) {
+      case BadgeRequestStatus.approved:
+        return l10n.aprovadoStatus;
+      case BadgeRequestStatus.rejected:
+        return l10n.rejeitadoStatus;
+      case BadgeRequestStatus.inProgress:
+        return l10n.emValidacaoStatus;
+      case BadgeRequestStatus.pending:
+        return l10n.candidaturaEmProgressoStatus;
+    }
+  }
+
   Future<void> _loadRequests() async {
     try {
       final accountId = await AuthSession.getAccountId();
@@ -143,7 +145,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
         return;
       }
       setState(() {
-        _loadError = 'Nao foi possivel carregar a base de dados';
+        _loadError = AppLocalizations.of(context)!.databaseLoadError;
       });
     }
   }
@@ -306,11 +308,11 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 14, 20, 14),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
                   child: Text(
-                    'Pedidos de Badges',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.requestsNav,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF243047),
@@ -323,9 +325,9 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Filtrar por:',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.filter,
+                          style: const TextStyle(
                             fontSize: 17,
                             color: Color(0xFF64748B),
                           ),
@@ -338,7 +340,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                               .where((s) => s != BadgeRequestStatus.inProgress)
                               .map(
                                 (status) => _FilterChipPill(
-                                  label: status.label,
+                                  label: _statusLabel(status),
                                   backgroundColor: status.backgroundColor,
                                   textColor: status.textColor,
                                   selected: _activeStatuses.contains(status),
@@ -381,6 +383,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
                       child: _RequestCard(
                         request: entry.value,
                         onView: () => _showRequestDetails(entry.value),
+                        statusLabel: _statusLabel(entry.value.status),
                       ),
                     ),
                   ),
@@ -437,10 +440,15 @@ class _FilterChipPill extends StatelessWidget {
 }
 
 class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.request, required this.onView});
+  const _RequestCard({
+    required this.request,
+    required this.onView,
+    required this.statusLabel,
+  });
 
   final _RequestData request;
   final VoidCallback onView;
+  final String statusLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -489,7 +497,7 @@ class _RequestCard extends StatelessWidget {
                   color: request.status.backgroundColor,
                 ),
                 child: Text(
-                  request.status.label,
+                  statusLabel,
                   style: TextStyle(
                     fontSize: 14,
                     color: request.status.textColor,

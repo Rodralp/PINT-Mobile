@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
 import '../utils/avatar_image.dart';
+import '../l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -44,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final storedName = await AuthSession.getAccountName() ?? '';
       final storedEmail = await AuthSession.getAccountEmail() ?? '';
 
-      final competencies = _buildCompetencies(profile);
+      final competencies = _buildCompetencies(profile, context);
       final requirements = _buildRequirements(profile);
 
       if (!mounted) {
@@ -69,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
       setState(() {
-        _loadError = 'Nao foi possivel carregar a base de dados';
+        _loadError = AppLocalizations.of(context)!.profileLoadError;
       });
     }
   }
@@ -81,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _loadFuture;
   }
 
-  List<_CompetencyData> _buildCompetencies(BackendProfile profile) {
+  List<_CompetencyData> _buildCompetencies(BackendProfile profile, BuildContext context) {
     if (profile.serviceLineStats.isNotEmpty) {
       final maxBadges = math.max(
         1,
@@ -99,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final index = entry.key;
         final stat = entry.value;
         final value = stat.badges / maxBadges;
-        final subtitle = '${stat.badges} badges · ${stat.points} pontos';
+        final subtitle = AppLocalizations.of(context)!.badgesCount(stat.badges, stat.points);
         return _CompetencyData(
           title: stat.serviceLine,
           subtitle: subtitle,
@@ -146,8 +147,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Perfil',
+        title: Text(
+          AppLocalizations.of(context)!.profileTitle,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -230,7 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        _name.isEmpty ? 'Sem nome' : _name,
+                                        _name.isEmpty ? AppLocalizations.of(context)!.noName : _name,
                                         style: const TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w700,
@@ -249,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         Padding(
                                           padding: const EdgeInsets.only(top: 6),
                                           child: Text(
-                                            'Membro desde $_joined',
+                                            AppLocalizations.of(context)!.memberSince(_joined),
                                             style: const TextStyle(
                                               fontSize: 13,
                                               color: Color(0xFF94A3B8),
@@ -282,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Padding(
                                   padding: const EdgeInsets.only(right: 16),
                                   child: _MetricInfoCard(
-                                    title: 'Pontos',
+                                    title: AppLocalizations.of(context)!.pointsLabel,
                                     value: '${_points ?? 0}',
                                     subtitle: '',
                                     icon: Icons.emoji_events_outlined,
@@ -292,7 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Padding(
                                   padding: const EdgeInsets.only(right: 16),
                                   child: _MetricInfoCard(
-                                    title: 'Ranking',
+                                    title: AppLocalizations.of(context)!.rankingLabel,
                                     value: _ranking == null ? '-' : '#${_ranking!}',
                                     subtitle: '',
                                     icon: Icons.leaderboard_outlined,
@@ -300,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 _MetricInfoCard(
-                                  title: 'Badges',
+                                  title: AppLocalizations.of(context)!.badgesLabel,
                                   value: '${_badges ?? 0}',
                                   subtitle: '',
                                   icon: Icons.workspace_premium_outlined,
@@ -443,8 +444,8 @@ class _CompetenciesCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Maiores Competências',
+          Text(
+            AppLocalizations.of(context)!.topCompetencies,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -453,8 +454,8 @@ class _CompetenciesCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            const Text(
-              'Sem dados disponíveis.',
+            Text(
+              AppLocalizations.of(context)!.noDataAvailable,
               style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
             )
           else
@@ -553,8 +554,8 @@ class _RequirementsCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (items.isEmpty)
-            const Text(
-              'Sem dados disponíveis.',
+            Text(
+              AppLocalizations.of(context)!.noDataAvailable,
               style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
             )
           else

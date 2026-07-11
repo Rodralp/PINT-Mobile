@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_api.dart';
 import '../theme/softinsa_theme.dart';
 
@@ -41,8 +42,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password.isEmpty ||
         confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha todos os campos para continuar.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.fillAllFields),
         ),
       );
       return;
@@ -50,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('As palavras-passe não coincidem.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.passwordsDoNotMatch)),
       );
       return;
     }
@@ -90,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       final message = error.message.isEmpty
-          ? 'Não foi possível criar a conta.'
+          ? AppLocalizations.of(context)!.createAccountFailed
           : error.message;
       ScaffoldMessenger.of(
         context,
@@ -101,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível criar a conta.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.createAccountFailed)),
       );
     } finally {
       if (mounted) {
@@ -138,20 +139,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Pedido enviado com sucesso!',
+              Text(
+                AppLocalizations.of(context)!.requestSentSuccess,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: SoftinsaColors.ink,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Um administrador irá verificar os seus dados e ativar a sua conta em breve.',
+              Text(
+                AppLocalizations.of(context)!.requestSentDescription,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: SoftinsaColors.textMuted, height: 1.45),
+                style: const TextStyle(color: SoftinsaColors.textMuted, height: 1.45),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -170,9 +171,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     backgroundColor: SoftinsaColors.blue,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text(
-                    'Voltar para Home',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  child: Text(
+                    AppLocalizations.of(context)!.backToHome,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -207,17 +208,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
-                    child: Row(
-                      children: const [
-                        Icon(
+                      child: Row(
+                      children: [
+                        const Icon(
                           Icons.verified_user_outlined,
                           color: SoftinsaColors.blue,
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Aceitação dos Termos RGPD',
-                            style: TextStyle(
+                            AppLocalizations.of(context)!.rgpdTitle,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                               color: SoftinsaColors.ink,
@@ -234,25 +235,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Para utilizar a plataforma de badges da Softinsa, necessitamos do seu consentimento para a publicação e partilha dos seus badges.',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.rgpdIntro,
+                            style: const TextStyle(
                               color: SoftinsaColors.textMuted,
                               height: 1.5,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'Os seus badges poderão ser visualizados por outros consultores e gestores da empresa, permitindo o reconhecimento das suas competências e progressão profissional.',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.rgpdBadgesInfo,
+                            style: const TextStyle(
                               color: SoftinsaColors.textMuted,
                               height: 1.5,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'Ao aceitar, concorda com o tratamento dos seus dados pessoais de acordo com o Regulamento Geral de Proteção de Dados (RGPD).',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.rgpdConsentInfo,
+                            style: const TextStyle(
                               color: SoftinsaColors.textMuted,
                               height: 1.5,
                             ),
@@ -268,10 +269,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   });
                                 },
                               ),
-                              const Expanded(
+                              Expanded(
                                 child: Text(
-                                  'Li e aceito os termos RGPD.',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  AppLocalizations.of(context)!.rgpdAccept,
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
                               ),
                             ],
@@ -288,7 +289,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: OutlinedButton(
                             onPressed: () =>
                                 Navigator.pop(dialogContext, false),
-                            child: const Text('Cancelar'),
+                            child: Text(AppLocalizations.of(context)!.cancel),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -301,7 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               backgroundColor: SoftinsaColors.blue,
                               foregroundColor: Colors.white,
                             ),
-                            child: const Text('Aceitar'),
+                            child: Text(AppLocalizations.of(context)!.accept),
                           ),
                         ),
                       ],
@@ -318,51 +319,109 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return accepted ?? false;
   }
 
-  static const List<Map<String, String>> _termsSections = [
-    {
-      'title': 'Utilização da plataforma',
-      'body':
-          'A plataforma destina-se exclusivamente a utilizadores autorizados pela Softinsa para gestão de badges e processos internos.',
-    },
-    {
-      'title': 'Responsabilidade da conta',
-      'body':
-          'O utilizador é responsável pela veracidade dos dados fornecidos e pela utilização adequada da sua conta.',
-    },
-    {
-      'title': 'Acesso e segurança',
-      'body':
-          'As credenciais são pessoais e intransmissíveis. O acesso deve ser mantido seguro e utilizado apenas para fins profissionais.',
-    },
-    {
-      'title': 'Condições de utilização',
-      'body':
-          'A Softinsa pode suspender ou limitar o acesso em caso de uso indevido, incumprimento das regras ou necessidade operacional.',
-    },
-  ];
+  List<Map<String, String>> _termsSections(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return [
+      {
+        'title': loc.termsAcceptanceTitle,
+        'body': loc.termsAcceptanceBody,
+      },
+      {
+        'title': loc.termsUsersTitle,
+        'body': loc.termsUsersBody,
+      },
+      {
+        'title': loc.termsAccountTitle,
+        'body': loc.termsAccountBody,
+      },
+      {
+        'title': loc.termsEvidenceTitle,
+        'body': loc.termsEvidenceBody,
+      },
+      {
+        'title': loc.termsValidationTitle,
+        'body': loc.termsValidationBody,
+      },
+      {
+        'title': loc.termsBadgesTitle,
+        'body': loc.termsBadgesBody,
+      },
+      {
+        'title': loc.termsSharingTitle,
+        'body': loc.termsSharingBody,
+      },
+      {
+        'title': loc.termsGamificationTitle,
+        'body': loc.termsGamificationBody,
+      },
+      {
+        'title': loc.termsNotificationsTitle,
+        'body': loc.termsNotificationsBody,
+      },
+      {
+        'title': loc.termsProhibitedTitle,
+        'body': loc.termsProhibitedBody,
+      },
+      {
+        'title': loc.termsSuspensionTitle,
+        'body': loc.termsSuspensionBody,
+      },
+      {
+        'title': loc.termsChangesTitle,
+        'body': loc.termsChangesBody,
+      },
+      {
+        'title': loc.termsLawTitle,
+        'body': loc.termsLawBody,
+      },
+    ];
+  }
 
-  static const List<Map<String, String>> _privacySections = [
-    {
-      'title': 'Dados recolhidos',
-      'body':
-          'A aplicação trata dados de identificação, autenticação e atividade necessários para gerir a conta e os badges.',
-    },
-    {
-      'title': 'Finalidade do tratamento',
-      'body':
-          'Os dados são usados para autenticação, gestão de permissões, validação de pedidos e funcionalidades associadas à plataforma.',
-    },
-    {
-      'title': 'Partilha e acesso',
-      'body':
-          'Os dados apenas são disponibilizados aos perfis internos autorizados e nunca são vendidos a terceiros.',
-    },
-    {
-      'title': 'Direitos do utilizador',
-      'body':
-          'O utilizador pode pedir acesso, correção ou eliminação dos seus dados nos termos da legislação aplicável.',
-    },
-  ];
+  List<Map<String, String>> _privacySections(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return [
+      {
+        'title': loc.privacyDataTitle,
+        'body': loc.privacyDataBody,
+      },
+      {
+        'title': loc.privacyCollectTitle,
+        'body': loc.privacyCollectBody,
+      },
+      {
+        'title': loc.privacyUseTitle,
+        'body': loc.privacyUseBody,
+      },
+      {
+        'title': loc.privacyLegalTitle,
+        'body': loc.privacyLegalBody,
+      },
+      {
+        'title': loc.privacyShareTitle,
+        'body': loc.privacyShareBody,
+      },
+      {
+        'title': loc.privacyBadgePageTitle,
+        'body': loc.privacyBadgePageBody,
+      },
+      {
+        'title': loc.privacyRetentionTitle,
+        'body': loc.privacyRetentionBody,
+      },
+      {
+        'title': loc.privacyRightsTitle,
+        'body': loc.privacyRightsBody,
+      },
+      {
+        'title': loc.privacyProtectTitle,
+        'body': loc.privacyProtectBody,
+      },
+      {
+        'title': loc.privacyMinorsTitle,
+        'body': loc.privacyMinorsBody,
+      },
+    ];
+  }
 
   void _showLegalDialog({
     required BuildContext context,
@@ -398,7 +457,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'SOFTINSA BADGES',
+                              AppLocalizations.of(context)!.softinsaBadges,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
@@ -487,24 +546,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _showTermsDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     _showLegalDialog(
       context: context,
-      title: 'Termos de Serviço',
-      intro:
-          'A utilização da plataforma está reservada a colaboradores autorizados. Estes Termos regulam o acesso, a utilização da conta e o tratamento das ações realizadas na aplicação.',
-      sections: _termsSections,
-      acceptLabel: 'Li e aceito os termos',
+      title: loc.termsOfServiceTitle,
+      intro: loc.termsOfServiceIntro,
+      sections: _termsSections(context),
+      acceptLabel: loc.acceptTerms,
     );
   }
 
   Future<void> _showPrivacyDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     _showLegalDialog(
       context: context,
-      title: 'Política de Privacidade',
-      intro:
-          'A Softinsa está comprometida com a proteção da sua privacidade e dos seus dados pessoais. Esta política explica como os dados são recolhidos, usados e protegidos.',
-      sections: _privacySections,
-      acceptLabel: 'Li e aceito a política',
+      title: loc.privacyPolicyTitle,
+      intro: loc.privacyPolicyIntro,
+      sections: _privacySections(context),
+      acceptLabel: loc.acceptPrivacy,
     );
   }
 
@@ -670,10 +729,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 32),
 
                     // TÍTULO
-                    const Text(
-                      'Criar Conta',
+                    Text(
+                      AppLocalizations.of(context)!.registerTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: SoftinsaColors.ink,
@@ -682,10 +741,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 10),
 
                     // SUBTÍTULO
-                    const Text(
-                      'Defina as suas credenciais para começar',
+                    Text(
+                      AppLocalizations.of(context)!.registerSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: SoftinsaColors.textMuted,
                         height: 1.5,
@@ -694,16 +753,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 32),
 
                     // CAMPO NOME
-                    _buildLabel('Nome Completo'),
+                    _buildLabel(AppLocalizations.of(context)!.fullNameLabel),
                     const SizedBox(height: 10),
                     _buildInputField(
-                      hintText: 'Insira o seu nome completo',
+                      hintText: AppLocalizations.of(context)!.fullNameHint,
                       controller: _nameController,
                     ),
                     const SizedBox(height: 20),
 
                     // CAMPO EMAIL
-                    _buildLabel('Email'),
+                    _buildLabel(AppLocalizations.of(context)!.emailLabel),
                     const SizedBox(height: 10),
                     _buildInputField(
                       hintText: 'email@dominio.com',
@@ -712,10 +771,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 20),
 
                     // CAMPO PALAVRA-PASSE
-                    _buildLabel('Palavra-passe'),
+                    _buildLabel(AppLocalizations.of(context)!.passwordLabel),
                     const SizedBox(height: 10),
                     _buildPasswordField(
-                      hintText: 'Defina a sua palavra-passe',
+                      hintText: AppLocalizations.of(context)!.passwordDefineHint,
                       obscureText: obscurePassword,
                       controller: _passwordController,
                       onToggle: () {
@@ -727,10 +786,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 20),
 
                     // CAMPO CONFIRMAR PALAVRA-PASSE
-                    _buildLabel('Confirmar Palavra-passe'),
+                    _buildLabel(AppLocalizations.of(context)!.confirmPasswordLabel),
                     const SizedBox(height: 10),
                     _buildPasswordField(
-                      hintText: 'Confirme a sua palavra-passe',
+                      hintText: AppLocalizations.of(context)!.confirmPasswordHint,
                       obscureText: obscureConfirmPassword,
                       controller: _confirmPasswordController,
                       onToggle: () {
@@ -764,9 +823,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                               )
-                            : const Text(
-                                'Confirmar',
-                                style: TextStyle(color: Colors.white),
+                            : Text(
+                                AppLocalizations.of(context)!.confirmButton,
+                                style: const TextStyle(color: Colors.white),
                               ),
                       ),
                     ),
@@ -776,9 +835,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Já tem conta? ',
-                          style: TextStyle(color: Colors.black87, fontSize: 12),
+                        Text(
+                          AppLocalizations.of(context)!.hasAccount,
+                          style: const TextStyle(color: Colors.black87, fontSize: 12),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -788,9 +847,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               (route) => false,
                             );
                           },
-                          child: const Text(
-                            'Entrar',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocalizations.of(context)!.loginLink,
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Colors.blue,
                               fontWeight: FontWeight.w500,
@@ -810,33 +869,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           color: Colors.grey,
                         ),
                         children: [
-                          const TextSpan(
-                            text:
-                                'Ao clicar em continuar, você concorda com os nossos\n',
+                          TextSpan(
+                            text: '${AppLocalizations.of(context)!.termsAndPrivacyIntro}\n',
                           ),
                           WidgetSpan(
                             alignment: PlaceholderAlignment.baseline,
                             baseline: TextBaseline.alphabetic,
                             child: GestureDetector(
                               onTap: () => _showTermsDialog(context),
-                              child: const Text(
-                                'Termos de Serviço',
-                                style: TextStyle(
+                              child: Text(
+                                AppLocalizations.of(context)!.termsOfService,
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue,
                                 ),
                               ),
                             ),
                           ),
-                          const TextSpan(text: ' e '),
+                          TextSpan(text: ' ${AppLocalizations.of(context)!.and} '),
                           WidgetSpan(
                             alignment: PlaceholderAlignment.baseline,
                             baseline: TextBaseline.alphabetic,
                             child: GestureDetector(
                               onTap: () => _showPrivacyDialog(context),
-                              child: const Text(
-                                'Política de Privacidade',
-                                style: TextStyle(
+                              child: Text(
+                                AppLocalizations.of(context)!.privacyPolicy,
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue,
                                 ),

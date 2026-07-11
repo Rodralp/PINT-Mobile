@@ -13,6 +13,7 @@ import '../services/consultor_api.dart';
 import 'messages_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
+import '../l10n/app_localizations.dart';
 
 enum BadgeState { approved, warning, review, inProgress }
 
@@ -206,58 +207,71 @@ class _FilterOption {
 
 const String _specialBadgeType = 'special';
 
-const Map<String, String> _badgeLevelLabels = {
-  'badge_level_junior': 'Júnior',
-  'badge_level_intermediate': 'Intermédio',
-  'badge_level_senior': 'Sénior',
-  'badge_level_specialist': 'Especialista',
-  'badge_level_knowledge_lead': 'Líder de Conhecimento',
-};
+Map<String, String> _badgeLevelLabels(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
+  return {
+    'badge_level_junior': loc.junior,
+    'badge_level_intermediate': loc.intermediate,
+    'badge_level_senior': loc.senior,
+    'badge_level_specialist': loc.specialist,
+    'badge_level_knowledge_lead': loc.knowledgeLead,
+  };
+}
 
-const Map<String, String> _badgeStateLabels = {
-  'aprovado': 'Aprovado',
-  'em_validacao': 'Em Validação',
-  'pendente-tm': 'Em Validação',
-  'pendente-sll': 'Em Validação',
-  'candidatura_em_progresso': 'Candidatura em Progresso',
-  'rejeitado': 'Rejeitado',
-};
+Map<String, String> _badgeStateLabels(BuildContext context) {
+  return {
+    'aprovado': AppLocalizations.of(context)!.approved,
+    'em_validacao': AppLocalizations.of(context)!.inValidationState,
+    'pendente-tm': AppLocalizations.of(context)!.inValidationState,
+    'pendente-sll': AppLocalizations.of(context)!.inValidationState,
+    'candidatura_em_progresso': AppLocalizations.of(context)!.applicationInProgress,
+    'rejeitado': AppLocalizations.of(context)!.rejected,
+  };
+}
 
-const List<_FilterOption> _catalogFilters = [
-  _FilterOption('todos', 'Todos'),
-  _FilterOption('badge_level_junior', 'Júnior'),
-  _FilterOption('badge_level_intermediate', 'Intermédio'),
-  _FilterOption('badge_level_senior', 'Sénior'),
-  _FilterOption('badge_level_specialist', 'Especialista'),
-  _FilterOption('badge_level_knowledge_lead', 'Líder de Conhecimento'),
-  _FilterOption(_specialBadgeType, 'Especial'),
-];
+List<_FilterOption> _catalogFilters(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
+  return [
+    _FilterOption('todos', loc.all),
+    _FilterOption('badge_level_junior', loc.junior),
+    _FilterOption('badge_level_intermediate', loc.intermediate),
+    _FilterOption('badge_level_senior', loc.senior),
+    _FilterOption('badge_level_specialist', loc.specialist),
+    _FilterOption('badge_level_knowledge_lead', loc.knowledgeLead),
+    _FilterOption(_specialBadgeType, loc.special),
+  ];
+}
 
-const List<_FilterOption> _myBadgesFilters = [
-  _FilterOption('todos', 'Todos'),
-  _FilterOption(_specialBadgeType, 'Especial'),
-  _FilterOption('aprovado', 'Aprovado'),
-  _FilterOption('em_validacao', 'Em Validação'),
-  _FilterOption('candidatura_em_progresso', 'Candidatura em Progresso'),
-  _FilterOption('rejeitado', 'Rejeitado'),
-];
+List<_FilterOption> _myBadgesFilters(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
+  return [
+    _FilterOption('todos', loc.all),
+    _FilterOption(_specialBadgeType, loc.special),
+    _FilterOption('aprovado', loc.approved),
+    _FilterOption('em_validacao', loc.inValidationState),
+    _FilterOption('candidatura_em_progresso', loc.applicationInProgress),
+    _FilterOption('rejeitado', loc.rejected),
+  ];
+}
 
-const List<_FilterOption> _badgeSortOptions = [
-  _FilterOption('points_desc', 'Pontos (Maior para Menor)'),
-  _FilterOption('points_asc', 'Pontos (Menor para Maior)'),
-  _FilterOption('area_asc', 'Area (A-Z)'),
-  _FilterOption('area_desc', 'Area (Z-A)'),
-];
+List<_FilterOption> _badgeSortOptions(BuildContext context) {
+  return [
+    _FilterOption('points_desc', AppLocalizations.of(context)!.pointsHighToLow),
+    _FilterOption('points_asc', AppLocalizations.of(context)!.pointsLowToHigh),
+    _FilterOption('area_asc', AppLocalizations.of(context)!.areaAZ),
+    _FilterOption('area_desc', AppLocalizations.of(context)!.areaZA),
+  ];
+}
 
 String _normalizeKey(String? value) =>
     value?.trim().toLowerCase().replaceAll(' ', '_') ?? '';
 
-String _levelLabelForBadge(BadgeData badge) {
+String _levelLabelForBadge(BadgeData badge, BuildContext context) {
   if (badge.isSpecial) {
-    return 'Especial';
+    return AppLocalizations.of(context)!.special;
   }
   final key = _normalizeKey(badge.levelKey);
-  return _badgeLevelLabels[key] ?? badge.level;
+  return _badgeLevelLabels(context)[key] ?? badge.level;
 }
 
 String _stateIdForBadge(BadgeData badge) {
@@ -279,9 +293,9 @@ String _stateIdForBadge(BadgeData badge) {
   }
 }
 
-String _stateLabelForBadge(BadgeData badge) {
+String _stateLabelForBadge(BadgeData badge, BuildContext context) {
   final stateId = _stateIdForBadge(badge);
-  return _badgeStateLabels[stateId] ?? 'Sem estado';
+  return _badgeStateLabels(context)[stateId] ?? AppLocalizations.of(context)!.noState;
 }
 
 List<BadgeData> _sortBadges(List<BadgeData> badges, String sortBy) {
@@ -400,11 +414,11 @@ class _BadgesScreenState extends State<BadgesScreen> {
               (_myBadgesFilter == _specialBadgeType
                   ? badge.isSpecial
                   : _stateIdForBadge(badge) == _myBadgesFilter);
-      final searchMatch =
+      final           searchMatch =
           normalizedSearch.isEmpty ||
               badge.title.toLowerCase().contains(normalizedSearch) ||
-              _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch) ||
-              _stateLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
+              _levelLabelForBadge(badge, context).toLowerCase().contains(normalizedSearch) ||
+              _stateLabelForBadge(badge, context).toLowerCase().contains(normalizedSearch);
       return matchesFilter && searchMatch;
     }).toList();
 
@@ -413,8 +427,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
 
   void _showMyBadgesFilterSheet() {
     _showOptionsSheet(
-      title: 'Filtrar badges',
-      options: _myBadgesFilters,
+      title: AppLocalizations.of(context)!.filterBadges,
+      options: _myBadgesFilters(context),
       selectedId: _myBadgesFilter,
       onSelected: (value) {
         setState(() {
@@ -426,8 +440,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
 
   void _showMyBadgesSortSheet() {
     _showOptionsSheet(
-      title: 'Ordenar badges',
-      options: _badgeSortOptions,
+      title: AppLocalizations.of(context)!.sortBadges,
+      options: _badgeSortOptions(context),
       selectedId: _myBadgesSort,
       onSelected: (value) {
         setState(() {
@@ -566,9 +580,9 @@ class _BadgesScreenState extends State<BadgesScreen> {
                     children: [
                       const Icon(Icons.verified_outlined, size: 24),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Catálogo de Badges Completo',
+                          AppLocalizations.of(context)!.fullBadgeCatalog,
                           style: TextStyle(
                             fontSize: 28 / 2,
                             fontWeight: FontWeight.w500,
@@ -602,8 +616,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
                           Expanded(
                             child: TextField(
                               controller: _myBadgesSearchController,
-                              decoration: const InputDecoration(
-                                hintText: 'Pesquisar badges',
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(context)!.searchBadges,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
@@ -628,7 +642,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                   Expanded(
                     child: _toolButton(
                       icon: Icons.filter_alt_outlined,
-                      label: 'Filtrar',
+                      label: AppLocalizations.of(context)!.filter,
                       onTap: _showMyBadgesFilterSheet,
                     ),
                   ),
@@ -636,7 +650,7 @@ class _BadgesScreenState extends State<BadgesScreen> {
                   Expanded(
                     child: _toolButton(
                       icon: Icons.tune_rounded,
-                      label: 'Ordenar',
+                      label: AppLocalizations.of(context)!.sort,
                       onTap: _showMyBadgesSortSheet,
                     ),
                   ),
@@ -660,11 +674,11 @@ class _BadgesScreenState extends State<BadgesScreen> {
                         );
                       }
                       if (snapshot.hasError) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
                           child: Center(
                             child: Text(
-                              'Nao foi possivel carregar a base de dados.',
+                              AppLocalizations.of(context)!.databaseLoadError,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Color(0xFF6B7280),
@@ -675,11 +689,11 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       }
                       final ownedBadges = snapshot.data ?? const <BadgeData>[];
                       if (ownedBadges.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
                           child: Center(
                             child: Text(
-                              'Ainda nao tem badges.',
+                              AppLocalizations.of(context)!.noBadgesYet,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Color(0xFF6B7280),
@@ -690,12 +704,12 @@ class _BadgesScreenState extends State<BadgesScreen> {
                       }
                       final visibleBadges = _applyMyBadgesFilters(ownedBadges);
                       if (visibleBadges.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
                           child: Center(
                             child: Text(
-                              'Nenhum badge encontrado com os filtros escolhidos.',
-                              style: TextStyle(
+                              AppLocalizations.of(context)!.noBadgesWithFilters,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 color: Color(0xFF6B7280),
                               ),
@@ -790,7 +804,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
       final searchMatch =
           normalizedSearch.isEmpty ||
               badge.title.toLowerCase().contains(normalizedSearch) ||
-              _levelLabelForBadge(badge).toLowerCase().contains(normalizedSearch);
+              _levelLabelForBadge(badge, context).toLowerCase().contains(normalizedSearch);
       return matchesFilter && searchMatch;
     }).toList();
 
@@ -799,8 +813,8 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
 
   void _showFilterSheet() {
     _showOptionsSheet(
-      title: 'Filtrar badges',
-      options: _catalogFilters,
+      title: AppLocalizations.of(context)!.filterBadges,
+      options: _catalogFilters(context),
       selectedId: _activeFilter,
       onSelected: (value) {
         setState(() {
@@ -812,8 +826,8 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
 
   void _showSortSheet() {
     _showOptionsSheet(
-      title: 'Ordenar badges',
-      options: _badgeSortOptions,
+      title: AppLocalizations.of(context)!.sortBadges,
+      options: _badgeSortOptions(context),
       selectedId: _sortBy,
       onSelected: (value) {
         setState(() {
@@ -896,8 +910,8 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Catálogo de Badges',
+        title: Text(
+          AppLocalizations.of(context)!.badgeCatalogTitle,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -930,8 +944,8 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                         Expanded(
                           child: TextField(
                             controller: _searchController,
-                            decoration: const InputDecoration(
-                              hintText: 'Pesquisar badges',
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(context)!.searchBadges,
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
@@ -956,7 +970,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                 Expanded(
                   child: _toolButton(
                     icon: Icons.filter_alt_outlined,
-                    label: 'Filtrar',
+                    label: AppLocalizations.of(context)!.filter,
                     onTap: _showFilterSheet,
                   ),
                 ),
@@ -964,7 +978,7 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                 Expanded(
                   child: _toolButton(
                     icon: Icons.tune_rounded,
-                    label: 'Ordenar',
+                    label: AppLocalizations.of(context)!.sort,
                     onTap: _showSortSheet,
                   ),
                 ),
@@ -988,11 +1002,11 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                       );
                     }
                     if (snapshot.hasError) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                           child: Text(
-                            'Nao foi possivel carregar a base de dados.',
+                            AppLocalizations.of(context)!.databaseLoadError,
                             style: TextStyle(
                               fontSize: 16,
                               color: Color(0xFF6B7280),
@@ -1003,11 +1017,11 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                     }
                     final badges = snapshot.data ?? const <BadgeData>[];
                     if (badges.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                           child: Text(
-                            'Catalogo vazio.',
+                            AppLocalizations.of(context)!.emptyCatalog,
                             style: TextStyle(
                               fontSize: 16,
                               color: Color(0xFF6B7280),
@@ -1018,11 +1032,11 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                     }
                     final visibleBadges = _applyCatalogFilters(badges);
                     if (visibleBadges.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                           child: Text(
-                            'Nenhum badge encontrado com os filtros escolhidos.',
+                            AppLocalizations.of(context)!.noBadgesWithFilters,
                             style: TextStyle(
                               fontSize: 16,
                               color: Color(0xFF6B7280),
@@ -1168,7 +1182,7 @@ class BadgeCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              '${badge.points} pts',
+                              '${badge.points} ${AppLocalizations.of(context)!.pointsAbbrev}',
                               style: TextStyle(
                                 fontSize: 9.5,
                                 color: Colors.grey[700],
@@ -1483,7 +1497,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     final accountId = await AuthSession.getAccountId();
     if (accountId == null) {
       setState(() {
-        _requestResultMessage = 'Sessao expirada. Faca login novamente.';
+        _requestResultMessage = AppLocalizations.of(context)!.sessionsExpiredLogin;
         _requestSuccess = false;
       });
       return;
@@ -1512,13 +1526,13 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
 
       switch (status) {
         case 'obtido':
-          message = 'Ja possui esta badge!';
+          message = AppLocalizations.of(context)!.jaPossuiBadge;
           success = true;
           newState = BadgeState.approved;
           newStateId = 'aprovado';
           break;
         case 'pendente-tm':
-          message = 'Pedido enviado com sucesso! Em validacao pelo Talent Manager.';
+          message = AppLocalizations.of(context)!.pedidoEnviadoSucesso;
           success = true;
           if (_previousBadgeState == BadgeState.warning) {
             newState = BadgeState.inProgress;
@@ -1528,13 +1542,13 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           newStateId = 'pendente-tm';
           break;
         case 'candidatura_em_progresso':
-          message = 'Candidatura criada. Submeta evidencias para continuar.';
+          message = AppLocalizations.of(context)!.candidaturaCriada;
           success = true;
           newState = BadgeState.inProgress;
           newStateId = 'candidatura_em_progresso';
           break;
         default:
-          message = 'Pedido processado.';
+          message = AppLocalizations.of(context)!.pedidoProcessado;
           success = true;
           newState = BadgeState.inProgress;
           newStateId = status;
@@ -1581,7 +1595,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
       if (!mounted) return;
       setState(() {
         _isRequesting = false;
-        _requestResultMessage = 'Erro ao submeter pedido. Tente novamente.';
+        _requestResultMessage = AppLocalizations.of(context)!.erroSubmeterPedido;
         _requestSuccess = false;
       });
     }
@@ -1652,7 +1666,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
 
       final accountId = await AuthSession.getAccountId();
       if (accountId == null) {
-        throw Exception('Sessao expirada.');
+        throw Exception(AppLocalizations.of(context)!.sessionsExpiredLogin);
       }
 
       await ConsultorApi.instance.requestBadgeAcquisition(
@@ -1666,7 +1680,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         _submittingAll = false;
         _submitted = true;
         _filesByRequirement.clear();
-        _requestResultMessage = 'Candidatura submetida com sucesso.';
+        _requestResultMessage = AppLocalizations.of(context)!.candidaturaSubmetida;
         _requestSuccess = true;
         _badge = BadgeData(
           id: _badge.id,
@@ -1701,7 +1715,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
       if (!mounted) return;
       setState(() {
         _submittingAll = false;
-        _requestResultMessage = 'Falha ao submeter: $e';
+        _requestResultMessage = AppLocalizations.of(context)!.falhaSubmeter(e);
         _requestSuccess = false;
       });
     }
@@ -1710,7 +1724,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final badge = _badge;
-    final statusText = _statusLabel(badge.state);
+    final statusText = _statusLabel(badge.state, context);
     final statusColor = _statusColor(badge.state);
 
     return Scaffold(
@@ -1913,16 +1927,16 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Requisitos',
-                        style: TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
+                      Text(
+                        AppLocalizations.of(context)!.requisitos,
+                        style: const TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 12),
                       if (snapshot.connectionState != ConnectionState.done)
                         const Center(child: CircularProgressIndicator())
                       else if (hasError)
-                        const Text(
-                          'Nao foi possivel carregar a base de dados.',
+                        Text(
+                          AppLocalizations.of(context)!.databaseLoadError,
                           style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         )
                       else if (requirements.isEmpty)
@@ -2042,8 +2056,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                                             const SizedBox(height: 8),
                                           ],
                                           if (evidenciasList.isNotEmpty) ...[
-                                            const Text(
-                                              'Documentos submetidos:',
+                                            Text(
+                                              AppLocalizations.of(context)!.ficheirosSubmetidos,
                                               style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
@@ -2115,7 +2129,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                                               child: OutlinedButton.icon(
                                                 onPressed: () => _pickFiles(nreq),
                                                 icon: const Icon(Icons.attach_file, size: 20),
-                                                label: const Text('Anexar ficheiro'),
+                                                label: Text(AppLocalizations.of(context)!.uploadEvidence),
                                                 style: OutlinedButton.styleFrom(
                                                   side: const BorderSide(color: Color(0xFF1A90F0)),
                                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2157,8 +2171,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                               height: 22,
                               child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                             )
-                          : const Text(
-                              'Submeter',
+                          : Text(
+                              AppLocalizations.of(context)!.submeter,
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                             ),
                     ),
@@ -2176,8 +2190,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Comentario do Avaliador',
+                        Text(
+                          AppLocalizations.of(context)!.comentarioAvaliador,
                           style: TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 12),
@@ -2215,7 +2229,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                           const SizedBox(height: 10),
                         ],
                         Text(
-                          _reviewerNote ?? 'A aguardar validacao.',
+                          _reviewerNote ?? AppLocalizations.of(context)!.aAguardarValidacao,
                           style: TextStyle(
                             fontSize: 14,
                             color: _reviewerNote != null ? const Color(0xFF374151) : const Color(0xFF94A3B8),
@@ -2260,18 +2274,18 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     );
   }
 
-  String _statusLabel(BadgeState? state) {
+  String _statusLabel(BadgeState? state, BuildContext context) {
     switch (state) {
       case BadgeState.approved:
-        return 'Aprovado';
+        return AppLocalizations.of(context)!.approved;
       case BadgeState.warning:
-        return 'Rejeitado';
+        return AppLocalizations.of(context)!.rejected;
       case BadgeState.review:
-        return 'Em validacao';
+        return AppLocalizations.of(context)!.inValidationState;
       case BadgeState.inProgress:
-        return 'Candidatura em Progresso';
+        return AppLocalizations.of(context)!.applicationInProgress;
       case null:
-        return 'Sem estado';
+        return AppLocalizations.of(context)!.noState;
     }
   }
 

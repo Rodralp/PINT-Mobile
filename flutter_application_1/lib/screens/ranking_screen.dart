@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/consultor_api.dart';
 import '../services/ranking_repository.dart';
 import '../utils/avatar_image.dart';
+import '../l10n/app_localizations.dart';
 
 class _RankingConsultant {
   const _RankingConsultant({
@@ -82,14 +83,16 @@ const List<_RankingConsultant> _fallbackRanking = [
   ),
 ];
 
-const List<_FilterOption> _rankingSortOptions = [
-  _FilterOption('points_desc', 'Pontos (Maior para Menor)'),
-  _FilterOption('points_asc', 'Pontos (Menor para Maior)'),
-  _FilterOption('badges_desc', 'Badges (Maior para Menor)'),
-  _FilterOption('badges_asc', 'Badges (Menor para Maior)'),
-  _FilterOption('name_asc', 'Nome (A-Z)'),
-  _FilterOption('name_desc', 'Nome (Z-A)'),
-];
+List<_FilterOption> _rankingSortOptions(BuildContext context) {
+  return [
+    _FilterOption('points_desc', AppLocalizations.of(context)!.pointsDown),
+    _FilterOption('points_asc', AppLocalizations.of(context)!.pointsUp),
+    _FilterOption('badges_desc', AppLocalizations.of(context)!.badgesHighToLow),
+    _FilterOption('badges_asc', AppLocalizations.of(context)!.badgesLowToHigh),
+    _FilterOption('name_asc', AppLocalizations.of(context)!.nameAZ),
+    _FilterOption('name_desc', AppLocalizations.of(context)!.nameZA),
+  ];
+}
 
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
@@ -126,7 +129,7 @@ class _RankingScreenState extends State<RankingScreen> {
       });
     } catch (error) {
       setState(() {
-        _errorMessage = 'Nao foi possivel carregar a base de dados.';
+        _errorMessage = AppLocalizations.of(context)!.databaseLoadError;
         _consultants = _fallbackRanking;
       });
     } finally {
@@ -239,11 +242,11 @@ class _RankingScreenState extends State<RankingScreen> {
 
   void _showFilterSheet() {
     final options = _serviceLineOptions().map(
-      (line) => _FilterOption(line, line == 'all' ? 'Todas as Service Lines' : line),
+      (line) => _FilterOption(line, line == 'all' ? AppLocalizations.of(context)!.allServiceLines : line),
     ).toList();
 
     _showOptionsSheet(
-      title: 'Filtrar consultores',
+      title: AppLocalizations.of(context)!.filterConsultants,
       options: options,
       selectedId: _activeServiceLine,
       onSelected: (value) {
@@ -256,8 +259,8 @@ class _RankingScreenState extends State<RankingScreen> {
 
   void _showSortSheet() {
     _showOptionsSheet(
-      title: 'Ordenar ranking',
-      options: _rankingSortOptions,
+      title: AppLocalizations.of(context)!.sortRanking,
+      options: _rankingSortOptions(context),
       selectedId: _sortBy,
       onSelected: (value) {
         setState(() {
@@ -329,8 +332,8 @@ class _RankingScreenState extends State<RankingScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Ranking',
+        title: Text(
+          AppLocalizations.of(context)!.rankingTitleScreen,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -370,8 +373,8 @@ class _RankingScreenState extends State<RankingScreen> {
                                 Expanded(
                                   child: TextField(
                                     controller: _searchController,
-                                    decoration: const InputDecoration(
-                                      hintText: 'Pesquisar consultores',
+                                    decoration: InputDecoration(
+                                      hintText: AppLocalizations.of(context)!.searchConsultants,
                                       border: InputBorder.none,
                                       enabledBorder: InputBorder.none,
                                       focusedBorder: InputBorder.none,
@@ -396,7 +399,7 @@ class _RankingScreenState extends State<RankingScreen> {
                         Expanded(
                           child: _toolButton(
                             icon: Icons.filter_alt_outlined,
-                            label: 'Filtrar',
+                            label: AppLocalizations.of(context)!.filter,
                             onTap: _showFilterSheet,
                           ),
                         ),
@@ -404,7 +407,7 @@ class _RankingScreenState extends State<RankingScreen> {
                         Expanded(
                           child: _toolButton(
                             icon: Icons.tune_rounded,
-                            label: 'Ordenar',
+                            label: AppLocalizations.of(context)!.sort,
                             onTap: _showSortSheet,
                           ),
                         ),
@@ -433,11 +436,11 @@ class _RankingScreenState extends State<RankingScreen> {
                 ),
               )
             else if (filtered.isEmpty)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Text(
-                    'Nao ha consultores para os filtros escolhidos.',
+                    AppLocalizations.of(context)!.noConsultantsForFilters,
                     style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
                   ),
                 ),
@@ -584,9 +587,9 @@ class _RankingCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _metricInfo('Pontos', '$points'),
+                    _metricInfo(AppLocalizations.of(context)!.points, '$points'),
                     const SizedBox(width: 24),
-                    _metricInfo('Badges', '$badges'),
+                    _metricInfo(AppLocalizations.of(context)!.badges, '$badges'),
                   ],
                 ),
               ],

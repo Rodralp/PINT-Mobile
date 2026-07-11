@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_session.dart';
 import '../services/reminder_api.dart';
 import '../services/reminder_repository.dart';
@@ -37,8 +38,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Não foi possível identificar a sua conta.'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.couldNotIdentifyAccount),
             ),
           );
         }
@@ -73,7 +74,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Erro ao carregar lembretes: ${e.toString()}',
+            AppLocalizations.of(context)!.reminderLoadError(e),
           ),
         ),
       );
@@ -117,8 +118,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
     if (_accountId == null || _accountId! <= 0) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível identificar a conta ativa.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.couldNotIdentifyAccount),
           ),
         );
       }
@@ -153,9 +154,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Lembrete atualizado com sucesso.'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.reminderUpdatedSuccess),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -177,9 +178,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Lembrete criado com sucesso.'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.reminderCreatedSuccess),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -194,7 +195,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Erro ao processar lembrete: ${e.toString()}',
+            AppLocalizations.of(context)!.reminderProcessError(e),
           ),
         ),
       );
@@ -205,8 +206,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
     if (_accountId == null || _accountId! <= 0) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível identificar a conta ativa.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.couldNotIdentifyAccount),
           ),
         );
       }
@@ -233,7 +234,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lembrete "${reminder.title}" removido.'),
+            content: Text(AppLocalizations.of(context)!.reminderDeleted(reminder.title)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -248,7 +249,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Erro ao remover lembrete: ${e.toString()}',
+            AppLocalizations.of(context)!.reminderDeleteError(e),
           ),
         ),
       );
@@ -268,9 +269,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Lembretes',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.remindersTitle,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
@@ -310,9 +311,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text(
-                        'Novo',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      label: Text(
+                        AppLocalizations.of(context)!.newReminder,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -327,13 +328,13 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 ),
               )
             else if (_reminders.isEmpty)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 64),
+                  padding: const EdgeInsets.symmetric(vertical: 64),
                   child: Center(
                     child: Text(
-                      'Sem lembretes ainda.',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+                      AppLocalizations.of(context)!.noRemindersYet,
+                      style: const TextStyle(fontSize: 16, color: Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -441,7 +442,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
 
     if (title.isEmpty || description.isEmpty || date.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.fillAllFieldsRequired)),
       );
       return;
     }
@@ -459,6 +460,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -474,7 +476,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.existing == null ? 'Novo Lembrete' : 'Editar Lembrete',
+                    widget.existing == null ? l10n.newReminderTitle : l10n.editReminderTitle,
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -482,22 +484,22 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _fieldLabel('Título'),
+                  _fieldLabel(l10n.titleLabel),
                   const SizedBox(height: 8),
                   _formField(
                     controller: _titleController,
-                    hintText: 'Digite o título',
+                    hintText: l10n.titleHint,
                   ),
                   const SizedBox(height: 20),
-                  _fieldLabel('Descrição'),
+                  _fieldLabel(l10n.descriptionLabel),
                   const SizedBox(height: 8),
                   _formField(
                     controller: _descriptionController,
-                    hintText: 'Digite a descrição',
+                    hintText: l10n.descriptionHint,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 20),
-                  _fieldLabel('Data'),
+                  _fieldLabel(l10n.dateLabel),
                   const SizedBox(height: 8),
                   _formField(
                     controller: _dateController,
@@ -506,7 +508,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
                     onTap: _pickDate,
                   ),
                   const SizedBox(height: 20),
-                  _fieldLabel('Cor'),
+                  _fieldLabel(l10n.colorLabel),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
@@ -530,9 +532,9 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
-                            'Cancelar',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.cancel,
+                            style: const TextStyle(
                               fontSize: 16,
                               color: Color(0xFF64748B),
                               fontWeight: FontWeight.w600,
@@ -554,7 +556,7 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
                             ),
                           ),
                           child: Text(
-                            widget.existing == null ? 'Criar' : 'Guardar',
+                            widget.existing == null ? l10n.createButton : l10n.saveButton,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -711,24 +713,25 @@ class _ReminderCard extends StatelessWidget {
                               if (value == 'edit') {
                                 onEdit();
                               } else if (value == 'delete') {
+                                final l10n = AppLocalizations.of(context)!;
                                 final confirmed = await showDialog<bool>(
                                   context: context,
                                   builder: (dialogContext) => AlertDialog(
-                                    title: const Text('Confirmar eliminação'),
+                                    title: Text(l10n.confirmDelete),
                                     content: Text(
-                                      'Tem a certeza que deseja eliminar o lembrete "$title"?',
+                                      l10n.confirmDeleteReminder(title),
                                     ),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(dialogContext, false),
-                                        child: const Text('Cancelar'),
+                                        child: Text(l10n.cancel),
                                       ),
                                       TextButton(
                                         onPressed: () => Navigator.pop(dialogContext, true),
                                         style: TextButton.styleFrom(
                                           foregroundColor: Colors.red,
                                         ),
-                                        child: const Text('Eliminar'),
+                                        child: Text(l10n.deleteButton),
                                       ),
                                     ],
                                   ),
@@ -739,30 +742,33 @@ class _ReminderCard extends StatelessWidget {
                                 }
                               }
                             },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_outlined, size: 20),
-                                    SizedBox(width: 8),
-                                    Text('Editar'),
-                                  ],
+                            itemBuilder: (context) {
+                              final l10n = AppLocalizations.of(context)!;
+                              return [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.edit_outlined, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(l10n.editButton),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete_outline,
-                                        size: 20, color: Colors.red),
-                                    SizedBox(width: 8),
-                                    Text('Eliminar',
-                                        style: TextStyle(color: Colors.red)),
-                                  ],
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.delete_outline,
+                                          size: 20, color: Colors.red),
+                                      const SizedBox(width: 8),
+                                      Text(l10n.deleteButton,
+                                          style: const TextStyle(color: Colors.red)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ];
+                            },
                             icon: const Icon(Icons.more_vert_rounded,
                                 color: Color(0xFF64748B)),
                             padding: EdgeInsets.zero,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_session.dart';
+import '../services/locale_service.dart';
 import 'account_info_screen.dart';
 import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
@@ -13,6 +15,72 @@ class SettingsMenuScreen extends StatefulWidget {
 }
 
 class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
+  void _showLanguageSheet(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return ValueListenableBuilder<Locale?>(
+          valueListenable: LocaleService.instance.localeNotifier,
+          builder: (context, currentLocale, _) {
+            final currentCode = currentLocale?.languageCode ?? 'pt';
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    loc.selectLanguage,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildLanguageOption(ctx, 'pt', loc.portuguese, currentCode),
+                  _buildLanguageOption(ctx, 'en', loc.english, currentCode),
+                  _buildLanguageOption(ctx, 'es', loc.spanish, currentCode),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLanguageOption(
+    BuildContext ctx,
+    String code,
+    String label,
+    String currentCode,
+  ) {
+    final isSelected = currentCode == code;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected
+          ? const Icon(Icons.check, color: Color(0xFF2563EB))
+          : null,
+      onTap: () {
+        LocaleService.instance.setLanguage(code);
+        Navigator.pop(ctx);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,9 +97,9 @@ class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
                     icon: const Icon(Icons.arrow_back_ios_new, size: 24),
                   ),
                   const SizedBox(width: 4),
-                  const Text(
-                    'Definições',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.settingsTitle,
+                    style: const TextStyle(
                       fontSize: 42 / 2,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF111827),
@@ -45,31 +113,37 @@ class _SettingsMenuScreenState extends State<SettingsMenuScreen> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  const _SettingsOptionTile(
+                  _SettingsOptionTile(
                     icon: Icons.person_outline,
-                    title: 'Conta',
-                    subtitle: 'Dados da conta e atalhos',
+                    title: AppLocalizations.of(context)!.accountOption,
+                    subtitle: AppLocalizations.of(context)!.accountOptionSubtitle,
                   ),
-                  const _SettingsOptionTile(
+                  _SettingsOptionTile(
                     icon: Icons.lock_outline,
-                    title: 'Segurança',
-                    subtitle: 'Alterar senha de acesso',
+                    title: AppLocalizations.of(context)!.securityOption,
+                    subtitle: AppLocalizations.of(context)!.securityOptionSubtitle,
                   ),
-                  const _SettingsOptionTile(
+                  _SettingsOptionTile(
                     icon: Icons.tune_rounded,
-                    title: 'Preferências',
-                    subtitle: 'Áreas de interesse e recomendações',
+                    title: AppLocalizations.of(context)!.preferencesOption,
+                    subtitle: AppLocalizations.of(context)!.preferencesOptionSubtitle,
                   ),
-                  const _SettingsOptionTile(
+                  _SettingsOptionTile(
                     icon: Icons.notifications_outlined,
-                    title: 'Notificações',
-                    subtitle: 'Alertas e comunicações',
+                    title: AppLocalizations.of(context)!.notificationsOption,
+                    subtitle: AppLocalizations.of(context)!.notificationsOptionSubtitle,
+                  ),
+                  _SettingsOptionTile(
+                    icon: Icons.language,
+                    title: AppLocalizations.of(context)!.languageOption,
+                    subtitle: AppLocalizations.of(context)!.languageOptionSubtitle,
+                    onTapCustom: () => _showLanguageSheet(context),
                   ),
 
-                  const _SettingsOptionTile(
+                  _SettingsOptionTile(
                     icon: Icons.logout,
-                    title: 'Terminar Sessão',
-                    subtitle: 'Terminar sessão e navegação',
+                    title: AppLocalizations.of(context)!.logoutOption,
+                    subtitle: AppLocalizations.of(context)!.logoutOptionSubtitle,
                   ),
                 ],
               ),
@@ -86,11 +160,13 @@ class _SettingsOptionTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTapCustom,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTapCustom;
 
   void _showLogoutDialog(BuildContext parentContext) {
     showDialog(
@@ -118,20 +194,20 @@ class _SettingsOptionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 28),
-              const Text(
-                'Terminar Sessão',
+              Text(
+                AppLocalizations.of(parentContext)!.logoutTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF111827),
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Pretende terminar a sua sessão?',
+              Text(
+                AppLocalizations.of(parentContext)!.logoutConfirm,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   color: Color(0xFF6B7280),
                   height: 1.4,
@@ -151,10 +227,10 @@ class _SettingsOptionTile extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text(
-                        'Cancelar',
+                      child: Text(
+                        AppLocalizations.of(parentContext)!.cancel,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1F2937),
@@ -186,10 +262,10 @@ class _SettingsOptionTile extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text(
-                        'Terminar Sessão',
+                      child: Text(
+                        AppLocalizations.of(parentContext)!.logoutButton,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -216,7 +292,11 @@ class _SettingsOptionTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            if (title == 'Conta') {
+            if (onTapCustom != null) {
+              onTapCustom!();
+              return;
+            }
+            if (title == AppLocalizations.of(context)!.accountOption) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -225,7 +305,7 @@ class _SettingsOptionTile extends StatelessWidget {
               );
               return;
             }
-            if (title == 'Segurança') {
+            if (title == AppLocalizations.of(context)!.securityOption) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -234,7 +314,7 @@ class _SettingsOptionTile extends StatelessWidget {
               );
               return;
             }
-            if (title == 'Preferências') {
+            if (title == AppLocalizations.of(context)!.preferencesOption) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -243,7 +323,7 @@ class _SettingsOptionTile extends StatelessWidget {
               );
               return;
             }
-            if (title == 'Notificações') {
+            if (title == AppLocalizations.of(context)!.notificationsOption) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -252,7 +332,7 @@ class _SettingsOptionTile extends StatelessWidget {
               );
               return;
             }
-            if (title == 'Terminar Sessão') {
+            if (title == AppLocalizations.of(context)!.logoutOption) {
               _showLogoutDialog(context);
             }
           },

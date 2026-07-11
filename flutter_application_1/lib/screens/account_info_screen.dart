@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_session.dart';
 import 'profile_screen.dart';
 
@@ -37,9 +38,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _name = 'Erro ao carregar';
-          _email = 'Erro ao carregar';
-          _permissions = 'Erro ao carregar';
+          _name = AppLocalizations.of(context)!.errorLoading;
+          _email = AppLocalizations.of(context)!.errorLoading;
+          _permissions = AppLocalizations.of(context)!.errorLoading;
         });
       }
     }
@@ -51,7 +52,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
   String _displayValue(String? value) {
     final cleaned = value?.trim() ?? '';
-    return cleaned.isEmpty ? 'Sem informação' : cleaned;
+    return cleaned.isEmpty ? AppLocalizations.of(context)!.noInformation : cleaned;
   }
 
   String _formatPermissions(String? value) {
@@ -107,9 +108,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Informação da conta',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.accountInfoTitle,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF243047),
@@ -121,26 +122,26 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   const SizedBox(height: 8),
 
                   // SUBTÍTULO
-                  const Text(
-                    'Consulte os dados principais da sua conta.',
+                  Text(
+                    AppLocalizations.of(context)!.accountInfoSubtitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
 
                   const SizedBox(height: 30),
 
                   // CARD NOME
-                  _InfoCard(label: 'Nome', value: _name),
+                  _InfoCard(label: AppLocalizations.of(context)!.nameLabel, value: _name),
 
                   const SizedBox(height: 16),
 
                   // CARD EMAIL
-                  _InfoCard(label: 'Email', value: _email),
+                  _InfoCard(label: AppLocalizations.of(context)!.emailFieldLabel, value: _email),
 
                   const SizedBox(height: 16),
 
                   // CARD PERFIL
-                  _InfoCard(label: 'Perfil', value: _permissions),
+                  _InfoCard(label: AppLocalizations.of(context)!.profileLabel, value: _permissions),
 
                   const SizedBox(height: 30),
 
@@ -160,9 +161,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
-                        'Ir para perfil',
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.goToProfile,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
@@ -185,9 +186,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Voltar ao dashboard',
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.backToDashboard,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,

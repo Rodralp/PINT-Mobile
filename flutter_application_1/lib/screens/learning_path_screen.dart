@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/consultor_api.dart';
 import '../services/auth_session.dart';
 import '../services/learning_path_repository.dart';
@@ -65,8 +66,8 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
     });
   }
 
-  _ProgressInfo _calculateProgress(List<BackendLevel> levels) {
-    if (levels.isEmpty) return const _ProgressInfo(total: 0, obtained: 0, percent: 0, label: '0 badges');
+  _ProgressInfo _calculateProgress(BuildContext context, List<BackendLevel> levels) {
+    if (levels.isEmpty) return _ProgressInfo(total: 0, obtained: 0, percent: 0, label: AppLocalizations.of(context)!.zeroBadges);
     final obtained = levels.where((level) => level.status == 'obtido').length;
     final total = levels.length;
     final percent = total > 0 ? obtained / total : 0.0;
@@ -74,7 +75,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
       total: total,
       obtained: obtained,
       percent: percent,
-      label: '$obtained de $total badges obtidas',
+      label: AppLocalizations.of(context)!.badgesObtainedCount(obtained, total),
     );
   }
 
@@ -103,7 +104,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return Center(child: Text('Erro: ${snapshot.error}'));
+              return Center(child: Text(AppLocalizations.of(context)!.learningPathError(snapshot.error ?? 'Unknown error')));
             }
 
             return _buildLearningPathList(context);
@@ -211,7 +212,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
 
   Widget _buildServiceLineCard(BackendLearningPath path, BackendServiceLine line) {
     final levels = line.areas.expand((a) => a.levels).toList();
-    final progress = _calculateProgress(levels);
+    final progress = _calculateProgress(context, levels);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: _ServiceLineCard(

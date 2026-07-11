@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_session.dart';
 import '../services/message_repository.dart';
 import '../services/messages_api.dart';
@@ -99,15 +100,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
   }
 
-  String _typeLabel(String value) {
+  String _typeLabel(BuildContext context, String value) {
+    final loc = AppLocalizations.of(context)!;
     switch (value.toLowerCase()) {
       case 'aviso':
-        return 'Aviso';
+        return loc.warnings;
       case 'importante':
-        return 'Importante';
+        return loc.important;
       case 'mensagem':
       default:
-        return 'Mensagem';
+        return loc.messages;
     }
   }
 
@@ -157,7 +159,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     return '${kilobytes.toStringAsFixed(kilobytes >= 10 ? 0 : 1)} KB';
   }
 
-  List<BackendAnnouncementItem> get _filteredMessages {
+  List<BackendAnnouncementItem> _filteredMessages() {
     final search = _searchTerm.trim().toLowerCase();
 
     return _messages.where((item) {
@@ -173,7 +175,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   List<BackendAnnouncementItem> get _sortedMessages {
-    final items = [..._filteredMessages];
+    final items = [..._filteredMessages()];
 
     items.sort((a, b) {
       if (_sortBy == 'antigas') {
@@ -214,6 +216,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Future<void> _openAttachment(BackendAnnouncementItem message, BackendAnnouncementAttachment attachment) async {
+    final loc = AppLocalizations.of(context)!;
     try {
       final url = await MessagesApi.instance.getAttachmentDownloadUrl(
         logId: message.id,
@@ -230,7 +233,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nao foi possivel abrir o anexo.')),
+        SnackBar(content: Text(loc.couldNotOpenAttachment)),
       );
     }
   }
@@ -280,15 +283,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   void _showFilterSheet() {
+    final loc = AppLocalizations.of(context)!;
     final options = [
-      const _FilterOption('todos', 'Todas'),
-      const _FilterOption('mensagem', 'Mensagens'),
-      const _FilterOption('aviso', 'Avisos'),
-      const _FilterOption('importante', 'Importantes'),
+      _FilterOption('todos', loc.allMessages),
+      _FilterOption('mensagem', loc.messages),
+      _FilterOption('aviso', loc.warnings),
+      _FilterOption('importante', loc.important),
     ];
 
     _showOptionsSheet(
-      title: 'Filtrar mensagens',
+      title: loc.filterMessages,
       options: options,
       selectedId: _activeFilter,
       onSelected: _setFilter,
@@ -296,14 +300,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   void _showSortSheet() {
+    final loc = AppLocalizations.of(context)!;
     final options = [
-      const _FilterOption('recentes', 'Mais recentes'),
-      const _FilterOption('antigas', 'Mais antigas'),
-      const _FilterOption('prioridade', 'Prioridade'),
+      _FilterOption('recentes', loc.mostRecent),
+      _FilterOption('antigas', loc.oldest),
+      _FilterOption('prioridade', loc.priority),
     ];
 
     _showOptionsSheet(
-      title: 'Ordenar mensagens',
+      title: loc.sortMessages,
       options: options,
       selectedId: _sortBy,
       onSelected: _setSort,
@@ -390,6 +395,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -400,9 +407,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Mensagens e Avisos',
-          style: TextStyle(
+        title: Text(
+          loc.messagesTitle,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
@@ -438,8 +445,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           Expanded(
                             child: TextField(
                               controller: _searchController,
-                              decoration: const InputDecoration(
-                                hintText: 'Pesquisar mensagens',
+                              decoration: InputDecoration(
+                                hintText: loc.searchMessages,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
@@ -460,7 +467,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   Expanded(
                     child: _toolButton(
                       icon: Icons.filter_alt_outlined,
-                      label: 'Filtrar',
+                      label: loc.filterMessages,
                       onTap: _showFilterSheet,
                     ),
                   ),
@@ -468,7 +475,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   Expanded(
                     child: _toolButton(
                       icon: Icons.tune_rounded,
-                      label: 'Ordenar',
+                      label: loc.sortMessages,
                       onTap: _showSortSheet,
                     ),
                   ),
@@ -485,7 +492,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 36),
                   child: Center(
                     child: Text(
-                      'Sem mensagens para mostrar.',
+                      loc.noMessages,
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ),
@@ -550,7 +557,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                                         borderRadius: BorderRadius.circular(999),
                                                       ),
                                                       child: Text(
-                                                        _typeLabel(message.type),
+                                                        _typeLabel(context, message.type),
                                                         style: TextStyle(
                                                           fontSize: 11,
                                                           fontWeight: FontWeight.w700,
@@ -567,7 +574,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                                 ),
                                                 const SizedBox(height: 8),
                                                 Text(
-                                                  message.title.isNotEmpty ? message.title : 'Mensagem',
+                                                  message.title.isNotEmpty ? message.title : loc.messages,
                                                   style: const TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w700,
@@ -627,7 +634,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                         if (message.attachments.isNotEmpty) ...[
                                           const SizedBox(height: 6),
                                           Text(
-                                            'Anexos',
+                                            loc.attachments,
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
@@ -680,7 +687,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '${_sortedMessages.length} mensagens',
+                              loc.messagesCount(_sortedMessages.length),
                               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                             ),
                             Row(

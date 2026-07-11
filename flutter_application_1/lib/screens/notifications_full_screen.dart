@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_session.dart';
 import '../services/notification_repository.dart';
 import '../services/notifications_api.dart';
@@ -98,16 +99,17 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
   }
 
-  String _notificationTypeLabel(String type) {
+  String _notificationTypeLabel(BuildContext context, String type) {
+    final loc = AppLocalizations.of(context)!;
     switch (type.toLowerCase()) {
       case 'aviso':
-        return 'Alerta';
+        return loc.alertType;
       case 'importante':
-        return 'Alerta';
+        return loc.alertType;
       case 'evento':
-        return 'Informação';
+        return loc.infoType;
       default:
-        return 'Informação';
+        return loc.infoType;
     }
   }
 
@@ -139,7 +141,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     }
   }
 
-  List<BackendNotificationItem> get _filteredNotifications {
+  List<BackendNotificationItem> _filteredNotifications(BuildContext context) {
     final search = _searchTerm.trim().toLowerCase();
 
     return _notifications.where((item) {
@@ -148,14 +150,14 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
           item.title.toLowerCase().contains(search) ||
           item.summary.toLowerCase().contains(search) ||
           item.message.toLowerCase().contains(search) ||
-          _notificationTypeLabel(item.type).toLowerCase().contains(search);
+          _notificationTypeLabel(context, item.type).toLowerCase().contains(search);
 
       return filterMatch && searchMatch;
     }).toList(growable: false);
   }
 
-  List<BackendNotificationItem> get _sortedNotifications {
-    final items = [..._filteredNotifications];
+  List<BackendNotificationItem> _sortedNotifications(BuildContext context) {
+    final items = [..._filteredNotifications(context)];
 
     items.sort((a, b) {
       if (_sortBy == 'antigas') {
@@ -173,21 +175,21 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
     return items;
   }
 
-  int get _totalPages {
-    final pages = (_sortedNotifications.length / _itemsPerPage).ceil();
+  int _totalPages(BuildContext context) {
+    final pages = (_sortedNotifications(context).length / _itemsPerPage).ceil();
     return pages < 1 ? 1 : pages;
   }
 
-  List<BackendNotificationItem> get _pagedNotifications {
+  List<BackendNotificationItem> _pagedNotifications(BuildContext context) {
     final start = (_page - 1) * _itemsPerPage;
     final end = start + _itemsPerPage;
-    if (_sortedNotifications.isEmpty) {
+    if (_sortedNotifications(context).isEmpty) {
       return const [];
     }
 
-    return _sortedNotifications.sublist(
-      start.clamp(0, _sortedNotifications.length),
-      end.clamp(0, _sortedNotifications.length),
+    return _sortedNotifications(context).sublist(
+      start.clamp(0, _sortedNotifications(context).length),
+      end.clamp(0, _sortedNotifications(context).length),
     );
   }
 
@@ -279,7 +281,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
   }
 
   Widget _buildPagination() {
-    final totalPages = _totalPages;
+    final totalPages = _totalPages(context);
     if (totalPages <= 1) return const SizedBox.shrink();
 
     final pages = <Widget>[];
@@ -369,15 +371,16 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
   }
 
   void _showFilterSheet() {
+    final loc = AppLocalizations.of(context)!;
     final options = [
-      const _FilterOption('todos', 'Todas'),
-      const _FilterOption('alerta', 'Alertas'),
-      const _FilterOption('info', 'Informações'),
-      const _FilterOption('sucesso', 'Sucesso'),
+      _FilterOption('todos', loc.allNotifications),
+      _FilterOption('alerta', loc.alerts),
+      _FilterOption('info', loc.informations),
+      _FilterOption('sucesso', loc.success),
     ];
 
     _showOptionsSheet(
-      title: 'Filtrar notificações',
+      title: loc.filterNotifications,
       options: options,
       selectedId: _activeFilter,
       onSelected: _setFilter,
@@ -385,14 +388,15 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
   }
 
   void _showSortSheet() {
+    final loc = AppLocalizations.of(context)!;
     final options = [
-      const _FilterOption('recentes', 'Mais recentes'),
-      const _FilterOption('antigas', 'Mais antigas'),
-      const _FilterOption('titulo_asc', 'Título (A-Z)'),
+      _FilterOption('recentes', loc.mostRecent),
+      _FilterOption('antigas', loc.oldest),
+      _FilterOption('titulo_asc', loc.titleAZ),
     ];
 
     _showOptionsSheet(
-      title: 'Ordenar notificações',
+      title: loc.sortNotifications,
       options: options,
       selectedId: _sortBy,
       onSelected: _setSort,
@@ -479,6 +483,8 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -489,9 +495,9 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Notificações',
-          style: TextStyle(
+        title: Text(
+          loc.notificationPrefsTitle,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
@@ -527,8 +533,8 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                           Expanded(
                             child: TextField(
                               controller: _searchController,
-                              decoration: const InputDecoration(
-                                hintText: 'Pesquisar notificações',
+                              decoration: InputDecoration(
+                                hintText: loc.searchNotifications,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
@@ -549,7 +555,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                   Expanded(
                     child: _toolButton(
                       icon: Icons.filter_alt_outlined,
-                      label: 'Filtrar',
+                      label: loc.filterNotifications,
                       onTap: _showFilterSheet,
                     ),
                   ),
@@ -557,7 +563,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                   Expanded(
                     child: _toolButton(
                       icon: Icons.tune_rounded,
-                      label: 'Ordenar',
+                      label: loc.sortNotifications,
                       onTap: _showSortSheet,
                     ),
                   ),
@@ -569,12 +575,12 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (_pagedNotifications.isEmpty)
+              else if (_pagedNotifications(context).isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 36),
                   child: Center(
                     child: Text(
-                      'Sem notificações para mostrar.',
+                      loc.noNotifications,
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ),
@@ -582,7 +588,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
               else
                 Column(
                   children: [
-                    ..._pagedNotifications.expand((item) {
+                    ..._pagedNotifications(context).expand((item) {
                           final details = item.message.trim().isNotEmpty ? item.message : item.summary;
                           final accent = _notificationAccent(item.type);
                           final expanded = _expandedNotificationId == item.id;
@@ -664,7 +670,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                                                       borderRadius: BorderRadius.circular(999),
                                                     ),
                                                     child: Text(
-                                                      _notificationTypeLabel(item.type),
+                                                      _notificationTypeLabel(context, item.type),
                                                       style: TextStyle(
                                                         fontSize: 11,
                                                         fontWeight: FontWeight.w700,
@@ -681,7 +687,7 @@ class _NotificationsFullScreenState extends State<NotificationsFullScreen> {
                                                   GestureDetector(
                                                     onTap: () => _handleNotificationTap(item),
                                                     child: Text(
-                                                      expanded ? 'Ver menos' : 'Ver mais',
+                                                      expanded ? loc.showLess : loc.showMore,
                                                       style: const TextStyle(
                                                         fontSize: 13,
                                                         fontWeight: FontWeight.w600,

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/achievement_center.dart';
 
 class AchievementUnlockDialog extends StatefulWidget {
@@ -69,19 +70,19 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
                     borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   child: Column(
-                    children: const [
+                    children: [
                       Text(
-                        'Parabens!',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.welcomeAchievementTitle,
+                        style: const TextStyle(
                           fontSize: 42 / 2,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 6),
+                      const SizedBox(height: 6),
                       Text(
-                        'Conquistou um badge especial',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.welcomeAchievementDescription,
+                        style: const TextStyle(
                           fontSize: 24 / 2,
                           color: Color(0xFFE8F4FF),
                         ),
@@ -151,9 +152,9 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
-                                    'Pontos',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)!.points,
+                                    style: const TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF94A3B8),
                                     ),
@@ -178,9 +179,9 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
-                                    'Badges',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)!.badges,
+                                    style: const TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF94A3B8),
                                     ),
@@ -202,9 +203,9 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
-                            child: const Text(
-                              'Continuar',
-                              style: TextStyle(
+                            child: Text(
+                              AppLocalizations.of(context)!.close,
+                              style: const TextStyle(
                                 fontSize: 17,
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,

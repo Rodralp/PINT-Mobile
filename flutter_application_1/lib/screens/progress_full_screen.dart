@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/consultor_api.dart';
 import '../widgets/badge_artwork.dart';
 
@@ -23,9 +24,9 @@ class ProgressFullScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back, size: 36),
                   ),
                   const SizedBox(width: 6),
-                  const Text(
-                    'Em Progresso',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.applicationInProgress,
+                    style: const TextStyle(
                       fontSize: 48 / 2,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF243047),
@@ -41,7 +42,7 @@ class ProgressFullScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
-                          'Sem itens em progresso para mostrar.',
+                          AppLocalizations.of(context)!.noState,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],

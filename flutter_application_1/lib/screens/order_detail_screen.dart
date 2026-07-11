@@ -6,6 +6,7 @@ import '../services/auth_session.dart';
 import '../services/badge_cache_repository.dart';
 import '../widgets/badge_artwork.dart';
 import 'app_shell_screen.dart';
+import '../l10n/app_localizations.dart';
 
 enum OrderStatus { approved, pending, rejected }
 
@@ -179,7 +180,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
       setState(() {
         _isLoadingRequirements = false;
-        _requirementsError = 'Erro ao carregar requisitos: $e';
+        _requirementsError = AppLocalizations.of(context)!.erroCarregarRequisitos(e);
       });
     }
   }
@@ -239,7 +240,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evidencias enviadas com sucesso.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.evidenciasEnviadas)),
       );
 
       _loadDetail();
@@ -247,7 +248,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
       setState(() => _uploadingByRequirement[requirementId] = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao submeter evidencias: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.falhaSubmeterEvidencias(e))),
       );
     }
   }
@@ -284,8 +285,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Candidatura submetida com sucesso para avaliacao.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.candidaturaSubmetida),
           backgroundColor: Color(0xFF05603A),
         ),
       );
@@ -297,7 +298,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       setState(() => _submittingAll = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Falha ao submeter: $e'),
+          content: Text(AppLocalizations.of(context)!.falhaSubmeter(e)),
           backgroundColor: const Color(0xFFA32424),
         ),
       );
@@ -319,8 +320,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Candidatura',
+        title: Text(
+          AppLocalizations.of(context)!.candidatura,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -364,8 +365,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             height: 22,
                             child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                           )
-                        : const Text(
-                            'Submeter',
+                        : Text(
+                            AppLocalizations.of(context)!.submeter,
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                           ),
                   ),
@@ -389,12 +390,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           backgroundColor: Colors.white,
           indicatorColor: const Color(0xFFEAF2FF),
           height: 74,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Dashboard'),
-            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Badges'),
-            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Jornada'),
-            NavigationDestination(icon: Icon(Icons.history_outlined), label: 'Pedidos'),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
+          destinations: [
+            NavigationDestination(icon: const Icon(Icons.home_rounded), label: AppLocalizations.of(context)!.dashboardNav),
+            NavigationDestination(icon: const Icon(Icons.workspace_premium_outlined), label: AppLocalizations.of(context)!.badgesNav),
+            NavigationDestination(icon: const Icon(Icons.menu_book_outlined), label: AppLocalizations.of(context)!.learningPathNav),
+            NavigationDestination(icon: const Icon(Icons.history_outlined), label: AppLocalizations.of(context)!.requestsNav),
+            NavigationDestination(icon: const Icon(Icons.more_horiz), label: AppLocalizations.of(context)!.moreNav),
           ],
         ),
       ),
@@ -504,8 +505,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Requisitos',
+          Text(
+            AppLocalizations.of(context)!.requisitos,
             style: TextStyle(fontSize: 24 / 2, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
@@ -555,8 +556,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Comentario do Avaliador',
+          Text(
+            AppLocalizations.of(context)!.comentarioAvaliador,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -607,8 +608,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
             )
           else
-            const Text(
-              'A aguardar validacao.',
+            Text(
+              AppLocalizations.of(context)!.aAguardarValidacao,
               style: TextStyle(
                 fontSize: 14,
                 color: Color(0xFF94A3B8),
@@ -621,10 +622,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   _StatusMeta _statusMeta(OrderStatus status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case OrderStatus.approved:
         return _StatusMeta(
-          label: 'Aprovado',
+          label: l10n.aprovadoStatus,
           icon: Icons.check_circle_outline,
           textColor: const Color(0xFF05603A),
           backgroundColor: const Color(0xFFE6F9ED),
@@ -632,7 +634,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         );
       case OrderStatus.rejected:
         return _StatusMeta(
-          label: 'Rejeitado',
+          label: l10n.rejeitadoStatus,
           icon: Icons.cancel_outlined,
           textColor: const Color(0xFFA32424),
           backgroundColor: const Color(0xFFFEE8E8),
@@ -640,15 +642,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         );
       case OrderStatus.pending:
         return _submitted
-            ? const _StatusMeta(
-                label: 'Em Validacao',
+            ? _StatusMeta(
+                label: l10n.emValidacaoStatus,
                 icon: Icons.hourglass_empty,
                 textColor: Color(0xFF92400E),
                 backgroundColor: Color(0xFFFEF3C7),
                 frameColor: Color(0xFFF59E0B),
               )
-            : const _StatusMeta(
-                label: 'Candidatura em Progresso',
+            : _StatusMeta(
+                label: l10n.candidaturaEmProgressoStatus,
                 icon: Icons.timelapse,
                 textColor: Color(0xFF1565C0),
                 backgroundColor: Color(0xFFE3F2FD),
@@ -734,7 +736,7 @@ class _RequirementItemState extends State<_RequirementItem> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${req.files.toString().padLeft(2, '0')} Arquivos Submetidos',
+                          AppLocalizations.of(context)!.arquivosSubmetidos(req.files.toString().padLeft(2, '0')),
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF64748B),
@@ -764,7 +766,7 @@ class _RequirementItemState extends State<_RequirementItem> {
                   Text(
                     req.description.isNotEmpty
                         ? req.description
-                        : 'Detalhes do requisito associado a candidatura.',
+                        : AppLocalizations.of(context)!.detalhesRequisito,
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF6B7280),
@@ -773,8 +775,8 @@ class _RequirementItemState extends State<_RequirementItem> {
                   ),
                   if (req.attachments.isNotEmpty) ...[
                     const SizedBox(height: 10),
-                    const Text(
-                      'Ficheiros submetidos:',
+                    Text(
+                      AppLocalizations.of(context)!.ficheirosSubmetidos,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -840,17 +842,17 @@ class _RequirementItemState extends State<_RequirementItem> {
                 style: BorderStyle.solid,
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.cloud_upload_outlined,
                   size: 20,
                   color: Color(0xFF64748B),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
-                  'Selecionar ficheiros',
+                  AppLocalizations.of(context)!.selecionarFicheiros,
                   style: TextStyle(
                     fontSize: 14,
                     color: Color(0xFF64748B),
@@ -926,8 +928,8 @@ class _RequirementItemState extends State<_RequirementItem> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text(
-                      'Enviar',
+                  : Text(
+                      AppLocalizations.of(context)!.enviar,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

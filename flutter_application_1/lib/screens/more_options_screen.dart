@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'exports_screen.dart';
 import 'notifications_full_screen.dart';
 import 'ranking_screen.dart';
@@ -59,7 +60,7 @@ class MoreOptionsScreen extends StatelessWidget {
               children: [
                 _OptionTile(
                   icon: Icons.leaderboard_outlined,
-                  title: 'Ranking',
+                  title: AppLocalizations.of(context)!.rankingTitle,
                   subtitle: 'Classificação e pontuação global',
                   onTap: () {
                     Navigator.push(
@@ -72,7 +73,7 @@ class MoreOptionsScreen extends StatelessWidget {
                 ),
                 _OptionTile(
                   icon: Icons.push_pin_outlined,
-                  title: 'Lembretes',
+                  title: AppLocalizations.of(context)!.remindersTitle,
                   subtitle: 'Agenda pessoal e alertas',
                   onTap: () {
                     Navigator.push(
@@ -85,7 +86,7 @@ class MoreOptionsScreen extends StatelessWidget {
                 ),
                 _OptionTile(
                   icon: Icons.file_download_outlined,
-                  title: 'Exportações',
+                  title: AppLocalizations.of(context)!.exportsTitle,
                   subtitle: 'Exportar dados e relatórios',
                   onTap: () {
                     Navigator.push(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
 import '../services/local_storage.dart';
@@ -42,16 +43,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         newPassword.isEmpty ||
         confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.fillAllFieldsRequired)),
       );
       return;
     }
 
     if (newPassword.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'A nova palavra-passe deve ter pelo menos 6 caracteres.',
+            AppLocalizations.of(context)!.passwordMinLength,
           ),
         ),
       );
@@ -60,8 +61,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     if (newPassword != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A confirmação não corresponde à nova palavra-passe.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordConfirmMismatch),
         ),
       );
       return;
@@ -74,8 +75,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     if (accountId == null || accountId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível identificar a conta ativa.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.accountNotFound),
         ),
       );
       return;
@@ -136,20 +137,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                const Text(
-                  'Palavra-passe alterada',
+                Text(
+                  AppLocalizations.of(context)!.passwordChangedTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'A sua palavra-passe foi atualizada com sucesso.',
+                Text(
+                  AppLocalizations.of(context)!.passwordChangedDescription,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF6B7280),
                     height: 1.35,
@@ -167,9 +168,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text(
-                      'Continuar',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.continueButton,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
@@ -191,7 +192,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         SnackBar(
           content: Text(
             error.message.isEmpty
-                ? 'Não foi possível alterar a palavra-passe.'
+                ? AppLocalizations.of(context)!.passwordChangeFailed
                 : error.message,
           ),
         ),
@@ -202,8 +203,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível alterar a palavra-passe.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordChangeFailed),
         ),
       );
     } finally {
@@ -239,9 +240,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Alterar senha',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context)!.changePasswordTitle,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF243047),
@@ -250,15 +251,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Atualize a sua palavra-passe para manter a conta segura.',
+                Text(
+                  AppLocalizations.of(context)!.changePasswordSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 26),
                 _PasswordSection(
-                  label: 'Senha atual',
-                  hintText: 'Digite sua palavra-passe atual',
+                  label: AppLocalizations.of(context)!.currentPasswordLabel,
+                  hintText: AppLocalizations.of(context)!.currentPasswordHint,
                   controller: _currentPasswordController,
                   obscureText: _obscureCurrentPassword,
                   onToggleVisibility: () {
@@ -269,8 +270,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 const SizedBox(height: 18),
                 _PasswordSection(
-                  label: 'Nova senha',
-                  hintText: 'Digite a nova palavra-passe',
+                  label: AppLocalizations.of(context)!.newPasswordLabel,
+                  hintText: AppLocalizations.of(context)!.newPasswordHint,
                   controller: _newPasswordController,
                   obscureText: _obscureNewPassword,
                   onToggleVisibility: () {
@@ -281,8 +282,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 const SizedBox(height: 18),
                 _PasswordSection(
-                  label: 'Confirmar nova senha',
-                  hintText: 'Confirme a nova palavra-passe',
+                  label: AppLocalizations.of(context)!.confirmNewPasswordLabel,
+                  hintText: AppLocalizations.of(context)!.confirmNewPasswordHint,
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   onToggleVisibility: () {
@@ -315,9 +316,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Guardar nova senha',
-                            style: TextStyle(
+                        : Text(
+                            AppLocalizations.of(context)!.saveNewPassword,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,

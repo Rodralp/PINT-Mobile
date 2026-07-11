@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/badges_api.dart';
 import '../services/auth_session.dart';
 import '../services/export_service.dart';
@@ -73,7 +74,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
 
       if (accountId == null) {
         setState(() {
-          _error = 'Sessão expirada. Faça login novamente.';
+          _error = AppLocalizations.of(context)!.sessionsExpiredLogin;
           _isLoading = false;
         });
         return;
@@ -243,7 +244,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
     if (selected.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione pelo menos um badge para exportar.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.selectAtLeastOneBadge)),
       );
       return;
     }
@@ -268,7 +269,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
     if (selected.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione pelo menos um badge para exportar.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.selectAtLeastOneBadge)),
       );
       return;
     }
@@ -317,9 +318,9 @@ class _ExportsScreenState extends State<ExportsScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF243047)),
         ),
-        title: const Text(
-          'Exportações',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.exportsTitle,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF243047),
@@ -356,7 +357,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ElevatedButton(
               onPressed: _loadData,
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A90F0)),
-              child: const Text('Tentar novamente', style: TextStyle(color: Colors.white)),
+              child: Text(AppLocalizations.of(context)!.tryAgain, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -371,12 +372,11 @@ class _ExportsScreenState extends State<ExportsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-          // Tabs
           Row(
             children: [
               Expanded(
                 child: _exportTypeButton(
-                  label: 'Badges',
+                  label: AppLocalizations.of(context)!.badgesTab,
                   selected: _activeTab == _ExportTab.badges,
                   onTap: () => setState(() => _activeTab = _ExportTab.badges),
                 ),
@@ -384,7 +384,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
               const SizedBox(width: 14),
               Expanded(
                 child: _exportTypeButton(
-                  label: 'Certificado',
+                  label: AppLocalizations.of(context)!.certificateTab,
                   selected: _activeTab == _ExportTab.certificate,
                   onTap: () => setState(() => _activeTab = _ExportTab.certificate),
                 ),
@@ -392,10 +392,8 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ],
           ),
           const SizedBox(height: 14),
-          // Search
           _buildSearchBar(),
           const SizedBox(height: 10),
-          // Filter & Sort
           Row(
             children: [
               Expanded(
@@ -619,14 +617,14 @@ class _ExportsScreenState extends State<ExportsScreen> {
       children: [
         Expanded(
           child: Text(
-            'Badges Obtidos (${_filteredBadges.length})',
+            AppLocalizations.of(context)!.badgesObtainedTitle(_filteredBadges.length),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
         ),
         GestureDetector(
           onTap: _toggleSelectAll,
           child: Text(
-            allSelected ? 'Desselecionar' : 'Selecionar tudo',
+            allSelected ? AppLocalizations.of(context)!.deselectAll : AppLocalizations.of(context)!.selectAll,
             style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF1A90F0),
@@ -636,7 +634,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
         ),
         const SizedBox(width: 8),
         Text(
-          '$selectedCount selecionados',
+          AppLocalizations.of(context)!.selectedCountBadges(selectedCount),
           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
         ),
       ],
@@ -655,7 +653,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
           children: [
             Expanded(
               child: _actionButton(
-                label: 'Exportar PDF',
+                label: AppLocalizations.of(context)!.exportPDF,
                 icon: Icons.picture_as_pdf,
                 primary: false,
                 onPressed: _exportBadgesToPDF,
@@ -664,7 +662,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: _actionButton(
-                label: 'Exportar Excel',
+                label: AppLocalizations.of(context)!.exportExcel,
                 icon: Icons.table_chart,
                 primary: true,
                 onPressed: _exportBadgesToCSV,
@@ -674,12 +672,12 @@ class _ExportsScreenState extends State<ExportsScreen> {
         ),
         const SizedBox(height: 14),
         if (badges.isEmpty)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.all(32),
+              padding: const EdgeInsets.all(32),
               child: Text(
-                'Nenhum badge encontrado.',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                AppLocalizations.of(context)!.noBadgesFound,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
               ),
             ),
           )
@@ -807,18 +805,18 @@ class _ExportsScreenState extends State<ExportsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Selecionar badge para certificado',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        Text(
+          AppLocalizations.of(context)!.selectBadgeCertificate,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         if (badges.isEmpty)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.all(32),
+              padding: const EdgeInsets.all(32),
               child: Text(
-                'Nenhum badge obtido disponível.',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                AppLocalizations.of(context)!.noBadgesAvailable,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
               ),
             ),
           )
@@ -887,11 +885,10 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          // Certificate preview
           if (selected != null) _certificatePreview(selected),
           const SizedBox(height: 16),
           _actionButton(
-            label: 'Exportar Certificado PDF',
+            label: AppLocalizations.of(context)!.exportCertificatePDF,
             icon: Icons.picture_as_pdf,
             primary: true,
             onPressed: _exportCertificateToPDF,
@@ -912,9 +909,9 @@ class _ExportsScreenState extends State<ExportsScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'SOFTINSA',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context)!.certificateTitle,
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: Color(0xFF1A90F0),
@@ -922,9 +919,9 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Certificado de Conquista',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context)!.certificateSubtitle,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Color(0xFF333333),
@@ -943,9 +940,9 @@ class _ExportsScreenState extends State<ExportsScreen> {
             title: badge.title,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Concedemos o presente certificado a',
-            style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+          Text(
+            AppLocalizations.of(context)!.certificateIssuedTo,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
           ),
           const SizedBox(height: 6),
           Text(
@@ -957,9 +954,9 @@ class _ExportsScreenState extends State<ExportsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'pela conquista da badge',
-            style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+          Text(
+            AppLocalizations.of(context)!.certificateBadge,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
           ),
           const SizedBox(height: 6),
           Text(

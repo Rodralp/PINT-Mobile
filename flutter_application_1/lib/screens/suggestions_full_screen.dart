@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 import '../services/consultor_api.dart';
 import '../widgets/badge_artwork.dart';
@@ -36,9 +37,9 @@ class SuggestionsFullScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Sugestões',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context)!.suggestionsTitle,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF243047),
@@ -47,10 +48,10 @@ class SuggestionsFullScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Sugestões personalizadas para si',
+                Text(
+                  AppLocalizations.of(context)!.suggestionsSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
@@ -58,10 +59,10 @@ class SuggestionsFullScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Explore áreas alinhadas com o seu perfil e descubra badges que fazem sentido para a sua evolução.',
+                Text(
+                  AppLocalizations.of(context)!.suggestionsDescription,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Colors.grey,
                     height: 1.4,
@@ -74,12 +75,12 @@ class SuggestionsFullScreen extends StatelessWidget {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (suggestions.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
-                      'Defina as suas preferências nas definições para receber sugestões alinhadas com a sua área.',
+                      AppLocalizations.of(context)!.definePreferencesInSettings,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF5B6472),
                         height: 1.45,
@@ -98,7 +99,7 @@ class SuggestionsFullScreen extends StatelessWidget {
                         subtitle: _badgeLevelLabelFromKey(item.subtitleKey),
                         subtitleKey: item.subtitleKey,
                         description:
-                            'Sugestões e badges alinhados com as suas preferências.',
+                            AppLocalizations.of(context)!.suggestionDescription,
                         accentColor: _accentColorFromKey(item.accent),
                         badgeImage: item.badgeImage,
                         levelKey: item.levelKey,

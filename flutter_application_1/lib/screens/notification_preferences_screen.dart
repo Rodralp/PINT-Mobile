@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_session.dart';
 import '../services/local_storage.dart';
 import '../theme/softinsa_theme.dart';
@@ -65,6 +66,7 @@ class _NotificationPreferencesScreenState
   }
 
   Future<void> _savePreferences() async {
+    final loc = AppLocalizations.of(context)!;
     setState(() {
       _isSaving = true;
     });
@@ -79,9 +81,9 @@ class _NotificationPreferencesScreenState
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preferências guardadas com sucesso.'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(loc.prefsSavedSuccess),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
@@ -90,9 +92,9 @@ class _NotificationPreferencesScreenState
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao guardar preferências.'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(loc.prefsSaveError),
+          duration: const Duration(seconds: 2),
         ),
       );
     } finally {
@@ -139,6 +141,8 @@ class _NotificationPreferencesScreenState
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -164,9 +168,9 @@ class _NotificationPreferencesScreenState
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Notificações',
-                        style: TextStyle(
+                      Text(
+                        loc.notificationPrefsTitle,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF243047),
@@ -175,26 +179,26 @@ class _NotificationPreferencesScreenState
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Configure as suas preferências de notificação.',
+                  Text(
+                    loc.notificationPrefsSubtitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 26),
                   _SettingCard(
-                    label: 'Receber atualizações por email',
+                    label: loc.emailUpdates,
                     value: _emailUpdates,
                     onChanged: _isLoading || _isSaving ? null : _toggleEmailUpdates,
                   ),
                   const SizedBox(height: 14),
                   _SettingCard(
-                    label: 'Receber alertas dentro da plataforma',
+                    label: loc.inAppAlerts,
                     value: _inAppAlerts,
                     onChanged: _isLoading || _isSaving ? null : _toggleInAppAlerts,
                   ),
                   const SizedBox(height: 14),
                   _SettingCard(
-                    label: 'Receber resumo semanal',
+                    label: loc.weeklySummary,
                     value: _weeklySummary,
                     onChanged: _isLoading || _isSaving ? null : _toggleWeeklySummary,
                   ),
@@ -222,9 +226,9 @@ class _NotificationPreferencesScreenState
                                 ),
                               ),
                             )
-                          : const Text(
-                              'Guardar alterações',
-                              style: TextStyle(
+                          : Text(
+                              loc.saveChanges,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -248,9 +252,9 @@ class _NotificationPreferencesScreenState
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
-                        'Repor padrão',
-                        style: TextStyle(
+                      child: Text(
+                        loc.resetDefaults,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

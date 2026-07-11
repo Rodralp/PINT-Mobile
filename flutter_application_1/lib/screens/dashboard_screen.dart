@@ -15,6 +15,7 @@ import 'badge_request_screen.dart';
 import 'app_shell_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
+import '../l10n/app_localizations.dart';
 
 class _DashboardMetricData {
   const _DashboardMetricData({
@@ -119,7 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (accountId == null || accountId <= 0) {
         setState(() {
-          _dashboardMetrics = _defaultDashboardMetrics;
+          _dashboardMetrics = _defaultDashboardMetrics(context);
           _isMetricsLoading = false;
         });
         return;
@@ -133,7 +134,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       setState(() {
         _dashboardMetrics = dashboard.stats
-            .map(_metricFromBackend)
+            .map((stat) => _metricFromBackend(stat, context))
             .toList(growable: false);
         _dashboardSuggestions = dashboard.suggestionItems;
         _isMetricsLoading = false;
@@ -144,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!mounted) return;
 
       setState(() {
-        _dashboardMetrics = _defaultDashboardMetrics;
+        _dashboardMetrics = _defaultDashboardMetrics(context);
         _dashboardProgressItems = const [];
         _dashboardSuggestions = const [];
         _isMetricsLoading = false;
@@ -214,42 +215,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  static const List<_DashboardMetricData> _defaultDashboardMetrics = [
-    _DashboardMetricData(
-      title: 'Badges Obtidos',
-      value: '0',
-      subtitle: '0 este mês',
-      icon: Icons.stars_rounded,
-      iconColor: Colors.orange,
-    ),
-    _DashboardMetricData(
-      title: 'Sequência de Dias',
-      value: '0',
-      subtitle: 'Recorde: 0 dias',
-      icon: Icons.local_fire_department_rounded,
-      iconColor: Colors.deepOrange,
-    ),
-    _DashboardMetricData(
-      title: 'Pedidos Pendentes',
-      value: '0',
-      subtitle: '0 em validação',
-      icon: Icons.watch_later,
-      iconColor: Colors.blue,
-    ),
-    _DashboardMetricData(
-      title: 'Ranking',
-      value: '#0',
-      subtitle: '+0 posições este mês',
-      icon: Icons.leaderboard,
-      iconColor: Colors.amber,
-    ),
-  ];
+  List<_DashboardMetricData> _defaultDashboardMetrics(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return [
+      _DashboardMetricData(
+        title: loc.badgesObtained,
+        value: '0',
+        subtitle: '0 ${loc.thisMonth}',
+        icon: Icons.stars_rounded,
+        iconColor: Colors.orange,
+      ),
+      _DashboardMetricData(
+        title: loc.streakDays,
+        value: '0',
+        subtitle: loc.recordDays(0),
+        icon: Icons.local_fire_department_rounded,
+        iconColor: Colors.deepOrange,
+      ),
+      _DashboardMetricData(
+        title: loc.pendingRequests,
+        value: '0',
+        subtitle: '0 ${loc.inValidation}',
+        icon: Icons.watch_later,
+        iconColor: Colors.blue,
+      ),
+      _DashboardMetricData(
+        title: loc.ranking,
+        value: '#0',
+        subtitle: '+0 ${loc.positionsThisMonth}',
+        icon: Icons.leaderboard,
+        iconColor: Colors.amber,
+      ),
+    ];
+  }
 
-  _DashboardMetricData _metricFromBackend(BackendDashboardStat stat) {
+  _DashboardMetricData _metricFromBackend(BackendDashboardStat stat, BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     switch (stat.titleKey) {
       case 'dashboard_stat_badges_title':
         return _DashboardMetricData(
-          title: 'Badges Obtidos',
+          title: loc.badgesObtained,
           value: stat.value,
           subtitle: '',
           icon: Icons.stars_rounded,
@@ -257,7 +262,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       case 'dashboard_stat_streak_title':
         return _DashboardMetricData(
-          title: 'Sequência de Dias',
+          title: loc.streakDays,
           value: stat.value,
           subtitle: '',
           icon: Icons.local_fire_department_rounded,
@@ -265,7 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       case 'dashboard_stat_requests_title':
         return _DashboardMetricData(
-          title: 'Pedidos Pendentes',
+          title: loc.pendingRequests,
           value: stat.value,
           subtitle: '',
           icon: Icons.watch_later,
@@ -273,7 +278,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       case 'dashboard_stat_ranking_title':
         return _DashboardMetricData(
-          title: 'Ranking',
+          title: loc.ranking,
           value: stat.value,
           subtitle: '',
           icon: Icons.leaderboard,
@@ -371,6 +376,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppTopBar(
@@ -418,9 +424,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: _dashboardMetrics.isEmpty && _isMetricsLoading
                         ? [
                             _buildMetricCard(
-                              title: 'A carregar...',
+                              title: loc.loading,
                               value: '—',
-                              subtitle: 'A obter dados do dashboard',
+                              subtitle: loc.obtainingData,
                               icon: Icons.sync,
                               iconColor: Colors.grey,
                             ),
@@ -449,7 +455,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 // LEMBRETES (Reminders)
                 _buildSection(
-                  title: "Lembretes",
+                  title: loc.remindersSection,
+                  viewAllLabel: loc.viewAll,
                   onViewAll: () {
                     Navigator.push(
                       context,
@@ -473,7 +480,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Text(
-                            "Sem lembretes para mostrar.",
+                            loc.noReminders,
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey[500],
@@ -504,7 +511,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 // EM PROGRESSO
                 _buildSection(
-                  title: "Em Progresso",
+                  title: loc.inProgressSection,
+                  viewAllLabel: loc.viewAll,
                   onViewAll: () {
                     Navigator.pushReplacement(
                       context,
@@ -536,7 +544,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Sem itens em progresso para mostrar.',
+                                loc.noInProgressItems,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[500],
@@ -582,7 +590,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 // SUGESTÕES
                 _buildSection(
-                  title: "Sugestões",
+                  title: loc.suggestionsSection,
+                  viewAllLabel: loc.viewAll,
                   onViewAll: () {
                     Navigator.push(
                       context,
@@ -613,7 +622,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Defina as suas preferências para ver sugestões de badges.',
+                                loc.definePreferencesHint,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[500],
@@ -661,6 +670,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildSection({
     required String title,
+    required String viewAllLabel,
     required VoidCallback onViewAll,
     required Widget child,
   }) {
@@ -693,8 +703,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   padding: EdgeInsets.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
-                  "Ver todos",
+                child: Text(
+                  viewAllLabel,
                   style: TextStyle(color: Colors.blue),
                 ),
               ),
@@ -918,7 +928,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String? levelKey,
   }) {
     final accentColor = _accentColorForSuggestion(accent);
-    final subtitle = _badgeLevelLabelFromKey(subtitleKey);
+    final subtitle = _badgeLevelLabelFromKey(subtitleKey, context);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -969,18 +979,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String _badgeLevelLabelFromKey(String key) {
+  String _badgeLevelLabelFromKey(String key, BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     switch (key.trim().toLowerCase()) {
       case 'badge_level_junior':
-        return 'Júnior';
+        return loc.junior;
       case 'badge_level_intermediate':
-        return 'Intermédio';
+        return loc.intermediate;
       case 'badge_level_senior':
-        return 'Sénior';
+        return loc.senior;
       case 'badge_level_specialist':
-        return 'Especialista';
+        return loc.specialist;
       case 'badge_level_knowledge_lead':
-        return 'Líder de Conhecimento';
+        return loc.knowledgeLead;
       default:
         return key;
     }
