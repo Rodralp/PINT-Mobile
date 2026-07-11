@@ -878,7 +878,7 @@ class ConsultorApi {
     }
 
     final streamedResponse = await request.send().timeout(
-      const Duration(seconds: 30),
+      const Duration(seconds: 120),
       onTimeout: () {
         throw const ConsultorApiException(
           'O servidor demorou demasiado tempo a responder.',
@@ -889,7 +889,15 @@ class ConsultorApi {
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      Map<String, dynamic>? body;
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          body = decoded;
+        }
+      } catch (_) {
+        body = null;
+      }
       throw ConsultorApiException(
         body?['message'] as String? ?? 'Falha ao submeter evidencias.',
         statusCode: response.statusCode,
