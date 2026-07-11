@@ -75,7 +75,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final hasPreferences = (await AuthSession.hasPreferences()) ||
-        ((await localStorage.getBool(PreferencesScreen.firstLoginPreferencesDoneKey)) ?? false);
+        ((await localStorage.getBool(
+              PreferencesScreen.firstLoginPreferencesDoneKeyFor(accountId),
+            )) ??
+            false);
 
     if (!mounted) {
       return;
@@ -90,10 +93,16 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      Navigator.pushReplacementNamed(
-        context,
-        hasPreferences ? '/app' : '/preferences',
-      );
+      if (hasPreferences) {
+        Navigator.pushReplacementNamed(context, '/app');
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PreferencesScreen(showBackButton: false),
+          ),
+        );
+      }
     });
   }
 
@@ -156,7 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final hasPreferences =
           account.hasPreferences ||
           (await AuthSession.hasPreferences()) ||
-          ((await localStorage.getBool(PreferencesScreen.firstLoginPreferencesDoneKey)) ?? false);
+          ((await localStorage.getBool(
+                PreferencesScreen.firstLoginPreferencesDoneKeyFor(account.id),
+              )) ??
+              false);
 
       if (!mounted) {
         return;
@@ -165,7 +177,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (hasPreferences) {
         Navigator.pushReplacementNamed(context, '/app');
       } else {
-        Navigator.pushReplacementNamed(context, '/preferences');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PreferencesScreen(showBackButton: false),
+          ),
+        );
       }
     } on AuthApiException catch (error) {
       if (!mounted) {

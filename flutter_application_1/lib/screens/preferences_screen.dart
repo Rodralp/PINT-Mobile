@@ -8,10 +8,13 @@ import '../services/preference_repository.dart';
 import '../theme/softinsa_theme.dart';
 
 class PreferencesScreen extends StatefulWidget {
-  const PreferencesScreen({super.key});
+  const PreferencesScreen({super.key, this.showBackButton = true});
 
-  static const String firstLoginPreferencesDoneKey =
-      'first_login_preferences_done';
+  final bool showBackButton;
+
+  static String firstLoginPreferencesDoneKeyFor(int accountId) {
+    return 'first_login_preferences_done:$accountId';
+  }
 
   @override
   State<PreferencesScreen> createState() => _PreferencesScreenState();
@@ -174,7 +177,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       );
 
       await localStorage.setBool(
-        PreferencesScreen.firstLoginPreferencesDoneKey,
+        PreferencesScreen.firstLoginPreferencesDoneKeyFor(accountId),
         true,
       );
       await AuthSession.setHasPreferences(true);
@@ -230,28 +233,32 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshAreas,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+        child: PopScope(
+          canPop: widget.showBackButton,
+          child: RefreshIndicator(
+            onRefresh: _refreshAreas,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, size: 28),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
+                      if (widget.showBackButton) ...[
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back, size: 28),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
+                        const SizedBox(width: 8),
+                      ],
                       const Text(
                         'Preferências',
                         style: TextStyle(
@@ -376,7 +383,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       itemCount: filteredAreas.length,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final area = filteredAreas[index];
                         return _PreferenceCard(
@@ -421,6 +428,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   ),
                   const SizedBox(height: 24),
                 ],
+                ),
               ),
             ),
           ),

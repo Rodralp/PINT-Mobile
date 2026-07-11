@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
 import '../theme/softinsa_theme.dart';
+import '../utils/avatar_image.dart';
 
 class AppTopBar extends StatefulWidget implements PreferredSizeWidget {
   const AppTopBar({
@@ -145,7 +146,8 @@ class _TopBarAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasAvatar = avatarUrl != null && avatarUrl!.trim().isNotEmpty;
+    final provider = avatarImageProvider(avatarUrl);
+    final hasAvatar = provider != null;
 
     return Container(
       width: 36,
@@ -156,10 +158,10 @@ class _TopBarAvatar extends StatelessWidget {
       ),
       child: hasAvatar
           ? ClipOval(
-              child: Image.network(
-                avatarUrl!,
+              child: Image(
+                image: provider,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.person,
                   size: 20,
                   color: SoftinsaColors.blueDark,

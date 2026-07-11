@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/consultor_api.dart';
 import '../services/ranking_repository.dart';
+import '../utils/avatar_image.dart';
 
 class _RankingConsultant {
   const _RankingConsultant({
@@ -223,7 +224,10 @@ class _RankingScreenState extends State<RankingScreen> {
     var currentRank = 0;
     for (var index = 0; index < reference.length; index++) {
       final item = reference[index];
-      final hasSameScore = previous != null && previous!.points == item.points && previous!.badges == item.badges;
+      final hasSameScore =
+          previous != null &&
+          previous.points == item.points &&
+          previous.badges == item.badges;
       if (!hasSameScore) {
         currentRank = index + 1;
       }
@@ -525,6 +529,8 @@ class _RankingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatarProvider = avatarImageProvider(avatarUrl);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -539,9 +545,8 @@ class _RankingCard extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: const Color(0xFFF1F5F9),
-            backgroundImage:
-                avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
-            child: avatarUrl == null || avatarUrl!.isEmpty
+            backgroundImage: avatarProvider,
+            child: avatarProvider == null
                 ? Text(
                     avatarLetter,
                     style: const TextStyle(

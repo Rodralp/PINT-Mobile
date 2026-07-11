@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import '../services/auth_session.dart';
 import '../services/consultor_api.dart';
+import '../utils/avatar_image.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -199,6 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final initials = _name.isNotEmpty
                           ? _name.trim().characters.first.toUpperCase()
                           : '?';
+                        final avatarProvider = avatarImageProvider(_avatar);
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,10 +212,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 CircleAvatar(
                                   radius: 36,
                                   backgroundColor: const Color(0xFFEFF6FF),
-                                  backgroundImage: _avatar.isNotEmpty
-                                      ? NetworkImage(_avatar)
-                                      : null,
-                                  child: _avatar.isEmpty
+                                  backgroundImage: avatarProvider,
+                                  child: avatarProvider == null
                                       ? Text(
                                           initials,
                                           style: const TextStyle(

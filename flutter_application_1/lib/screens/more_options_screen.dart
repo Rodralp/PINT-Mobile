@@ -51,93 +51,129 @@ class MoreOptionsScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                  _OptionTile(
-                    icon: Icons.leaderboard_outlined,
-                    title: 'Ranking',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RankingScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  _OptionTile(
-                    icon: Icons.push_pin_outlined,
-                    title: 'Lembretes',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RemindersScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  _OptionTile(
-                    icon: Icons.file_download_outlined,
-                    title: 'Exportações',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ExportsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                ],
-              ),
+                _OptionTile(
+                  icon: Icons.leaderboard_outlined,
+                  title: 'Ranking',
+                  subtitle: 'Classificação e pontuação global',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RankingScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _OptionTile(
+                  icon: Icons.push_pin_outlined,
+                  title: 'Lembretes',
+                  subtitle: 'Agenda pessoal e alertas',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RemindersScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _OptionTile(
+                  icon: Icons.file_download_outlined,
+                  title: 'Exportações',
+                  subtitle: 'Exportar dados e relatórios',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ExportsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _OptionTile extends StatelessWidget {
-  const _OptionTile({required this.icon, required this.title, this.onTap});
+  const _OptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
 
   final IconData icon;
   final String title;
+  final String subtitle;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        height: 110,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE0E5EC), width: 1.6),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 38),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Text(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Material(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE4EAF2)),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 10,
+              ),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE4EAF2)),
+                ),
+                child: Icon(icon, size: 22, color: const Color(0xFF374151)),
+              ),
+              title: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F2937),
                 ),
               ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                size: 28,
+                color: Color(0xFF374151),
+              ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF97A0AD), size: 40),
-          ],
+          ),
         ),
       ),
     );

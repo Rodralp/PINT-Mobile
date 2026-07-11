@@ -632,8 +632,25 @@ class ConsultorApi {
       if (decoded is Map<String, dynamic>) {
         final data = decoded['data'];
         final resolved = data is Map<String, dynamic> ? data : decoded;
-        await _writeCache(cacheKey, resolved);
-        return BackendProfile.fromJson(resolved);
+        final enriched = Map<String, dynamic>.from(resolved);
+
+        final profileAvatar = _readString(
+          enriched,
+          ['avatar', 'photoUrl', 'photo'],
+        );
+        final resolvedAccountId = accountId ?? await _getAccountId();
+
+        if ((profileAvatar == null || profileAvatar.isEmpty) &&
+            resolvedAccountId != null &&
+            resolvedAccountId > 0) {
+          final userImage = await _fetchUserImage(resolvedAccountId);
+          if (userImage != null && userImage.isNotEmpty) {
+            enriched['avatar'] = userImage;
+          }
+        }
+
+        await _writeCache(cacheKey, enriched);
+        return BackendProfile.fromJson(enriched);
       }
 
       return const BackendProfile(
@@ -655,6 +672,26 @@ class ConsultorApi {
         return BackendProfile.fromJson(cached);
       }
       rethrow;
+    }
+  }
+
+  Future<String?> _fetchUserImage(int accountId) async {
+    try {
+      final uri = await _uri('/consultor/user-image?accountId=$accountId');
+      final response = await _getJson(uri);
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+
+      final image = _readString(decoded, ['image', 'avatar', 'photo']);
+      return image == null || image.isEmpty ? null : image;
+    } catch (_) {
+      return null;
     }
   }
 
