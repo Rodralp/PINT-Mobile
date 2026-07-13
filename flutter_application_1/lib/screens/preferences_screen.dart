@@ -2,7 +2,6 @@
 import '../l10n/app_localizations.dart';
 import '../services/local_storage.dart';
 
-import '../services/achievement_center.dart';
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
 import '../services/preference_repository.dart';
@@ -182,18 +181,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         true,
       );
       await AuthSession.setHasPreferences(true);
-
-      AchievementCenter.instance.unlock(
-        AchievementUnlock(
-          id: 'welcome-achievement',
-          title: AppLocalizations.of(context)!.welcomeAchievementTitle,
-          description:
-              AppLocalizations.of(context)!.welcomeAchievementDescription,
-          points: 50,
-          badgesCount: 1,
-          imageAsset: 'assets/images/welcome.png',
-        ),
-      );
 
       if (!mounted) {
         return;
