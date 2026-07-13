@@ -1180,4 +1180,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spanish => 'Español';
+
+  @override
+  String get forgotPasswordTitle => 'Recover Password';
+
+  @override
+  String get forgotStep1Subtitle =>
+      'Enter the email associated with your account';
+
+  @override
+  String get forgotEmailNotFound => 'No account found with this email';
+
+  @override
+  String get forgotStep2Subtitle => 'Solve to continue';
+
+  @override
+  String forgotMathQuestion(int a, int b) {
+    return 'What is $a + $b?';
+  }
+
+  @override
+  String get forgotWrongAnswer => 'Wrong answer. Try again.';
+
+  @override
+  String get forgotStep3Title => 'Set New Password';
+
+  @override
+  String get forgotNewPasswordHint => 'New Password';
+
+  @override
+  String get forgotConfirmPasswordHint => 'Confirm Password';
+
+  @override
+  String get forgotPasswordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get forgotPasswordMismatch => 'Passwords do not match';
+
+  @override
+  String get forgotPasswordSuccess => 'Password reset successfully!';
+
+  @override
+  String get forgotPasswordError => 'Failed to reset password. Try again.';
 }

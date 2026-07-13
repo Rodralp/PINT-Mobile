@@ -268,6 +268,39 @@ class AuthApi {
 
   }
 
+  Future<int> recoverPassword({required String email}) async {
+    final attempt = await _postJson('/auth/recover-password', {'email': email});
+    final response = attempt.response;
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
+
+    final body = _decodeBody(response);
+    final accountId = body['accountId'];
+    if (accountId == null) {
+      throw AuthApiException('Resposta invalida do servidor.');
+    }
+    return accountId is int ? accountId : int.tryParse('$accountId') ?? 0;
+  }
+
+  Future<AuthAccount> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    final attempt = await _postJson('/auth/reset-password', {
+      'email': email,
+      'newPassword': newPassword,
+    });
+    final response = attempt.response;
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
+
+    return AuthAccount.fromJson(_decodeBody(response));
+  }
+
   Future<List<BackendArea>> fetchPreferenceAreas({
     required int accountId,
   }) async {

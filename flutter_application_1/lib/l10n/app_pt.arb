@@ -379,5 +379,19 @@
   "selectLanguage": "Selecionar idioma",
   "portuguese": "Português",
   "english": "English",
-  "spanish": "Español"
+  "spanish": "Español",
+  "forgotPasswordTitle": "Recuperar Password",
+  "forgotStep1Subtitle": "Insira o email associado à sua conta",
+  "forgotEmailNotFound": "Nenhuma conta encontrada com este email",
+  "forgotStep2Subtitle": "Resolva para continuar",
+  "forgotMathQuestion": "Quanto é {a} + {b}?",
+  "@forgotMathQuestion": { "placeholders": { "a": { "type": "int" }, "b": { "type": "int" } } },
+  "forgotWrongAnswer": "Resposta errada. Tente novamente.",
+  "forgotStep3Title": "Definir Nova Password",
+  "forgotNewPasswordHint": "Nova password",
+  "forgotConfirmPasswordHint": "Confirmar password",
+  "forgotPasswordTooShort": "A password deve ter pelo menos 6 caracteres",
+  "forgotPasswordMismatch": "As passwords não coincidem",
+  "forgotPasswordSuccess": "Password reposta com sucesso!",
+  "forgotPasswordError": "Erro ao repor password. Tente novamente."
 }

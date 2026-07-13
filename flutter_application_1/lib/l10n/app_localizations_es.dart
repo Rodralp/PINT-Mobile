@@ -1190,4 +1190,48 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get spanish => 'Español';
+
+  @override
+  String get forgotPasswordTitle => 'Recuperar Contraseña';
+
+  @override
+  String get forgotStep1Subtitle => 'Ingresa el email asociado a tu cuenta';
+
+  @override
+  String get forgotEmailNotFound =>
+      'No se encontró ninguna cuenta con este email';
+
+  @override
+  String get forgotStep2Subtitle => 'Resuelve para continuar';
+
+  @override
+  String forgotMathQuestion(int a, int b) {
+    return '¿Cuánto es $a + $b?';
+  }
+
+  @override
+  String get forgotWrongAnswer => 'Respuesta incorrecta. Inténtalo de nuevo.';
+
+  @override
+  String get forgotStep3Title => 'Definir Nueva Contraseña';
+
+  @override
+  String get forgotNewPasswordHint => 'Nueva contraseña';
+
+  @override
+  String get forgotConfirmPasswordHint => 'Confirmar contraseña';
+
+  @override
+  String get forgotPasswordTooShort =>
+      'La contraseña debe tener al menos 6 caracteres';
+
+  @override
+  String get forgotPasswordMismatch => 'Las contraseñas no coinciden';
+
+  @override
+  String get forgotPasswordSuccess => '¡Contraseña restablecida con éxito!';
+
+  @override
+  String get forgotPasswordError =>
+      'Error al restablecer la contraseña. Inténtalo de nuevo.';
 }

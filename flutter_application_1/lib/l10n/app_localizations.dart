@@ -2265,6 +2265,84 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Español'**
   String get spanish;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recuperar Password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotStep1Subtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Insira o email associado à sua conta'**
+  String get forgotStep1Subtitle;
+
+  /// No description provided for @forgotEmailNotFound.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma conta encontrada com este email'**
+  String get forgotEmailNotFound;
+
+  /// No description provided for @forgotStep2Subtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resolva para continuar'**
+  String get forgotStep2Subtitle;
+
+  /// No description provided for @forgotMathQuestion.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quanto é {a} + {b}?'**
+  String forgotMathQuestion(int a, int b);
+
+  /// No description provided for @forgotWrongAnswer.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resposta errada. Tente novamente.'**
+  String get forgotWrongAnswer;
+
+  /// No description provided for @forgotStep3Title.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definir Nova Password'**
+  String get forgotStep3Title;
+
+  /// No description provided for @forgotNewPasswordHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova password'**
+  String get forgotNewPasswordHint;
+
+  /// No description provided for @forgotConfirmPasswordHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confirmar password'**
+  String get forgotConfirmPasswordHint;
+
+  /// No description provided for @forgotPasswordTooShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'A password deve ter pelo menos 6 caracteres'**
+  String get forgotPasswordTooShort;
+
+  /// No description provided for @forgotPasswordMismatch.
+  ///
+  /// In pt, this message translates to:
+  /// **'As passwords não coincidem'**
+  String get forgotPasswordMismatch;
+
+  /// No description provided for @forgotPasswordSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Password reposta com sucesso!'**
+  String get forgotPasswordSuccess;
+
+  /// No description provided for @forgotPasswordError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Erro ao repor password. Tente novamente.'**
+  String get forgotPasswordError;
 }
 
 class _AppLocalizationsDelegate

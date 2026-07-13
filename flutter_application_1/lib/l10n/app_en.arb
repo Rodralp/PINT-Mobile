@@ -379,5 +379,19 @@
   "selectLanguage": "Select language",
   "portuguese": "Português",
   "english": "English",
-  "spanish": "Español"
+  "spanish": "Español",
+  "forgotPasswordTitle": "Recover Password",
+  "forgotStep1Subtitle": "Enter the email associated with your account",
+  "forgotEmailNotFound": "No account found with this email",
+  "forgotStep2Subtitle": "Solve to continue",
+  "forgotMathQuestion": "What is {a} + {b}?",
+  "@forgotMathQuestion": { "placeholders": { "a": { "type": "int" }, "b": { "type": "int" } } },
+  "forgotWrongAnswer": "Wrong answer. Try again.",
+  "forgotStep3Title": "Set New Password",
+  "forgotNewPasswordHint": "New Password",
+  "forgotConfirmPasswordHint": "Confirm Password",
+  "forgotPasswordTooShort": "Password must be at least 6 characters",
+  "forgotPasswordMismatch": "Passwords do not match",
+  "forgotPasswordSuccess": "Password reset successfully!",
+  "forgotPasswordError": "Failed to reset password. Try again."
 }
