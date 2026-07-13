@@ -416,4 +416,73 @@ class BadgesApi {
         .where((item) => item.text.isNotEmpty)
         .toList(growable: false);
   }
+
+  Future<List<BackendBadge>> fetchVitrine({required int accountId}) async {
+    try {
+      final uri = await _uri('/consultor/vitrine?accountId=$accountId');
+      final response = await _getJson(uri);
+
+      if (_looksLikeHtml(response.body)) {
+        throw BadgesApiException(
+          'A resposta do servidor nao e JSON ($uri).',
+          statusCode: response.statusCode,
+        );
+      }
+
+      if (response.statusCode != 200) {
+        _throwApiError(response);
+      }
+
+      final decoded = jsonDecode(response.body);
+      final data = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+      if (data is! List) {
+        return const [];
+      }
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map((item) {
+            final nivel = item['nivel']?.toString() ?? '';
+            final tipo = item['tipo']?.toString() ?? '';
+            final isSpecial = tipo.toLowerCase() == 'especial';
+            return BackendBadge(
+              id: item['nbadge'] is int ? item['nbadge'] as int : int.tryParse('${item['nbadge']}') ?? 0,
+              title: item['b_nome']?.toString() ?? '',
+              level: nivel,
+              points: item['pontos'] is int ? item['pontos'] as int : int.tryParse('${item['pontos']}') ?? 0,
+              status: 'obtido',
+              owned: true,
+              date: item['validade']?.toString(),
+              area: item['b_nome']?.toString(),
+              levelKey: isSpecial ? 'special' : _levelKeyFromName(nivel),
+              stateId: 'aprovado',
+              badgeImage: item['imagem']?.toString(),
+            );
+          })
+          .toList(growable: false);
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  static String _levelKeyFromName(String nivel) {
+    switch (nivel.toLowerCase()) {
+      case 'junior':
+      case 'júnior':
+        return 'badge_level_junior';
+      case 'intermédio':
+      case 'intermedio':
+        return 'badge_level_intermediate';
+      case 'sénior':
+      case 'senior':
+        return 'badge_level_senior';
+      case 'especialista':
+        return 'badge_level_specialist';
+      case 'líder de conhecimento':
+      case 'lider de conhecimento':
+        return 'badge_level_knowledge_lead';
+      default:
+        return '';
+    }
+  }
 }

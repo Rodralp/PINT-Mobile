@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -7,9 +8,11 @@ import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
 import 'settings_menu_screen.dart';
 import '../services/auth_session.dart';
+import '../services/achievement_center.dart';
 import '../services/badges_api.dart';
 import '../services/badge_cache_repository.dart';
 import '../services/consultor_api.dart';
+import '../services/local_storage.dart';
 import 'messages_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
@@ -378,15 +381,56 @@ class _BadgesScreenState extends State<BadgesScreen> {
     return catalogBadges;
   }
 
+  static const String _ownedSpecialBadgesKey = 'owned_special_badge_ids';
+
   Future<List<BadgeData>> _loadMyBadges() async {
     final accountId = await AuthSession.getAccountId();
     if (accountId == null) {
       return const <BadgeData>[];
     }
+
+    final previousOwnedKey = '$_ownedSpecialBadgesKey:$accountId';
+    final previousOwnedRaw = await localStorage.getString(previousOwnedKey);
+    final previousOwnedIds = previousOwnedRaw != null
+        ? Set<String>.from(jsonDecode(previousOwnedRaw) as List)
+        : <String>{};
+
     final items = await BadgesApi.instance.fetchMyBadges(accountId: accountId);
-    return items
+    final badges = items
         .map((badge) => _badgeDataFromBackend(badge, isOwnedOverride: true))
         .toList(growable: false);
+
+    final currentOwnedIds = <String>{};
+    for (final badge in badges) {
+      if (badge.isOwned && badge.isSpecial) {
+        currentOwnedIds.add(badge.id.toString());
+      }
+    }
+
+    if (previousOwnedIds.isNotEmpty && mounted) {
+      for (final badge in badges) {
+        if (badge.isOwned &&
+            badge.isSpecial &&
+            !previousOwnedIds.contains(badge.id.toString())) {
+          AchievementCenter.instance.unlock(AchievementUnlock(
+            id: 'special-badge-${badge.id}',
+            title: AppLocalizations.of(context)!.specialBadgeAchievementTitle,
+            description:
+                AppLocalizations.of(context)!.specialBadgeAchievementDescription,
+            points: badge.points,
+            badgesCount: 1,
+            imageAsset: badge.badgeImage,
+          ));
+        }
+      }
+    }
+
+    await localStorage.setString(
+      previousOwnedKey,
+      jsonEncode(currentOwnedIds.toList()),
+    );
+
+    return badges;
   }
 
   @override
@@ -1530,6 +1574,16 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           success = true;
           newState = BadgeState.approved;
           newStateId = 'aprovado';
+          if (_badge.isSpecial) {
+            AchievementCenter.instance.unlock(AchievementUnlock(
+              id: 'special-badge-${_badge.id}',
+              title: AppLocalizations.of(context)!.specialBadgeAchievementTitle,
+              description: AppLocalizations.of(context)!.specialBadgeAchievementDescription,
+              points: _badge.points,
+              badgesCount: 1,
+              imageAsset: _badge.badgeImage,
+            ));
+          }
           break;
         case 'pendente-tm':
           message = AppLocalizations.of(context)!.pedidoEnviadoSucesso;
@@ -1669,10 +1723,12 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
         throw Exception(AppLocalizations.of(context)!.sessionsExpiredLogin);
       }
 
-      await ConsultorApi.instance.requestBadgeAcquisition(
+      final submitResult = await ConsultorApi.instance.requestBadgeAcquisition(
         accountId: accountId,
         badgeId: _badge.id,
       );
+
+      final submitStatus = submitResult['status']?.toString() ?? '';
 
       if (!mounted) return;
 
@@ -1700,6 +1756,17 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           requestId: _currentRequestId,
         );
       });
+
+      if (submitStatus == 'obtido' && _badge.isSpecial) {
+        AchievementCenter.instance.unlock(AchievementUnlock(
+          id: 'special-badge-${_badge.id}',
+          title: AppLocalizations.of(context)!.specialBadgeAchievementTitle,
+          description: AppLocalizations.of(context)!.specialBadgeAchievementDescription,
+          points: _badge.points,
+          badgesCount: 1,
+          imageAsset: _badge.badgeImage,
+        ));
+      }
 
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;

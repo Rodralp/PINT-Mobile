@@ -17,11 +17,9 @@ class _NotificationPreferencesScreenState
     extends State<NotificationPreferencesScreen> {
   static const bool _defaultEmailUpdates = true;
   static const bool _defaultInAppAlerts = true;
-  static const bool _defaultWeeklySummary = false;
 
   bool _emailUpdates = _defaultEmailUpdates;
   bool _inAppAlerts = _defaultInAppAlerts;
-  bool _weeklySummary = _defaultWeeklySummary;
   bool _isLoading = true;
   bool _isSaving = false;
   int? _accountId;
@@ -48,9 +46,6 @@ class _NotificationPreferencesScreenState
     final inAppAlerts =
         await localStorage.getBool(_storageKey('in_app_alerts', accountId)) ??
             _defaultInAppAlerts;
-    final weeklySummary =
-        await localStorage.getBool(_storageKey('weekly_summary', accountId)) ??
-            _defaultWeeklySummary;
 
     if (!mounted) {
       return;
@@ -60,7 +55,6 @@ class _NotificationPreferencesScreenState
       _accountId = accountId;
       _emailUpdates = emailUpdates;
       _inAppAlerts = inAppAlerts;
-      _weeklySummary = weeklySummary;
       _isLoading = false;
     });
   }
@@ -74,7 +68,6 @@ class _NotificationPreferencesScreenState
     try {
       await localStorage.setBool(_storageKey('email_updates'), _emailUpdates);
       await localStorage.setBool(_storageKey('in_app_alerts'), _inAppAlerts);
-      await localStorage.setBool(_storageKey('weekly_summary'), _weeklySummary);
 
       if (!mounted) {
         return;
@@ -110,7 +103,6 @@ class _NotificationPreferencesScreenState
     setState(() {
       _emailUpdates = _defaultEmailUpdates;
       _inAppAlerts = _defaultInAppAlerts;
-      _weeklySummary = _defaultWeeklySummary;
     });
   }
 
@@ -130,12 +122,6 @@ class _NotificationPreferencesScreenState
   void _toggleInAppAlerts(bool value) {
     setState(() {
       _inAppAlerts = value;
-    });
-  }
-
-  void _toggleWeeklySummary(bool value) {
-    setState(() {
-      _weeklySummary = value;
     });
   }
 
@@ -195,12 +181,6 @@ class _NotificationPreferencesScreenState
                     label: loc.inAppAlerts,
                     value: _inAppAlerts,
                     onChanged: _isLoading || _isSaving ? null : _toggleInAppAlerts,
-                  ),
-                  const SizedBox(height: 14),
-                  _SettingCard(
-                    label: loc.weeklySummary,
-                    value: _weeklySummary,
-                    onChanged: _isLoading || _isSaving ? null : _toggleWeeklySummary,
                   ),
                   const SizedBox(height: 28),
                   SizedBox(

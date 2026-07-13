@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 import '../services/auth_session.dart';
+import '../services/badges_api.dart';
 import '../services/consultor_api.dart';
+import '../widgets/badge_artwork.dart';
 import '../utils/avatar_image.dart';
 import '../l10n/app_localizations.dart';
+import 'badges_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,7 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int? _badges;
 
   List<_CompetencyData> _competencies = const [];
-  List<_RequirementData> _requirements = const [];
+  List<BackendBadge> _ownedBadges = const [];
 
   @override
   void initState() {
@@ -46,7 +49,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final storedEmail = await AuthSession.getAccountEmail() ?? '';
 
       final competencies = _buildCompetencies(profile, context);
-      final requirements = _buildRequirements(profile);
+
+      List<BackendBadge> ownedBadges = const [];
+      if (accountId != null) {
+        try {
+          ownedBadges = await BadgesApi.instance.fetchVitrine(accountId: accountId);
+        } catch (_) {}
+      }
 
       if (!mounted) {
         return;
@@ -62,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _ranking = profile.ranking;
         _badges = profile.badges;
         _competencies = competencies;
-        _requirements = requirements;
+        _ownedBadges = ownedBadges;
         _loadError = null;
       });
     } catch (_) {
@@ -122,20 +131,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return const [];
-  }
-
-  List<_RequirementData> _buildRequirements(BackendProfile profile) {
-    if (profile.certificationsItems.isEmpty) {
-      return const [];
-    }
-
-    return profile.certificationsItems.map((item) {
-      return _RequirementData(
-        title: item.title,
-        level: item.subtitle,
-        points: null,
-      );
-    }).toList(growable: false);
   }
 
   @override
@@ -312,8 +307,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 24),
                           _CompetenciesCard(items: _competencies),
-                          const SizedBox(height: 24),
-                          _RequirementsCard(items: _requirements),
+                          if (_ownedBadges.isNotEmpty) ...[
+                            const SizedBox(height: 24),
+                            _BadgeShowcaseCard(badges: _ownedBadges),
+                          ],
                         ],
                       );
                     },
@@ -343,16 +340,131 @@ class _CompetencyData {
   final Color color;
 }
 
-class _RequirementData {
-  const _RequirementData({
-    required this.title,
-    required this.level,
-    required this.points,
-  });
+class _BadgeShowcaseCard extends StatelessWidget {
+  const _BadgeShowcaseCard({required this.badges});
 
-  final String title;
-  final String level;
-  final int? points;
+  final List<BackendBadge> badges;
+
+  Color _frameColor(String? levelKey) {
+    switch (levelKey?.toLowerCase()) {
+      case 'badge_level_junior':
+        return const Color(0xFFD67F45);
+      case 'badge_level_intermediate':
+        return const Color(0xFFBFC4CD);
+      case 'badge_level_senior':
+        return const Color(0xFFF0C64A);
+      case 'badge_level_specialist':
+        return const Color(0xFF9B6CF2);
+      case 'badge_level_knowledge_lead':
+        return const Color(0xFF39C65A);
+      default:
+        return const Color(0xFF1A90F0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.badgesShowcase,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF243047),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 90,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: badges.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final badge = badges[index];
+                  final color = _frameColor(badge.levelKey);
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BadgeLiveDetailScreen(
+                            badge: BadgeData(
+                              id: badge.id,
+                              title: badge.title,
+                              level: badge.level,
+                              points: badge.points,
+                              date: badge.date ?? '-',
+                              badgeImage: badge.badgeImage,
+                              frameColor: color,
+                              iconBackground: color.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                              isOwned: true,
+                              isSpecial: badge.levelKey == null ||
+                                  badge.levelKey!.isEmpty ||
+                                  badge.levelKey == 'special',
+                              levelKey: badge.levelKey,
+                              stateId: badge.stateId,
+                              state: null,
+                              requestId: badge.requestId,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: BadgeArtwork(
+                            size: 60,
+                            frameColor: color,
+                            backgroundColor: color.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                            borderWidth: 0,
+                            iconSize: 28,
+                            badgeImage: badge.badgeImage,
+                            levelKey: badge.levelKey,
+                            title: badge.title,
+                            subtitle: badge.level,
+                            isSpecial: badge.levelKey == null ||
+                                badge.levelKey!.isEmpty ||
+                                badge.levelKey == 'special',
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: 72,
+                          child: Text(
+                            badge.area ?? badge.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF243047),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MetricInfoCard extends StatelessWidget {
@@ -520,114 +632,6 @@ class _CompetencyProgress extends StatelessWidget {
             color: color,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _RequirementsCard extends StatelessWidget {
-  const _RequirementsCard({required this.items});
-
-  final List<_RequirementData> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Requisitos',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF243047),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (items.isEmpty)
-            Text(
-              AppLocalizations.of(context)!.noDataAvailable,
-              style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-            )
-          else
-            ...items.map(_RequirementItem.new),
-        ],
-      ),
-    );
-  }
-}
-
-class _RequirementItem extends StatelessWidget {
-  const _RequirementItem(this.data);
-
-  final _RequirementData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 62,
-              height: 62,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFE3FF),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.workspace_premium_outlined,
-                color: Color(0xFF9333EA),
-                size: 34,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF243047),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    data.level.isEmpty ? '-' : data.level,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (data.points != null)
-              Text(
-                '+${data.points} pts',
-                style: const TextStyle(
-                  fontSize: 22,
-                  color: Color(0xFF7E22CE),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        const Divider(height: 1, color: Color(0xFFE4EAF2)),
-        const SizedBox(height: 14),
       ],
     );
   }

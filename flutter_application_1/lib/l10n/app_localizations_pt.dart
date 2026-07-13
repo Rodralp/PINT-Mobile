@@ -760,6 +760,19 @@ class AppLocalizationsPt extends AppLocalizations {
       'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.';
 
   @override
+  String get specialBadgeAchievementTitle => 'Badge Especial Desbloqueada!';
+
+  @override
+  String get specialBadgeAchievementDescription =>
+      'Parabéns! Ganhou uma badge especial. Esta conquista reconhece a sua contribuição excepcional.';
+
+  @override
+  String get badgesShowcase => 'Vitrine de Badges';
+
+  @override
+  String get seeAllBadges => 'Ver todos';
+
+  @override
   String get profileTitle => 'Perfil';
 
   @override

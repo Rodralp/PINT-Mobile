@@ -1486,6 +1486,30 @@ abstract class AppLocalizations {
   /// **'Bem-vindo a plataforma de badges da Softinsa. Esta conquista celebra o seu primeiro login e o inicio da sua jornada.'**
   String get welcomeAchievementDescription;
 
+  /// No description provided for @specialBadgeAchievementTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Badge Especial Desbloqueada!'**
+  String get specialBadgeAchievementTitle;
+
+  /// No description provided for @specialBadgeAchievementDescription.
+  ///
+  /// In pt, this message translates to:
+  /// **'Parabéns! Ganhou uma badge especial. Esta conquista reconhece a sua contribuição excepcional.'**
+  String get specialBadgeAchievementDescription;
+
+  /// No description provided for @badgesShowcase.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vitrine de Badges'**
+  String get badgesShowcase;
+
+  /// No description provided for @seeAllBadges.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver todos'**
+  String get seeAllBadges;
+
   /// No description provided for @profileTitle.
   ///
   /// In pt, this message translates to:
