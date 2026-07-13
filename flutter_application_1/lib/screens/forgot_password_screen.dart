@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_api.dart';
 import '../services/auth_session.dart';
-import 'preferences_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -140,17 +139,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         SnackBar(content: Text(loc.forgotPasswordSuccess)),
       );
 
-      final hasPreferences = account.hasPreferences;
-      if (hasPreferences) {
-        Navigator.pushReplacementNamed(context, '/app');
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const PreferencesScreen(showBackButton: false),
-          ),
-        );
-      }
+      Navigator.pushReplacementNamed(context, '/app');
     } on AuthApiException catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
