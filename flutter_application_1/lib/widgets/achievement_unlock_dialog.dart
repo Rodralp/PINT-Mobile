@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/achievement_center.dart';
+import 'badge_artwork.dart';
 
 class AchievementUnlockDialog extends StatefulWidget {
   const AchievementUnlockDialog({
@@ -111,7 +112,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          achievement.title,
+                          achievement.badgeName ?? achievement.title,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 38 / 2,
@@ -225,7 +226,23 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
             left: 0,
             right: 0,
             child: Center(
-              child: _roundBadgeImage(achievement.imageAsset),
+              child: SizedBox(
+                width: 104,
+                height: 104,
+                child: BadgeArtwork(
+                  size: 104,
+                  frameColor: const Color(0xFFBFC4CD),
+                  backgroundColor: const Color(0xFFF0F0F0).withOpacity(0.24),
+                  shape: BoxShape.rectangle,
+                  borderWidth: 5,
+                  iconSize: 38,
+                  badgeImage: achievement.imageAsset,
+                  levelKey: achievement.levelKey,
+                  title: achievement.badgeName,
+                  subtitle: null,
+                  isSpecial: true,
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -267,37 +284,6 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _roundBadgeImage(String? imageAsset) {
-    return Container(
-      width: 104,
-      height: 104,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFD67F45), width: 8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: imageAsset != null
-            ? Image.asset(imageAsset, fit: BoxFit.cover)
-            : Container(
-                color: const Color(0xFFFFE1C9),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.workspace_premium,
-                  color: Color(0xFFD67F45),
-                  size: 52,
-                ),
-              ),
       ),
     );
   }

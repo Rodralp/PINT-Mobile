@@ -8,6 +8,8 @@ class AchievementUnlock {
     required this.points,
     required this.badgesCount,
     this.imageAsset,
+    this.badgeName,
+    this.levelKey,
   });
 
   final String id;
@@ -16,6 +18,8 @@ class AchievementUnlock {
   final int points;
   final int badgesCount;
   final String? imageAsset;
+  final String? badgeName;
+  final String? levelKey;
 }
 
 class AchievementCenter {

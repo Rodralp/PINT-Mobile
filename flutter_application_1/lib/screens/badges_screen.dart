@@ -420,6 +420,8 @@ class _BadgesScreenState extends State<BadgesScreen> {
             points: badge.points,
             badgesCount: 1,
             imageAsset: badge.badgeImage,
+            badgeName: badge.title,
+            levelKey: badge.levelKey,
           ));
         }
       }
@@ -1582,6 +1584,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
               points: _badge.points,
               badgesCount: 1,
               imageAsset: _badge.badgeImage,
+              badgeName: _badge.title,
+              levelKey: _badge.levelKey,
             ));
           }
           break;
@@ -1765,6 +1769,8 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           points: _badge.points,
           badgesCount: 1,
           imageAsset: _badge.badgeImage,
+          badgeName: _badge.title,
+          levelKey: _badge.levelKey,
         ));
       }
 
