@@ -185,7 +185,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<bool> _showRgpdConsentDialog() async {
-    bool isChecked = false;
+    List<Map<String, String>> topics = [];
+    bool loading = true;
+    String? error;
 
     final accepted = await showDialog<bool>(
       context: context,
@@ -193,125 +195,144 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (dialogContext) => PopScope(
         canPop: false,
         child: StatefulBuilder(
-          builder: (dialogContext, setDialogState) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 640, maxWidth: 700),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
+          builder: (dialogContext, setDialogState) {
+            if (loading && topics.isEmpty && error == null) {
+              AuthApi.instance.fetchRgpdTopics().then((data) {
+                if (dialogContext.mounted) {
+                  setDialogState(() {
+                    topics = data;
+                    loading = false;
+                  });
+                }
+              }).catchError((_) {
+                if (dialogContext.mounted) {
+                  setDialogState(() {
+                    loading = false;
+                    error = 'Erro ao carregar termos.';
+                  });
+                }
+              });
+            }
+
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 640, maxWidth: 700),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
                       child: Row(
-                      children: [
-                        const Icon(
-                          Icons.verified_user_outlined,
-                          color: SoftinsaColors.blue,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            AppLocalizations.of(context)!.rgpdTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: SoftinsaColors.ink,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1, color: Colors.grey.shade200),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            AppLocalizations.of(context)!.rgpdIntro,
-                            style: const TextStyle(
-                              color: SoftinsaColors.textMuted,
-                              height: 1.5,
-                            ),
+                          const Icon(
+                            Icons.verified_user_outlined,
+                            color: SoftinsaColors.blue,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            AppLocalizations.of(context)!.rgpdBadgesInfo,
-                            style: const TextStyle(
-                              color: SoftinsaColors.textMuted,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            AppLocalizations.of(context)!.rgpdConsentInfo,
-                            style: const TextStyle(
-                              color: SoftinsaColors.textMuted,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: isChecked,
-                                onChanged: (value) {
-                                  setDialogState(() {
-                                    isChecked = value ?? false;
-                                  });
-                                },
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              AppLocalizations.of(context)!.rgpdTitle,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: SoftinsaColors.ink,
                               ),
-                              Expanded(
-                                child: Text(
-                                  AppLocalizations.of(context)!.rgpdAccept,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, false),
-                            child: Text(AppLocalizations.of(context)!.cancel),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: isChecked
-                                ? () => Navigator.pop(dialogContext, true)
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: SoftinsaColors.blue,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text(AppLocalizations.of(context)!.accept),
-                          ),
-                        ),
-                      ],
+                    Divider(height: 1, color: Colors.grey.shade200),
+                    Flexible(
+                      child: loading
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(32),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : error != null
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Text(
+                                      error!,
+                                      style: const TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                )
+                              : SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: topics.map((topic) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 16),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              topic['title'] ?? '',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 15,
+                                                color: SoftinsaColors.ink,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              topic['body'] ?? '',
+                                              style: const TextStyle(
+                                                color: SoftinsaColors.textMuted,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(AppLocalizations.of(context)!.cancel),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: loading
+                                  ? null
+                                  : () => Navigator.pop(dialogContext, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: SoftinsaColors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text(AppLocalizations.of(context)!.accept),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

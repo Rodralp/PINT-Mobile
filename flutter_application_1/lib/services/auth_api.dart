@@ -337,4 +337,27 @@ class AuthApi {
     }
 
   }
+
+  Future<List<Map<String, String>>> fetchRgpdTopics() async {
+    final attempt = await _getJson('/auth/rgpd-topics');
+    final response = attempt.response;
+
+    if (response.statusCode != 200) {
+      _throwApiError(response);
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      return const [];
+    }
+
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map((topic) => {
+              'id': (topic['id'] ?? '').toString(),
+              'title': (topic['title'] ?? '').toString(),
+              'body': (topic['body'] ?? '').toString(),
+            })
+        .toList(growable: false);
+  }
 }
