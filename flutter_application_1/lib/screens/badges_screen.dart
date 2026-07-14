@@ -1532,7 +1532,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
   }
 
   bool get _canRequest {
-    return !_badge.isOwned && (_badge.state == null || _badge.state == BadgeState.warning);
+    return !_badge.isSpecial && !_badge.isOwned && (_badge.state == null || _badge.state == BadgeState.warning);
   }
 
   bool get _canUpload {
