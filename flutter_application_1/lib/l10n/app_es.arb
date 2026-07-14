@@ -393,5 +393,6 @@
   "forgotPasswordTooShort": "La contraseña debe tener al menos 6 caracteres",
   "forgotPasswordMismatch": "Las contraseñas no coinciden",
   "forgotPasswordSuccess": "¡Contraseña restablecida con éxito!",
-  "forgotPasswordError": "Error al restablecer la contraseña. Inténtalo de nuevo."
+  "forgotPasswordError": "Error al restablecer la contraseña. Inténtalo de nuevo.",
+  "shareOnLinkedIn": "Compartir en LinkedIn"
 }

@@ -393,5 +393,6 @@
   "forgotPasswordTooShort": "A password deve ter pelo menos 6 caracteres",
   "forgotPasswordMismatch": "As passwords não coincidem",
   "forgotPasswordSuccess": "Password reposta com sucesso!",
-  "forgotPasswordError": "Erro ao repor password. Tente novamente."
+  "forgotPasswordError": "Erro ao repor password. Tente novamente.",
+  "shareOnLinkedIn": "Partilhar no LinkedIn"
 }

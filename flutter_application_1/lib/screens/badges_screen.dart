@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'app_shell_screen.dart';
 import 'notifications_full_screen.dart';
 import 'profile_screen.dart';
@@ -17,6 +18,7 @@ import 'messages_screen.dart';
 import '../widgets/badge_artwork.dart';
 import '../widgets/app_top_bar.dart';
 import '../l10n/app_localizations.dart';
+import '../services/backend_config.dart';
 
 enum BadgeState { approved, warning, review, inProgress }
 
@@ -1794,6 +1796,20 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
     }
   }
 
+  Future<void> _shareOnLinkedIn() async {
+    final badge = _badge;
+    final badgeId = badge.id;
+    if (badgeId <= 0) return;
+
+    final baseUrl = BackendConfig.defaultBaseUrl.replaceAll(RegExp(r'/api$'), '');
+    final shareUrl = '$baseUrl/api/share/badge/$badgeId';
+    final linkedInUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=${Uri.encodeComponent(shareUrl)}';
+
+    try {
+      await launchUrl(Uri.parse(linkedInUrl), mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final badge = _badge;
@@ -1818,6 +1834,14 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
             color: Color(0xFF243047),
           ),
         ),
+        actions: [
+          if (badge.state == BadgeState.approved)
+            IconButton(
+              onPressed: () => _shareOnLinkedIn(),
+              icon: const Icon(Icons.share, color: Color(0xFF243047)),
+              tooltip: AppLocalizations.of(context)!.shareOnLinkedIn,
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: const Color(0xFFE5E7EB), height: 1),

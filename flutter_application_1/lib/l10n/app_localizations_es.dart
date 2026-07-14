@@ -1234,4 +1234,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get forgotPasswordError =>
       'Error al restablecer la contraseña. Inténtalo de nuevo.';
+
+  @override
+  String get shareOnLinkedIn => 'Compartir en LinkedIn';
 }

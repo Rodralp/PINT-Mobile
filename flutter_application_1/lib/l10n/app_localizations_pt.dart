@@ -1229,4 +1229,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get forgotPasswordError => 'Erro ao repor password. Tente novamente.';
+
+  @override
+  String get shareOnLinkedIn => 'Partilhar no LinkedIn';
 }

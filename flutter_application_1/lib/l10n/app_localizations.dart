@@ -2343,6 +2343,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Erro ao repor password. Tente novamente.'**
   String get forgotPasswordError;
+
+  /// No description provided for @shareOnLinkedIn.
+  ///
+  /// In pt, this message translates to:
+  /// **'Partilhar no LinkedIn'**
+  String get shareOnLinkedIn;
 }
 
 class _AppLocalizationsDelegate

@@ -393,5 +393,6 @@
   "forgotPasswordTooShort": "Password must be at least 6 characters",
   "forgotPasswordMismatch": "Passwords do not match",
   "forgotPasswordSuccess": "Password reset successfully!",
-  "forgotPasswordError": "Failed to reset password. Try again."
+  "forgotPasswordError": "Failed to reset password. Try again.",
+  "shareOnLinkedIn": "Share on LinkedIn"
 }

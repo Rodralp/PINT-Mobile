@@ -1222,4 +1222,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgotPasswordError => 'Failed to reset password. Try again.';
+
+  @override
+  String get shareOnLinkedIn => 'Share on LinkedIn';
 }
