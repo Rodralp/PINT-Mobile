@@ -39,6 +39,7 @@ class BadgeData {
     this.stateId,
     this.state,
     this.requestId,
+    this.description,
   });
 
   final int id;
@@ -56,6 +57,7 @@ class BadgeData {
   final String? stateId;
   final BadgeState? state;
   final int? requestId;
+  final String? description;
 }
 
 class _BadgePalette {
@@ -200,6 +202,7 @@ BadgeData _badgeDataFromBackend(BackendBadge badge, {bool? isOwnedOverride}) {
     stateId: stateId,
     state: _badgeStateFromStatus(stateId),
     requestId: badge.requestId,
+    description: badge.description,
   );
 }
 
@@ -375,6 +378,9 @@ class _BadgesScreenState extends State<BadgesScreen> {
             stateId: merged.stateId ?? catalog.stateId,
             state: merged.state ?? catalog.state,
             requestId: merged.requestId ?? catalog.requestId,
+            description: (merged.description != null && merged.description!.isNotEmpty)
+                ? merged.description
+                : catalog.description,
           );
         }).toList(growable: false);
       }
@@ -1522,6 +1528,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
               stateId: mb.stateId,
               state: _badgeStateFromStatus(mb.stateId),
               requestId: mb.requestId,
+              description: _badge.description,
             );
             _currentRequestId = mb.requestId;
           });
@@ -1634,6 +1641,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           stateId: newStateId,
           state: newState,
           requestId: requestId ?? _currentRequestId,
+          description: _badge.description,
         );
         _currentRequestId = requestId ?? _currentRequestId;
         _previousBadgeState = newState;
@@ -1760,6 +1768,7 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
           stateId: 'em_validacao_tm',
           state: BadgeState.review,
           requestId: _currentRequestId,
+          description: _badge.description,
         );
       });
 
@@ -1918,6 +1927,17 @@ class _BadgeLiveDetailScreenState extends State<BadgeLiveDetailScreen> {
                           _metaItem(Icons.description_outlined, '${requirements.length} requisitos'),
                         ],
                       ),
+                      if (badge.description != null && badge.description!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          badge.description!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
                       if (badge.state != null) ...[
                         const SizedBox(height: 16),
                         Container(

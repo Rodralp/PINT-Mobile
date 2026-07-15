@@ -31,6 +31,7 @@ class BackendRequest {
     this.reviewerNote,
     this.reviewerName,
     this.requirements,
+    this.description,
   });
 
   factory BackendRequest.fromJson(Map<String, dynamic> json) {
@@ -46,6 +47,7 @@ class BackendRequest {
       requirements: json['requirements'] is List
           ? (json['requirements'] as List).whereType<Map<String, dynamic>>().toList()
           : null,
+      description: _readString(json, ['description', 'descricao', 'b_descricao', 'badgeDescription']),
     );
   }
 
@@ -58,6 +60,7 @@ class BackendRequest {
   final String? reviewerNote;
   final String? reviewerName;
   final List<Map<String, dynamic>>? requirements;
+  final String? description;
 }
 
 class ProfileSkillItem {
@@ -125,6 +128,7 @@ class BackendLevel {
     required this.requirements,
     required this.status,
     required this.isSpecial,
+    this.description,
   });
 
   factory BackendLevel.fromJson(Map<String, dynamic> json) {
@@ -146,6 +150,7 @@ class BackendLevel {
       requirements: requirements,
       status: _readString(json, ['status', 'state', 'estado']) ?? 'visualizar',
       isSpecial: json['isSpecial'] == true,
+      description: _readString(json, ['description', 'descricao', 'b_descricao']),
     );
   }
 
@@ -160,6 +165,7 @@ class BackendLevel {
   final List<BackendRequirement> requirements;
   final String status;
   final bool isSpecial;
+  final String? description;
 }
 
 class BackendArea {

@@ -413,6 +413,7 @@ class _BadgeShowcaseCard extends StatelessWidget {
                               stateId: badge.stateId,
                               state: null,
                               requestId: badge.requestId,
+                              description: badge.description,
                             ),
                           ),
                         ),

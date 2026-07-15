@@ -21,6 +21,7 @@ class _RequestData {
     required this.date,
     required this.status,
     this.badgeDbId,
+    this.description,
   });
 
   final int id;
@@ -29,6 +30,7 @@ class _RequestData {
   final String date;
   final BadgeRequestStatus status;
   final int? badgeDbId;
+  final String? description;
 }
 
 extension RequestStatusExtension on BadgeRequestStatus {
@@ -126,6 +128,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
               date: request.date ?? '',
               status: _requestStatusFromApi(request.status),
               badgeDbId: request.badgeDbId,
+              description: request.description,
             ),
           )
           .toList(growable: false);
@@ -230,6 +233,7 @@ class _BadgeRequestScreenState extends State<BadgeRequestScreen> {
             stateId: null,
             state: badgeState,
             requestId: request.id,
+            description: request.description,
           ),
         ),
       ),

@@ -170,6 +170,7 @@ class _ServiceLineScreenState extends State<ServiceLineScreen> {
       stateId: level.status,
       state: badgeState,
       requestId: level.requestId,
+      description: level.description,
     );
 
     Navigator.push(
