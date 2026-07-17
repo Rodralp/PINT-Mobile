@@ -443,6 +443,54 @@ class _BadgesScreenState extends State<BadgesScreen> {
     return badges;
   }
 
+  Future<void> checkNewSpecialBadges() async {
+    final accountId = await AuthSession.getAccountId();
+    if (accountId == null || !mounted) return;
+
+    final previousOwnedKey = '$_ownedSpecialBadgesKey:$accountId';
+    final previousOwnedRaw = await localStorage.getString(previousOwnedKey);
+    final previousOwnedIds = previousOwnedRaw != null
+        ? Set<String>.from(jsonDecode(previousOwnedRaw) as List)
+        : <String>{};
+
+    final items = await BadgesApi.instance.fetchMyBadges(accountId: accountId);
+    final badges = items
+        .map((badge) => _badgeDataFromBackend(badge, isOwnedOverride: true))
+        .toList(growable: false);
+
+    final currentOwnedIds = <String>{};
+    for (final badge in badges) {
+      if (badge.isOwned && badge.isSpecial) {
+        currentOwnedIds.add(badge.id.toString());
+      }
+    }
+
+    if (previousOwnedIds.isNotEmpty && mounted) {
+      for (final badge in badges) {
+        if (badge.isOwned &&
+            badge.isSpecial &&
+            !previousOwnedIds.contains(badge.id.toString())) {
+          AchievementCenter.instance.unlock(AchievementUnlock(
+            id: 'special-badge-${badge.id}',
+            title: AppLocalizations.of(context)!.specialBadgeAchievementTitle,
+            description:
+                AppLocalizations.of(context)!.specialBadgeAchievementDescription,
+            points: badge.points,
+            badgesCount: 1,
+            imageAsset: badge.badgeImage,
+            badgeName: badge.title,
+            levelKey: badge.levelKey,
+          ));
+        }
+      }
+    }
+
+    await localStorage.setString(
+      previousOwnedKey,
+      jsonEncode(currentOwnedIds.toList()),
+    );
+  }
+
   @override
   void dispose() {
     _myBadgesSearchController.dispose();

@@ -27,15 +27,16 @@ class AppShellScreen extends StatefulWidget {
   State<AppShellScreen> createState() => _AppShellScreenState();
 }
 
-class _AppShellScreenState extends State<AppShellScreen> {
+class _AppShellScreenState extends State<AppShellScreen> with WidgetsBindingObserver {
   late int _selectedIndex;
   late final StreamSubscription<AchievementUnlock> _achievementSub;
   final List<AchievementUnlock> _achievementQueue = [];
   bool _isShowingAchievement = false;
+  final GlobalKey _badgesKey = GlobalKey();
 
   late final List<Widget> _pages = [
     const DashboardScreen(),
-    const BadgesScreen(),
+    BadgesScreen(key: _badgesKey),
     const LearningPathScreen(),
     BadgeRequestScreen(initialStatuses: widget.badgeRequestInitialStatuses),
     const MoreOptionsScreen(),
@@ -44,6 +45,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedIndex = widget.initialIndex;
     _achievementSub = AchievementCenter.instance.stream.listen((achievement) {
       _achievementQueue.add(achievement);
@@ -63,8 +65,20 @@ class _AppShellScreenState extends State<AppShellScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _achievementSub.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkBadgesForNewSpecials();
+    }
+  }
+
+  void _checkBadgesForNewSpecials() {
+    (_badgesKey.currentState as dynamic)?.checkNewSpecialBadges();
   }
 
   Future<void> _showNextAchievement() async {
@@ -118,6 +132,9 @@ class _AppShellScreenState extends State<AppShellScreen> {
             setState(() {
               _selectedIndex = index;
             });
+            if (index == 1) {
+              _checkBadgesForNewSpecials();
+            }
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           backgroundColor: Colors.white,
