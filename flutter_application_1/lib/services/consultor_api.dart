@@ -738,12 +738,24 @@ class ConsultorApi {
                 .where((item) => item.title.isNotEmpty)
                 .toList(growable: false);
 
-        final suggestionItems =
-            (resolved['certificationsItems'] as List<dynamic>? ?? const [])
-                .whereType<Map<String, dynamic>>()
-                .map(BackendSuggestionItem.fromJson)
-                .where((item) => item.title.isNotEmpty)
-                .toList(growable: false);
+        List<BackendSuggestionItem> suggestionItems = [];
+        if (accountId != null) {
+          try {
+            final sugUri = await _uri('/consultor/sugestoes?accountId=$accountId&limit=5');
+            final sugResponse = await _getJson(sugUri);
+            if (sugResponse.statusCode == 200) {
+              final sugDecoded = jsonDecode(sugResponse.body);
+              final sugData = sugDecoded is List ? sugDecoded : (sugDecoded['data'] as List<dynamic>? ?? const []);
+              suggestionItems = sugData
+                  .whereType<Map<String, dynamic>>()
+                  .map(BackendSuggestionItem.fromJson)
+                  .where((item) => item.title.isNotEmpty)
+                  .toList(growable: false);
+            }
+          } catch (e) {
+            debugPrint('[ConsultorApi] fetchSuggestions fallback: $e');
+          }
+        }
 
         final dashboard = BackendConsultorDashboard(
           timelineValues: timelineValues,

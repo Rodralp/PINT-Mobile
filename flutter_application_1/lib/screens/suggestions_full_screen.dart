@@ -96,7 +96,7 @@ class SuggestionsFullScreen extends StatelessWidget {
                       ),
                       child: _SuggestionItemFull(
                         title: item.title,
-                        subtitle: _badgeLevelLabelFromKey(item.subtitleKey),
+                        subtitle: _badgeLevelLabelFromKey(item.subtitleKey, context),
                         subtitleKey: item.subtitleKey,
                         description:
                             AppLocalizations.of(context)!.suggestionDescription,
@@ -225,18 +225,19 @@ class _SuggestionItemFull extends StatelessWidget {
   }
 }
 
-String _badgeLevelLabelFromKey(String key) {
+String _badgeLevelLabelFromKey(String key, BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
   switch (key.trim().toLowerCase()) {
     case 'badge_level_junior':
-      return 'Júnior';
+      return loc.junior;
     case 'badge_level_intermediate':
-      return 'Intermédio';
+      return loc.intermediate;
     case 'badge_level_senior':
-      return 'Sénior';
+      return loc.senior;
     case 'badge_level_specialist':
-      return 'Especialista';
+      return loc.specialist;
     case 'badge_level_knowledge_lead':
-      return 'Líder de Conhecimento';
+      return loc.knowledgeLead;
     default:
       return key;
   }

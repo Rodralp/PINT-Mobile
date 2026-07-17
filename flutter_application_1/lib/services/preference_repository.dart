@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -23,12 +22,21 @@ class PreferenceRepository {
       final cached = await _readCached(db, accountId);
       if (cached != null) return cached;
 
-      unawaited(_sync(accountId));
-      return [];
+      await _sync(accountId);
+      return (await _readCached(db, accountId)) ?? [];
     }
 
     await _sync(accountId);
     return (await _readCached(db, accountId)) ?? [];
+  }
+
+  Future<void> clearCache(int accountId) async {
+    final db = await LocalDatabase.instance.database;
+    await db.delete(
+      'preference_areas_cache',
+      where: 'account_id = ?',
+      whereArgs: [accountId],
+    );
   }
 
   Future<List<BackendArea>?> _readCached(Database db, int accountId) async {

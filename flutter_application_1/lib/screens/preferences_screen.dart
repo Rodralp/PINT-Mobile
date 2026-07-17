@@ -176,6 +176,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         areaIds: selectedAreaIds,
       );
 
+      await PreferenceRepository.instance.clearCache(accountId);
+
       await localStorage.setBool(
         PreferencesScreen.firstLoginPreferencesDoneKeyFor(accountId),
         true,
