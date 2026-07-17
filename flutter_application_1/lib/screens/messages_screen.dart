@@ -372,7 +372,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       onTap: onTap,
       child: Container(
         height: 54,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFE0E6F0)),
@@ -381,11 +381,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            Icon(icon, size: 18),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
             ),
           ],
         ),

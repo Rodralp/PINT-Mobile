@@ -494,9 +494,12 @@ class _MetricInfoCard extends StatelessWidget {
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -510,12 +513,16 @@ class _MetricInfoCard extends StatelessWidget {
             children: [
               Icon(icon, size: 44, color: iconColor),
               const SizedBox(width: 12),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
             ],
@@ -524,6 +531,8 @@ class _MetricInfoCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 12,
                 color: Colors.grey,
@@ -609,6 +618,8 @@ class _CompetencyProgress extends StatelessWidget {
       children: [
         Text(
           title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -618,6 +629,8 @@ class _CompetencyProgress extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 13,
             color: Colors.grey[500],

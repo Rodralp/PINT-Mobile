@@ -734,9 +734,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -750,12 +753,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(icon, size: 44, color: iconColor),
               const SizedBox(width: 12),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
             ],
